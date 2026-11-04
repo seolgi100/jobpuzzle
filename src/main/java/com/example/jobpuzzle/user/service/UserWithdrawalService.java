@@ -23,6 +23,7 @@ import com.example.jobpuzzle.jobposting.repository.JobPostingRepository;
 import com.example.jobpuzzle.analysis.rag.repository.RequirementRetrievalChunkRepository;
 import com.example.jobpuzzle.analysis.rag.repository.RequirementRetrievalResultRepository;
 import com.example.jobpuzzle.user.repository.UserRepository;
+import com.example.jobpuzzle.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class UserWithdrawalService {
     private final QuestionSetRepository questionSetRepository;
     private final GuideContextChunkRepository guideContextChunkRepository;
     private final GuideContextResultRepository guideContextResultRepository;
+    private final TicketService ticketService;
     private final AnalysisCaseRepository analysisCaseRepository;
     private final JobPostingRepository jobPostingRepository;
     private final DocumentExtractionRepository documentExtractionRepository;
@@ -99,6 +101,9 @@ public class UserWithdrawalService {
             document.getFiles().forEach(file -> fileStorage.delete(file.getFilePath()));
         }
         userDocumentRepository.deleteByUser_UserId(userId);
+
+        // 티켓 잔액·이력은 지우고, 결제 주문(payment_order)은 거래 기록 보관을 위해 남긴다.
+        ticketService.deleteAllByUser(userId);
 
         userRepository.deleteById(userId);
     }

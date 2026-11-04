@@ -35,6 +35,10 @@ public class PageViewController {
     @GetMapping("/settings")
     public String settings() { return "settings"; }
 
+    // 티켓 충전·잔액. 토스 결제창 successUrl/failUrl도 이 화면으로 돌아온다.
+    @GetMapping("/tickets")
+    public String tickets() { return "tickets"; }
+
     @GetMapping("/job-category-setup")
     public String jobCategorySetup() { return "job-category-setup"; }
 }

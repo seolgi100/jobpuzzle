@@ -114,7 +114,14 @@ public enum ErrorCode {
     INTERVIEW_SESSION_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "REPORT_002", "완료되지 않은 세션은 최종 리포트를 생성할 수 없습니다."),
     FINAL_REPORT_NOT_GENERATABLE(HttpStatus.BAD_REQUEST, "REPORT_003", "평가에 성공한 답변이 없어 최종 리포트를 생성할 수 없습니다."),
     FINAL_REPORT_GENERATION_IN_PROGRESS(HttpStatus.CONFLICT, "REPORT_004", "최종 리포트를 생성하는 중입니다. 잠시 후 다시 시도해주세요."),
-    FINAL_REPORT_GENERATION_FAILED(HttpStatus.BAD_GATEWAY, "REPORT_005", "최종 리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    FINAL_REPORT_GENERATION_FAILED(HttpStatus.BAD_GATEWAY, "REPORT_005", "최종 리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요."),
+
+    // ticket / payment
+    TICKET_INSUFFICIENT(HttpStatus.PAYMENT_REQUIRED, "TICKET_001", "티켓이 부족합니다. 상단 메뉴의 티켓 충전에서 충전해 주세요."),
+    PAYMENT_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001", "결제 주문을 찾을 수 없습니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_002", "결제 금액이 주문 금액과 다릅니다."),
+    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_GATEWAY, "PAYMENT_003", "결제 승인에 실패했습니다."),
+    PAYMENT_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_004", "결제 설정이 되어 있지 않습니다. 관리자에게 문의해 주세요.");
 
     private final HttpStatus status;
     private final String code;
