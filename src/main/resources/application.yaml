@@ -141,6 +141,28 @@ app:
         json05-retrieval-chars: ${AI_JSON05_RETRIEVAL_CHARS:36000}
         json05-rendered-prompt-chars: ${AI_JSON05_RENDERED_PROMPT_CHARS:64000}
 
+  # 면접 티켓: 기본 면접 첫 1회 무료 후 1장, 약점 보완 1장, 공고 맞춤 3~5장(지원자 자료 종류 수에 따라)
+  ticket:
+    basic-cost: 1
+    weakness-cost: 1
+    company-fit-min-cost: 3
+    company-fit-max-cost: 5
+    products:
+      - code: T5
+        name: 면접 티켓 5장
+        tickets: 5
+        price: 5000
+      - code: T10
+        name: 면접 티켓 10장
+        tickets: 10
+        price: 9000
+      - code: T30
+        name: 면접 티켓 30장
+        tickets: 30
+        price: 24000
+    toss:
+      client-key: ${TOSS_CLIENT_KEY:}
+      secret-key: ${TOSS_SECRET_KEY:}
   data-initializer:
     enabled: false
 

@@ -6,6 +6,8 @@ import com.example.jobpuzzle.analysis.dto.WeaknessQuestionRequest;
 import com.example.jobpuzzle.analysis.dto.PreparedQuestionSetResponse;
 import com.example.jobpuzzle.analysis.service.QuestionGenerationService;
 import com.example.jobpuzzle.global.common.ApiResponse;
+import com.example.jobpuzzle.ticket.entity.TicketUsage;
+import com.example.jobpuzzle.ticket.service.TicketService;
 import com.example.jobpuzzle.user.entity.User;
 import com.example.jobpuzzle.interview.dto.QuestionListResponse;
 import jakarta.validation.Valid;
@@ -23,17 +25,17 @@ import java.util.List;
 public class QuestionSetController {
 
     private final QuestionGenerationService questionGenerationService;
+    private final TicketService ticketService;
 
     @PostMapping("/basic")
     public ResponseEntity<ApiResponse<QuestionSetResponse>> generateBasic(
             @AuthenticationPrincipal(expression = "user") User user,
             @Valid @RequestBody BasicQuestionRequest request
     ) {
+        // 첫 기본 면접은 무료, 이후 티켓 차감. 질문 생성에 실패하면 돌려준다.
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
-                questionGenerationService.generateBasicQuestionSet(
-                        user.getUserId(),
-                        request
-                )
+                ticketService.spend(user.getUserId(), TicketUsage.BASIC, ticketService.cost(TicketUsage.BASIC),
+                        () -> questionGenerationService.generateBasicQuestionSet(user.getUserId(), request))
         ));
     }
 
@@ -43,10 +45,9 @@ public class QuestionSetController {
             @Valid @RequestBody WeaknessQuestionRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
-                questionGenerationService.generateWeaknessQuestionSet(
-                        user.getUserId(),
-                        request
-                )
+                ticketService.spend(user.getUserId(), TicketUsage.WEAKNESS_REVIEW,
+                        ticketService.cost(TicketUsage.WEAKNESS_REVIEW),
+                        () -> questionGenerationService.generateWeaknessQuestionSet(user.getUserId(), request))
         ));
     }
 

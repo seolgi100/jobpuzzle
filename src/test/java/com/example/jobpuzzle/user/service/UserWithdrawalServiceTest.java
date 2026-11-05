@@ -65,6 +65,7 @@ class UserWithdrawalServiceTest {
     @Mock private UserDocumentRepository userDocumentRepository;
     @Mock private UserRepository userRepository;
     @Mock private FileStorage fileStorage;
+    @Mock private com.example.jobpuzzle.ticket.service.TicketService ticketService;
 
     @InjectMocks
     private UserWithdrawalService userWithdrawalService;
