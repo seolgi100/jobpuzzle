@@ -84,6 +84,7 @@
         .then(function (result) {
           if (result.ok && result.body.success) {
             resultLoginId.textContent = result.body.data;
+            document.getElementById('find-id-form').hidden = true;
             resultBox.hidden = false;
           } else {
             showError(errorEl, result.body.message || '인증 코드가 올바르지 않습니다.');

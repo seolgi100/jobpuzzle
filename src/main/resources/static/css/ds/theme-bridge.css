@@ -1,0 +1,43 @@
+/* 예전 화면 구조를 쓰는 페이지(면접 준비·관리자)를 새 디자인 색·글꼴·헤더로 맞추는 연결 스타일.
+   예전 app-theme 변수(--jp-*)를 시안 색으로 바꿔 끼운다. */
+body.jp-app-theme { --text: #111827; --text-2: #4B5563; --text-3: #9CA3AF; --card-line: #E2E8F3;
+  font-family: "Pretendard", -apple-system, "Malgun Gothic", sans-serif; background: #F5F7FB; }
+body.jp-app-theme .site-header[data-dynamic-header],
+body.jp-app-theme .site-header[data-dynamic-header].header--light,
+body.jp-app-theme .site-header[data-dynamic-header].header--dark,
+body.jp-app-theme .site-header[data-dynamic-header].is-header-compact {
+  position: sticky; top: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0; border-bottom: 1px solid rgba(147,197,253,.12);
+  border-radius: 0; background: rgba(15,30,51,.9); box-shadow: none; color: #fff; display: block;
+}
+body.jp-app-theme .site-header__nav a { color: rgba(226,236,250,.72); background: none; border-radius: 0; height: 60px; padding: 0 12px; }
+body.jp-app-theme .site-header__nav a.is-active { color: #fff; background: none; }
+body.jp-app-theme .site-header__brand { color: #fff; }
+/* 기존 app-theme 헤더 규칙이 더 구체적이라 덮어쓴다 */
+body.jp-app-theme .site-header .site-header__nav a { color: rgba(226,236,250,.72) !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+body.jp-app-theme .site-header .site-header__nav a:hover, body.jp-app-theme .site-header .site-header__nav a.is-active { color: #fff !important; }
+body.jp-app-theme .site-header .user-chip { border: 1px solid rgba(147,197,253,.2) !important; background: rgba(255,255,255,.04) !important; color: #fff !important; box-shadow: none !important; }
+body.jp-app-theme .site-header .user-chip__avatar { background: linear-gradient(135deg, #60A5FA, #3B82F6) !important; color: #fff !important; }
+
+/* 시안 팔레트로 변수 바꾸기: 흰 카드 · 회청 바탕 · 스카이 블루 · 남색, 그림자 없음 · 얇은 선 */
+body.jp-app-theme, body.jp-app-theme.jp-interview-page {
+  --jp-canvas-top: #F5F7FB; --jp-canvas-bottom: #F5F7FB;
+  --jp-paper: #FFFFFF; --jp-paper-soft: #F7F9FD; --jp-paper-blue: #EAF2FE;
+  --jp-blue-soft: #DCE8FD; --jp-blue: #3B82F6; --jp-blue-deep: #0F1E33;
+  --jp-cyan-soft: #E0F2FE; --jp-cyan: #2F74E8;
+  --jp-ink: #111827; --jp-text-secondary: #4B5563; --jp-text-tertiary: #9CA3AF;
+  --jp-line: #E2E8F3; --jp-line-soft: #E2E8F3;
+  --jp-danger: #DC2626; --jp-warning: #C2410C; --jp-success: #16A34A;
+  --jp-shadow: none; --jp-shadow-small: none;
+  --jp-mode-basic: #64748B; --jp-mode-basic-deep: #334155; --jp-mode-basic-soft: #EEF2F8;
+  --jp-mode-company: #3B82F6; --jp-mode-company-deep: #2F74E8; --jp-mode-company-soft: #EAF2FE;
+  --jp-mode-weakness: #C2410C; --jp-mode-weakness-deep: #9A3412; --jp-mode-weakness-soft: #FFF4ED;
+  --color-text: #111827; --color-border: #E2E8F3;
+  background: #F5F7FB !important; background-attachment: initial !important;
+}
+body.jp-app-theme .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+body.jp-app-theme .eyebrow-label { color: #3B82F6; letter-spacing: .12em; font-weight: 700; }
+body.jp-app-theme .btn--primary { background: #0F1E33; border-color: #0F1E33; color: #fff; box-shadow: none; }
+body.jp-app-theme .btn--primary:hover { background: #1A2C47; }
+/* 시안에 없는 예전 장식(청록 퍼즐 조각)은 숨긴다 */
+body.jp-app-theme canvas[data-puzzle-piece] { display: none !important; }
+body.jp-app-theme .site-footer { background: transparent; border-top: 1px solid #E2E8F3; }

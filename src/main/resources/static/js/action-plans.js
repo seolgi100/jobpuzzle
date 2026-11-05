@@ -1,361 +1,183 @@
+// action-plans.js — 분석별 보완 과제 목록과 달력. 과제 내용은 분석 결과 그대로이고 완료·마감일만 바꾼다.
 (function () {
   'use strict';
-
-  var GROUPS_PER_PAGE = 4;
+  var U = window.JPUI, route = window.JobPuzzleRoutes.path;
+  var ICAL = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var TODAY = key(today);
   var state = {
-    plans: [],
-    filter: 'ALL',
-    page: 1,
-    savingIds: new Set(),
-    focusedAnalysisCaseId: new URLSearchParams(window.location.search).get('analysisCaseId')
+    plans: [], loaded: false, error: '', filter: 'ALL', view: 'list', savingIds: {}, errors: {},
+    month: new Date(today.getFullYear(), today.getMonth(), 1), selDay: TODAY,
+    focused: new URLSearchParams(window.location.search).get('analysisCaseId'), highlight: null
   };
 
-  var list = document.getElementById('action-plan-list');
-  var feedback = document.getElementById('action-plan-feedback');
-  var pagination = document.getElementById('action-plan-load-more');
-  var calendar = null;
+  function key(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function fmt(d) { var p = d.split('-'); return +p[1] + '월 ' + +p[2] + '일'; }
+  function done(p) { return p.status === 'DONE'; }
+  function over(p) { return !done(p) && p.deadline && p.deadline < TODAY; }
+  function show(p) { return state.filter === 'ALL' || (state.filter === 'DONE') === done(p); }
+  function careerLabel(v) { return { NEW: '신입', EXPERIENCED: '경력', ANY: '경력 무관' }[v] || ''; }
+  function api(p, method, body) { return U.api(route(p), { method: method, json: body }); }
 
-  // 공통 API 응답을 검사하고 data 값만 반환한다.
-  function api(path, options) {
-    return fetch(window.JobPuzzleRoutes.path(path), Object.assign({
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' }
-    }, options || {})).then(function (response) {
-      return response.json().catch(function () { return null; }).then(function (body) {
-        if (!response.ok || !body || !body.success) {
-          throw new Error(body && body.message ? body.message : '요청을 처리하지 못했습니다.');
-        }
-        return body.data;
-      });
+  function groups() {
+    var map = new Map();
+    state.plans.forEach(function (p) {
+      var k = String(p.analysisCaseId);
+      if (!map.has(k)) map.set(k, { id: k, plans: [] });
+      map.get(k).plans.push(p);
     });
-  }
-
-  // 안전하게 텍스트 노드를 가진 요소를 만든다.
-  function textElement(tag, className, text) {
-    var element = document.createElement(tag);
-    if (className) element.className = className;
-    element.textContent = text == null ? '' : text;
-    return element;
-  }
-
-  // 서버 경력 수준을 화면용 한국어로 변환한다.
-  function careerLabel(value) {
-    return { NEW: '신입', EXPERIENCED: '경력', ANY: '무관' }[value] || '경력 미지정';
-  }
-
-  // 날짜·시간 문자열을 분석 일자 표기로 변환한다.
-  function dateLabel(value) {
-    if (!value) return '분석 일자 미상';
-    var date = new Date(value);
-    if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
-  }
-
-  // 전체 진행률 요약을 현재 데이터와 동기화한다.
-  function renderSummary() {
-    var total = state.plans.length;
-    var done = state.plans.filter(function (plan) { return plan.status === 'DONE'; }).length;
-    var pending = total - done;
-    var progress = total ? Math.round((done / total) * 100) : 0;
-    document.getElementById('action-plan-total').textContent = total;
-    document.getElementById('action-plan-done').textContent = done;
-    document.getElementById('action-plan-pending').textContent = pending;
-    document.getElementById('action-plan-progress-value').textContent = progress + '%';
-    document.getElementById('action-plan-progress-bar').style.width = progress + '%';
-  }
-
-  // 선택한 완료 상태에 해당하는 과제만 반환한다.
-  function filteredPlans() {
-    if (state.filter === 'ALL') return state.plans;
-    return state.plans.filter(function (plan) { return plan.status === state.filter; });
-  }
-
-  // 현재 필터의 과제를 공통 달력 표시 모델로 변환한다.
-  function calendarItems() {
-    return filteredPlans().map(function (plan) {
-      var notice = window.ActionPlanDeadline.getNotice(plan.deadline, plan.status);
-      return {
-        id: String(plan.actionPlanId),
-        date: plan.deadline,
-        title: plan.suggestion || '보완 과제',
-        description: plan.missingPoint || '',
-        tone: plan.status === 'DONE' ? 'done' : (notice ? notice.tone : 'normal'),
-        statusLabel: plan.status === 'DONE' ? '완료' : (notice ? notice.label : '진행 중')
-      };
-    });
-  }
-
-  // 과제를 분석 ID별로 묶고 선택해 들어온 분석을 가장 앞에 배치한다.
-  function groupedPlans() {
-    var groups = new Map();
-    filteredPlans().forEach(function (plan) {
-      var key = String(plan.analysisCaseId);
-      if (!groups.has(key)) groups.set(key, { analysisCaseId: key, plans: [] });
-      groups.get(key).plans.push(plan);
-    });
-    return Array.from(groups.values()).sort(function (a, b) {
-      if (a.analysisCaseId === state.focusedAnalysisCaseId) return -1;
-      if (b.analysisCaseId === state.focusedAnalysisCaseId) return 1;
+    return Array.from(map.values()).sort(function (a, b) {
+      if (a.id === state.focused) return -1;
+      if (b.id === state.focused) return 1;
       return new Date(b.plans[0].createdAt || 0) - new Date(a.plans[0].createdAt || 0);
     });
   }
 
-  // 저장 중인 과제 컨트롤과 오류 문구를 한곳에서 갱신한다.
-  function setSaving(actionPlanId, saving, message) {
-    if (saving) state.savingIds.add(actionPlanId);
-    else state.savingIds.delete(actionPlanId);
-    var item = list.querySelector('[data-action-plan-id="' + actionPlanId + '"]');
-    if (!item) return;
-    item.querySelectorAll('button, input').forEach(function (control) {
-      control.disabled = saving;
-    });
-    var error = item.querySelector('.action-plan-inline-error');
-    if (error) error.textContent = message || '';
+  function renderStats() {
+    var all = state.plans, d = all.filter(done).length, rate = all.length ? Math.round(d / all.length * 100) : 0;
+    document.querySelector('[data-stat="total"]').innerHTML = all.length + '<small>개</small>';
+    document.querySelector('[data-stat="pending"]').innerHTML = (all.length - d) + '<small>개</small>';
+    document.querySelector('[data-stat="over"]').innerHTML = all.filter(over).length + '<small>개</small>';
+    document.querySelector('[data-stat="rate"]').innerHTML = rate + '<small>%</small>';
+    document.querySelector('[data-stat="bar"]').style.width = rate + '%';
   }
 
-  // 한 과제의 완료 처리와 일정 입력 UI를 만든다.
-  function createPlanItem(plan) {
-    var item = document.createElement('article');
-    item.className = 'action-plan-item' + (plan.status === 'DONE' ? ' is-done' : '');
-    item.dataset.actionPlanId = plan.actionPlanId;
-
-    var completion = textElement('button', 'action-plan-completion', plan.status === 'DONE' ? '✓' : '');
-    completion.type = 'button';
-    completion.setAttribute('aria-label', plan.status === 'DONE' ? '완료 취소' : '과제 완료');
-    completion.addEventListener('click', function () {
-      updateCompletion(plan, plan.status !== 'DONE');
-    });
-
-    var copy = document.createElement('div');
-    copy.className = 'action-plan-copy';
-    copy.appendChild(textElement('h3', null, plan.suggestion || '보완 과제'));
-    var meta = textElement('div', 'action-plan-meta', '');
-    if (plan.matchLevel) {
-      var matchClass = 'action-plan-match action-plan-match--' + String(plan.matchLevel).toLowerCase();
-      meta.appendChild(textElement('span', matchClass, plan.matchLevel));
+  function dueControl(p) {
+    if (done(p)) return '<span class="pill pill--done">완료</span>';
+    var label;
+    if (!p.deadline) label = '마감일 정하기';
+    else {
+      var days = Math.round((new Date(p.deadline + 'T00:00:00') - today) / 864e5);
+      label = fmt(p.deadline) + ' · ' + (days < 0 ? -days + '일 지남' : days === 0 ? '오늘' : 'D-' + days);
     }
-    if (plan.requirement) {
-      meta.appendChild(textElement('span', 'action-plan-requirement', plan.requirement));
-    }
-    copy.appendChild(meta);
-    var detail = textElement('div', 'action-plan-detail', '');
-    var missing = textElement('p', null, '');
-    missing.appendChild(textElement('strong', null, '보완 포인트 · '));
-    missing.appendChild(document.createTextNode(plan.missingPoint || '보완이 필요한 내용을 확인해 주세요.'));
-    detail.appendChild(missing);
-    copy.appendChild(detail);
-
-    var deadlineBox = textElement('div', 'action-plan-deadline', '');
-    var label = textElement('label', null, '마감일');
-    label.htmlFor = 'action-plan-deadline-' + plan.actionPlanId;
-    var input = document.createElement('input');
-    input.type = 'date';
-    input.id = label.htmlFor;
-    input.value = plan.deadline || '';
-    input.addEventListener('change', function () {
-      updateDeadline(plan, input.value || null, input);
-    });
-    deadlineBox.appendChild(label);
-    deadlineBox.appendChild(input);
-    var notice = window.ActionPlanDeadline.getNotice(plan.deadline, plan.status);
-    if (notice) {
-      deadlineBox.classList.add('action-plan-deadline--' + notice.tone);
-      deadlineBox.appendChild(textElement('span', 'action-plan-deadline-notice action-plan-deadline-notice--' + notice.tone, notice.label));
-    }
-    deadlineBox.appendChild(textElement('p', 'action-plan-inline-error', ''));
-
-    item.appendChild(completion);
-    item.appendChild(copy);
-    item.appendChild(deadlineBox);
-    return item;
+    var cls = 'ap-due' + (!p.deadline ? ' ap-due--empty' : over(p) ? ' ap-due--over' : '');
+    return '<button type="button" class="' + cls + '" data-due="' + p.actionPlanId + '">' + ICAL + label + '</button>' +
+      '<input type="date" class="ap-due__input" data-due-input="' + p.actionPlanId + '" value="' + (p.deadline || '') + '" aria-label="마감일" tabindex="-1">';
   }
 
-  // 분석 정보와 그 분석에서 생성된 과제들을 하나의 구획으로 만든다.
-  function createAnalysisGroup(group) {
-    var sample = group.plans[0];
-    var section = document.createElement('section');
-    section.className = 'action-plan-group' + (group.analysisCaseId === state.focusedAnalysisCaseId ? ' is-focused' : '');
-
-    var header = document.createElement('header');
-    header.className = 'action-plan-group__header';
-    var titleBox = document.createElement('div');
-    titleBox.appendChild(textElement('p', 'action-plan-group__eyebrow', '분석 #' + group.analysisCaseId));
-    titleBox.appendChild(textElement('h3', null, [sample.mainCategory, sample.subCategory].filter(Boolean).join(' · ') || '직무 분석'));
-    titleBox.appendChild(textElement('p', 'action-plan-group__meta', careerLabel(sample.careerLevel) + ' · ' + dateLabel(sample.createdAt)));
-    header.appendChild(titleBox);
-    var resultLink = textElement('a', 'action-plan-group__report', '분석 결과 보기');
-    resultLink.href = window.JobPuzzleRoutes.path('/analysis-results/' + group.analysisCaseId);
-    header.appendChild(resultLink);
-    section.appendChild(header);
-
-    var taskList = document.createElement('div');
-    taskList.className = 'action-plan-group__tasks';
-    group.plans.forEach(function (plan) { taskList.appendChild(createPlanItem(plan)); });
-    section.appendChild(taskList);
-    return section;
+  function itemHtml(p) {
+    var id = p.actionPlanId, saving = !!state.savingIds[id];
+    var tags = [p.requirement].filter(Boolean).map(function (t) { return '<span class="mbadge mbadge--tag">#' + U.esc(t) + '</span>'; }).join('');
+    return '<div class="ap-item' + (done(p) ? ' is-done' : '') + (String(state.highlight) === String(id) ? ' is-hl' : '') + '" data-plan="' + id + '">' +
+      '<button type="button" class="ap-check" data-check="' + id + '" aria-pressed="' + done(p) + '" aria-label="' + (done(p) ? '완료 취소' : '완료') + '"' + (saving ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>' +
+      '<div><p class="ap-item__title">' + U.esc(p.suggestion || '보완 과제') + '</p>' +
+      '<p class="ap-item__desc">' + U.esc(p.missingPoint || '보완이 필요한 내용을 확인해 주세요.') + '</p>' +
+      (tags ? '<div class="ap-item__tags">' + tags + '</div>' : '') +
+      (state.errors[id] ? '<p class="ap-item__desc" style="color:var(--danger)">' + U.esc(state.errors[id]) + '</p>' : '') + '</div>' +
+      '<div class="ap-item__side">' + dueControl(p) + '</div></div>';
   }
 
-  // 현재 페이지 번호를 앞뒤 이동과 숫자 버튼으로 표시한다.
-  function renderPagination(pageCount) {
-    pagination.replaceChildren();
-    pagination.hidden = pageCount <= 1;
-    if (pagination.hidden) return;
-
-    function addButton(label, page, active, disabled, ariaLabel) {
-      var button = textElement('button', active ? 'is-active' : '', label);
-      button.type = 'button';
-      button.disabled = disabled;
-      if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
-      if (active) button.setAttribute('aria-current', 'page');
-      button.addEventListener('click', function () {
-        state.page = page;
-        renderList();
-        document.querySelector('.action-plan-board').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-      pagination.appendChild(button);
-    }
-
-    addButton('‹', Math.max(1, state.page - 1), false, state.page === 1, '이전 페이지');
-    // 분석 묶음이 많아도 원하는 페이지로 바로 이동할 수 있도록 모든 번호를 표시한다.
-    for (var page = 1; page <= pageCount; page++) {
-      addButton(String(page), page, page === state.page, false, page + '페이지');
-    }
-    addButton('›', Math.min(pageCount, state.page + 1), false, state.page === pageCount, '다음 페이지');
+  function emptyBox(title, desc, withLink) {
+    return '<div class="dcard ap-empty" style="margin-top:16px"><b>' + U.esc(title) + '</b>' + (desc ? '<p>' + U.esc(desc) + '</p>' : '') +
+      (withLink ? '<a href="' + route('/interview') + '" class="dbtn dbtn--navy">지원 분석 시작하기</a>' : '') + '</div>';
   }
 
-  // 현재 필터와 페이지에 맞는 분석 그룹 목록을 그린다.
   function renderList() {
-    var groups = groupedPlans();
-    if (calendar) calendar.setItems(calendarItems());
-    var pageCount = Math.max(1, Math.ceil(groups.length / GROUPS_PER_PAGE));
-    state.page = Math.min(state.page, pageCount);
-    var visibleGroups = groups.slice((state.page - 1) * GROUPS_PER_PAGE, state.page * GROUPS_PER_PAGE);
-    list.replaceChildren();
-    feedback.hidden = groups.length > 0;
-    if (!groups.length) {
-      pagination.hidden = true;
-      feedback.textContent = state.plans.length === 0
-        ? '아직 생성된 액션플랜이 없습니다. 지원 분석을 완료하면 보완 과제가 이곳에 표시됩니다.'
-        : '선택한 상태에 해당하는 과제가 없습니다.';
-      return;
+    var el = document.getElementById('ap-list');
+    if (!state.loaded) { el.innerHTML = emptyBox('과제를 불러오고 있어요.'); return; }
+    if (state.error) { el.innerHTML = emptyBox('과제를 불러오지 못했어요.', state.error); return; }
+    if (!state.plans.length) { el.innerHTML = emptyBox('아직 과제가 없어요', '지원 분석을 마치면 부족한 근거를 채울 과제가 여기에 생겨요.', true); return; }
+    var html = groups().map(function (g) {
+      var items = g.plans.filter(show);
+      if (!items.length) return '';
+      var s = g.plans[0], d = g.plans.filter(done).length;
+      var title = [s.mainCategory, s.subCategory].filter(Boolean).join(' · ') || '직무 분석';
+      var meta = ['분석 #' + g.id, s.createdAt ? new Date(s.createdAt).toLocaleDateString('ko-KR') + ' 분석' : '', careerLabel(s.careerLevel)].filter(Boolean).join(' · ');
+      return '<section class="dcard ap-group"><div class="ap-group__head"><div><h2 class="ap-group__title">' + U.esc(title) + '</h2><p class="ap-group__meta">' + U.esc(meta) + '</p></div>' +
+        '<div class="ap-group__right"><span>' + d + ' / ' + g.plans.length + ' 완료</span><span class="ap-mini"><i style="width:' + (d / g.plans.length * 100) + '%"></i></span>' +
+        '<a class="ap-group__link" href="' + route('/analysis-results/' + encodeURIComponent(g.id)) + '">분석 결과 보기</a></div></div>' +
+        items.map(itemHtml).join('') + '</section>';
+    }).join('');
+    el.innerHTML = html || emptyBox('해당하는 과제가 없어요');
+  }
+
+  function renderCal() {
+    var m = state.month, start = new Date(m.getFullYear(), m.getMonth(), 1 - m.getDay());
+    var plans = state.plans.filter(show);
+    var h = '<div class="cal__head"><b>' + m.getFullYear() + '년 ' + (m.getMonth() + 1) + '월</b><div class="cal__nav">' +
+      '<button type="button" data-month="-1" aria-label="이전 달">‹</button><button type="button" class="cal__today" data-month="0">오늘</button>' +
+      '<button type="button" data-month="1" aria-label="다음 달">›</button></div></div><div class="cal__grid">';
+    h += ['일', '월', '화', '수', '목', '금', '토'].map(function (d) { return '<span class="cal__dow">' + d + '</span>'; }).join('');
+    var weeks = Math.ceil((m.getDay() + new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate()) / 7);
+    for (var i = 0; i < weeks * 7; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var k = key(d);
+      var ev = plans.filter(function (p) { return p.deadline === k; });
+      h += '<button type="button" class="cal__day' + (d.getMonth() !== m.getMonth() ? ' is-out' : '') + (k === TODAY ? ' is-today' : '') + '" data-day="' + k + '" aria-pressed="' + (k === state.selDay) + '"><span class="cal__n">' + d.getDate() + '</span>' +
+        ev.map(function (p) { return '<span class="cal__ev' + (done(p) ? ' cal__ev--done' : over(p) ? ' cal__ev--over' : '') + '">' + U.esc(p.suggestion || '보완 과제') + '</span>'; }).join('') + '</button>';
     }
-    visibleGroups.forEach(function (group) { list.appendChild(createAnalysisGroup(group)); });
-    renderPagination(pageCount);
+    document.getElementById('cal').innerHTML = h + '</div>';
+    var day = plans.filter(function (p) { return p.deadline === state.selDay; });
+    var nodue = plans.filter(function (p) { return !p.deadline && !done(p); }).length;
+    document.getElementById('cal-side').innerHTML = '<p class="cal-side__date">' + fmt(state.selDay) + (state.selDay === TODAY ? ' · 오늘' : '') + '</p>' +
+      (day.length ? day.map(function (p) {
+        return '<button type="button" class="cal-side__item" data-goto="' + p.actionPlanId + '" style="width:100%; border:0; background:none; text-align:left; font:inherit; cursor:pointer"><p>' + U.esc(p.suggestion || '보완 과제') + '</p><small>' +
+          U.esc([p.mainCategory, p.subCategory].filter(Boolean).join(' · ')) + ' · ' + (done(p) ? '완료' : over(p) ? '마감 지남' : '진행 중') + '</small></button>';
+      }).join('') : '<p style="margin:0; font-size:14px; color:var(--text-3)">이 날 마감인 과제가 없어요.</p>') +
+      (nodue ? '<p class="cal-side__nodue">마감일이 없는 과제 ' + nodue + '개는 달력에 안 보여요. 목록에서 마감일을 정해주세요.</p>' : '');
   }
 
-  // 변경된 한 과제만 상태에 반영한 뒤 요약과 목록을 동기화한다.
-  function replacePlan(actionPlanId, changes) {
-    state.savingIds.delete(actionPlanId);
-    state.plans = state.plans.map(function (plan) {
-      return String(plan.actionPlanId) === String(actionPlanId) ? Object.assign({}, plan, changes) : plan;
-    });
-    renderSummary();
+  function render() {
+    renderStats();
+    var cal = state.view === 'cal' && state.plans.length > 0;
+    document.getElementById('ap-list').hidden = cal;
+    document.getElementById('ap-cal').hidden = !cal;
+    document.querySelectorAll('[data-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.filter === state.filter)); });
+    document.querySelectorAll('[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === state.view)); });
     renderList();
+    if (cal) renderCal();
   }
 
-  // 사용자가 선택한 최종 완료 상태를 서버에 저장한다.
-  function updateCompletion(plan, completed) {
-    if (state.savingIds.has(plan.actionPlanId)) return;
-    setSaving(plan.actionPlanId, true);
-    api('/action-plan/' + encodeURIComponent(plan.actionPlanId) + '/completion', {
-      method: 'PATCH',
-      body: JSON.stringify({ completed: completed })
-    }).then(function (updated) {
-      replacePlan(plan.actionPlanId, { status: updated.status, completedAt: updated.completedAt });
-    }).catch(function (error) {
-      setSaving(plan.actionPlanId, false, error.message);
-    });
+  function find(id) { return state.plans.filter(function (p) { return String(p.actionPlanId) === String(id); })[0]; }
+  function patch(p, url, body, apply) {
+    var id = p.actionPlanId;
+    if (state.savingIds[id]) return;
+    state.savingIds[id] = true; delete state.errors[id]; render();
+    api(url, 'PATCH', body).then(function (updated) { apply(updated || {}); })
+      .catch(function (error) { state.errors[id] = error.message; })
+      .then(function () { delete state.savingIds[id]; render(); });
   }
 
-  // 사용자가 선택한 마감일을 저장하고 빈 값은 마감일 제거로 전달한다.
-  function updateDeadline(plan, deadline, input) {
-    if (state.savingIds.has(plan.actionPlanId)) return;
-    setSaving(plan.actionPlanId, true);
-    api('/action-plan/' + encodeURIComponent(plan.actionPlanId) + '/deadline', {
-      method: 'PATCH',
-      body: JSON.stringify({ deadline: deadline })
-    }).then(function (updated) {
-      replacePlan(plan.actionPlanId, { deadline: updated.deadline });
-    }).catch(function (error) {
-      input.value = plan.deadline || '';
-      setSaving(plan.actionPlanId, false, error.message);
-    });
-  }
-
-  // 필터 버튼 상태와 안내 문구를 갱신하고 첫 페이지를 표시한다.
-  function selectFilter(filter) {
-    state.filter = filter;
-    state.page = 1;
-    document.querySelectorAll('[data-action-plan-filter]').forEach(function (button) {
-      button.classList.toggle('is-active', button.dataset.actionPlanFilter === filter);
-    });
-    var descriptions = {
-      ALL: '분석 결과별로 묶은 전체 과제를 보고 있어요.',
-      PENDING: '분석 결과별로 남은 과제만 보고 있어요.',
-      DONE: '분석 결과별로 완료한 과제만 보고 있어요.'
-    };
-    document.getElementById('action-plan-filter-description').textContent = descriptions[filter];
-    renderList();
-  }
-
-  // 달력에서 선택한 과제가 있는 목록 페이지로 전환해 해당 카드를 강조한다.
-  function openPlanFromCalendar(actionPlanId) {
-    var plan = state.plans.find(function (item) { return String(item.actionPlanId) === String(actionPlanId); });
-    if (!plan) return;
-    var groups = groupedPlans();
-    var groupIndex = groups.findIndex(function (group) { return group.analysisCaseId === String(plan.analysisCaseId); });
-    state.page = Math.max(1, Math.floor(groupIndex / GROUPS_PER_PAGE) + 1);
-    document.querySelectorAll('[data-action-plan-view]').forEach(function (button) {
-      button.classList.toggle('is-active', button.dataset.actionPlanView === 'list');
-    });
-    document.querySelectorAll('[data-action-plan-panel]').forEach(function (panel) {
-      panel.hidden = panel.dataset.actionPlanPanel !== 'list';
-    });
-    renderList();
-    var item = list.querySelector('[data-action-plan-id="' + actionPlanId + '"]');
-    if (item) {
-      item.classList.add('is-calendar-target');
-      item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      window.setTimeout(function () { item.classList.remove('is-calendar-target'); }, 1600);
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.filter) { state.filter = b.dataset.filter; render(); }
+    else if (b.dataset.view) { state.view = b.dataset.view; render(); }
+    else if (b.dataset.check) {
+      var p = find(b.dataset.check);
+      patch(p, '/action-plan/' + encodeURIComponent(p.actionPlanId) + '/completion', { completed: !done(p) },
+        function (u) { p.status = u.status || (done(p) ? 'PENDING' : 'DONE'); p.completedAt = u.completedAt; });
+    } else if (b.dataset.due) {
+      var input = document.querySelector('[data-due-input="' + b.dataset.due + '"]');
+      if (input.showPicker) { try { input.showPicker(); return; } catch (err) { /* 아래로 */ } }
+      input.focus(); input.click();
+    } else if (b.dataset.month) {
+      var n = Number(b.dataset.month);
+      state.month = n === 0 ? new Date(today.getFullYear(), today.getMonth(), 1) : new Date(state.month.getFullYear(), state.month.getMonth() + n, 1);
+      if (n === 0) state.selDay = TODAY;
+      renderCal();
+    } else if (b.dataset.day) { state.selDay = b.dataset.day; renderCal(); }
+    else if (b.dataset.goto) {
+      state.view = 'list'; state.filter = 'ALL'; state.highlight = b.dataset.goto; render();
+      var el = document.querySelector('[data-plan="' + b.dataset.goto + '"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function () { state.highlight = null; render(); }, 1600);
     }
-  }
+  });
 
-  // 로그인 사용자의 전체 액션플랜을 최초 한 번 불러온다.
-  function loadActionPlans() {
+  document.addEventListener('change', function (e) {
+    var id = e.target.dataset && e.target.dataset.dueInput;
+    if (!id) return;
+    var p = find(id), value = e.target.value || null;
+    patch(p, '/action-plan/' + encodeURIComponent(id) + '/deadline', { deadline: value }, function (u) { p.deadline = u.deadline !== undefined ? u.deadline : value; });
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (new URLSearchParams(window.location.search).get('view') === 'cal') state.view = 'cal';
+    render();
     api('/action-plan').then(function (plans) {
       state.plans = Array.isArray(plans) ? plans : [];
-      renderSummary();
-      renderList();
-    }).catch(function (error) {
-      feedback.hidden = false;
-      feedback.textContent = error.message;
-    });
-  }
-
-  // 필터 이벤트를 연결하고 액션플랜 조회를 시작한다.
-  function init() {
-    if (!list || !feedback || !pagination) return;
-    var calendarRoot = document.getElementById('action-plan-calendar');
-    if (calendarRoot) {
-      calendar = new window.ActionPlanCalendar(calendarRoot, { onItemClick: openPlanFromCalendar });
-    }
-    document.querySelectorAll('[data-action-plan-filter]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        selectFilter(button.dataset.actionPlanFilter);
-      });
-    });
-    document.querySelectorAll('[data-action-plan-view]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        document.querySelectorAll('[data-action-plan-view]').forEach(function (item) {
-          item.classList.toggle('is-active', item === button);
-        });
-        document.querySelectorAll('[data-action-plan-panel]').forEach(function (panel) {
-          panel.hidden = panel.dataset.actionPlanPanel !== button.dataset.actionPlanView;
-        });
-      });
-    });
-    loadActionPlans();
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
+      state.loaded = true; render();
+    }).catch(function (error) { state.loaded = true; state.error = error.message; render(); });
+  });
 })();

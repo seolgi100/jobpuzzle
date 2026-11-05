@@ -1,0 +1,103 @@
+/* 대시보드 — app.css(공통 카드·버튼·탭·배지) 위에 얹는 대시보드 전용 스타일 */
+body.dash { background: #F5F7FB; color: var(--text); }
+
+/* ── 상단: 남색 배너 + 퍼즐(완료한 단계 = 맞춘 조각, 남은 단계 = 빈칸) ── */
+.dhead { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 420px; align-items: center; min-height: 240px; padding: 32px 36px; border-radius: 20px; background: #0F1E33; color: #fff; }
+.dhead__puzzle { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dhead__anchor { position: absolute; right: 60px; top: 50px; width: 300px; aspect-ratio: 2 / 1; pointer-events: none; }
+.dhead__copy { position: relative; z-index: 1; }
+.dhead__eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #8FB4F5; }
+.dhead__title { margin: 10px 0 0; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+.dhead__sub { margin: 8px 0 0; font-size: 15px; color: rgba(226,236,250,.75); }
+.dhead__row { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.job-chip { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 8px 0 12px; border: 1px solid rgba(147,197,253,.25); border-radius: 10px; background: rgba(255,255,255,.05); font-size: 13px; }
+.job-chip b { font-weight: 600; color: rgba(226,236,250,.6); }
+.job-chip a { height: 26px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 7px; background: rgba(255,255,255,.1); color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; }
+.job-chip a:hover { background: rgba(255,255,255,.18); }
+/* 준비 6단계: 배너 아래쪽 한 줄 */
+.dsteps { grid-column: 1 / -1; position: relative; z-index: 1; margin-top: 26px; padding-top: 18px; border-top: 1px solid rgba(147,197,253,.16); }
+.dsteps__head { margin: 0; font-size: 12px; color: rgba(226,236,250,.7); }
+.dsteps__head b { color: #fff; }
+.dsteps__list { margin: 10px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.dstep a { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 10px; border: 1px solid rgba(147,197,253,.16); border-radius: 10px; color: rgba(226,236,250,.55); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dstep__no { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(147,197,253,.3); font-size: 11px; }
+.dstep--done a { color: #fff; background: rgba(255,255,255,.05); }
+.dstep--done .dstep__no { border-color: #5AA9F5; background: #5AA9F5; color: #0F1E33; }
+.dstep--next a { color: #fff; border-color: #5AA9F5; background: rgba(90,169,245,.14); }
+.dstep--next .dstep__no { border-color: #5AA9F5; color: #8FC8FF; }
+.dstep a:hover { border-color: rgba(147,197,253,.5); }
+
+/* ── 요약 카드 ── */
+.dstats { margin-top: 20px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.dstat { display: flex; align-items: center; gap: 14px; padding: 20px; }
+.dstat__icon { width: 44px; height: 44px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--sky-tint); color: var(--sky); }
+.dstat__icon svg { width: 22px; height: 22px; }
+.dstat__icon--danger { background: var(--danger-tint); color: var(--danger); }
+.dstat__label { margin: 0; font-size: 13px; color: var(--text-2); }
+.dstat__value { margin: 2px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.dstat__value small { margin-left: 3px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.dstat__value--danger { color: var(--danger); }
+
+/* ── 다음 해야 할 일 ── */
+.dtodo { margin-top: 20px; }
+.nx { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--card-line); border-radius: 12px; }
+.nx + .nx { margin-top: 10px; }
+.nx__icon { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--sky-tint); color: var(--sky); }
+.nx__icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+.nx__body { flex: 1; min-width: 0; }
+.nx__title { margin: 0; font-size: 14.5px; font-weight: 700; }
+.nx__desc { margin: 3px 0 0; font-size: 13px; color: var(--text-2); }
+
+
+.srow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px; border-top: 1px solid #EEF2F8; color: inherit; text-decoration: none; }
+.srow:first-of-type { border-top: 0; }
+.srow:hover .srow__title { color: var(--sky-strong); }
+.srow__title { margin: 0; font-size: 14.5px; font-weight: 600; }
+.srow__meta { margin: 3px 0 0; font-size: 12.5px; color: var(--text-3); }
+.srow__score { font-size: 18px; font-weight: 800; color: var(--sky-strong); font-variant-numeric: tabular-nums; }
+.srow--progress { padding: 14px 16px; border: 1px solid #C9D7EE; border-radius: 12px; background: #F5F8FF; }
+.progress { margin-top: 8px; height: 6px; border-radius: 3px; background: #E2E8F3; overflow: hidden; }
+.progress i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #60A5FA, #3B82F6); }
+
+.tag { padding: 14px 16px; border-radius: 12px; border: 1px solid var(--card-line); }
+.tag + .tag { margin-top: 10px; }
+.tag__name { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; }
+.tag__desc { margin: 8px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.6; }
+.tag__meta { margin: 6px 0 0; font-size: 12px; color: var(--text-3); }
+.tag--warn .tag__name { background: var(--warn-tint); color: var(--warn); }
+.tag--ok .tag__name { background: var(--ok-tint); color: var(--ok); }
+.dcard__title--warn { color: var(--warn); }
+.dcard__title--ok { color: var(--ok); }
+
+.task { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px; border-top: 1px solid #EEF2F8; }
+.task:first-of-type { border-top: 0; }
+.task__title { margin: 0; font-size: 14.5px; font-weight: 600; }
+.task__title--done { color: var(--text-3); text-decoration: line-through; }
+.task__due { margin: 3px 0 0; font-size: 12.5px; color: var(--text-3); }
+.task__actions { display: flex; align-items: center; gap: 6px; flex: none; }
+
+@media (max-width: 960px) {
+  .dhead { grid-template-columns: 1fr; padding: 28px 24px 196px; }
+  .dhead__anchor { right: 50%; top: auto; bottom: 52px; width: 220px; transform: translateX(50%); }
+  .dsteps__list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dstats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dcols { grid-template-columns: 1fr; }
+  .nx { flex-wrap: wrap; }
+}
+@media (max-width: 560px) {
+  .dsteps__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dstats { grid-template-columns: 1fr; }
+  .job-chip { height: auto; flex-wrap: wrap; padding: 8px 8px 8px 12px; row-gap: 4px; }
+  /* 할 일: 버튼은 아래 줄로 */
+  .nx__body { flex-basis: calc(100% - 50px); }
+  .nx .dbtn { margin-left: 50px; }
+  .task { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── 면접·약점 목록: 흰 카드 높이 고정 + 빈 상태 + 페이지네이션 자리 확보 ── */
+.dlist { display: flex; flex-direction: column; align-self: stretch; }
+.dlist__body { flex: 1; min-height: 292px; display: flex; flex-direction: column; }
+.dlist--tags .dlist__body { min-height: 352px; }
+.dlist__body .tag + .tag, .dlist__body .srow--progress + .srow--progress { margin-top: 10px; }
+.dlist__empty { flex: 1; margin: 0; display: grid; place-items: center; text-align: center; font-size: 13.5px; color: var(--text-3); }
+.dlist__pager, .dlist__pager:empty { display: flex; min-height: 34px; }

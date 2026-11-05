@@ -1,92 +1,55 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>액션플랜 — JobPuzzle</title>
-  <link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-  <link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-  <link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
-  <link rel="stylesheet" href="/css/action-plan-calendar.css" th:href="@{/css/action-plan-calendar.css}">
-  <link rel="stylesheet" href="/css/action-plans.css" th:href="@{/css/action-plans.css}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>액션플랜 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="stylesheet" href="/css/ds/action-plans.css" th:href="@{/css/ds/action-plans.css}">
 </head>
-<body class="jp-app-theme jp-action-plans-page">
-  <div th:replace="~{fragments/header :: appHeader('actionPlans')}"></div>
+<body class="app">
 
-  <main class="action-plans-shell">
-    <header class="action-plans-hero">
-      <div>
-        <p class="action-plans-eyebrow">나의 보완 과제</p>
-        <h1>액션플랜</h1>
-        <p>분석에서 발견된 부족한 점을 하나씩 완료해 보세요. 과제 내용은 분석 결과를 유지하고, 일정과 완료 상태만 관리할 수 있습니다.</p>
-      </div>
-      <a class="action-plans-analysis-link" href="/jobpuzzle/interview" th:href="@{/interview}">새 분석 시작하기</a>
-      <canvas
-        id="action-plan-puzzle-canvas"
-        class="action-plan-puzzle-canvas"
-        data-job-puzzle-scene
-        data-result-puzzle
-        aria-hidden="true"
-      ></canvas>
-    </header>
+<div th:replace="~{fragments/header :: appHeader('actionPlans')}"></div>
 
-    <section class="action-plan-summary" aria-label="액션플랜 진행 현황">
-      <article>
-        <span>전체 과제</span>
-        <strong id="action-plan-total">0</strong>
-      </article>
-      <article>
-        <span>완료한 과제</span>
-        <strong id="action-plan-done">0</strong>
-        <canvas class="action-plan-summary-puzzle stat-puzzle-canvas" data-puzzle-piece="1" aria-hidden="true"></canvas>
-      </article>
-      <article>
-        <span>남은 과제</span>
-        <strong id="action-plan-pending">0</strong>
-      </article>
-      <article class="action-plan-progress-card">
-        <span>전체 진행률</span>
-        <strong id="action-plan-progress-value">0%</strong>
-        <div class="action-plan-progress" aria-hidden="true"><i id="action-plan-progress-bar"></i></div>
-      </article>
-    </section>
+<main class="dash-wrap">
+  <div class="phead">
+    <div>
+      <p class="phead__eyebrow">ACTION PLAN</p>
+      <h1 class="phead__title">액션플랜</h1>
+      <p class="phead__sub">지원 분석에서 찾은 보완 과제를 하나씩 끝내요. 과제 내용은 분석 결과 그대로이고, 마감일과 완료만 관리해요.</p>
+    </div>
+    <a href="/jobpuzzle/interview" th:href="@{/interview}" class="dbtn dbtn--navy"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>새 분석 시작하기</a>
+  </div>
 
-    <section class="action-plan-board">
-      <div class="action-plan-toolbar">
-        <div>
-          <h2>과제 목록</h2>
-          <p id="action-plan-filter-description">전체 과제를 보고 있어요.</p>
-        </div>
-        <div class="action-plan-filters" role="group" aria-label="완료 상태 필터">
-          <button type="button" class="is-active" data-action-plan-filter="ALL">전체</button>
-          <button type="button" data-action-plan-filter="PENDING">할 일</button>
-          <button type="button" data-action-plan-filter="DONE">완료</button>
-        </div>
-      </div>
+  <section class="ap-stats" aria-label="진행 현황">
+    <div class="dcard ap-stat"><p class="ap-stat__label">전체 과제</p><p class="ap-stat__value" data-stat="total"></p></div>
+    <div class="dcard ap-stat"><p class="ap-stat__label">남은 과제</p><p class="ap-stat__value" data-stat="pending"></p></div>
+    <div class="dcard ap-stat"><p class="ap-stat__label">마감 지난 과제</p><p class="ap-stat__value ap-stat__value--danger" data-stat="over"></p></div>
+    <div class="dcard ap-stat"><p class="ap-stat__label">전체 진행률</p><p class="ap-stat__value" data-stat="rate"></p><div class="ap-bar"><i data-stat="bar"></i></div></div>
+  </section>
 
-      <div id="action-plan-feedback" class="action-plan-feedback" role="status" aria-live="polite">액션플랜을 불러오고 있어요.</div>
-      <div class="action-plan-view-toggle" role="group" aria-label="액션플랜 보기 방식">
-        <button type="button" class="is-active" data-action-plan-view="list">분석별 목록</button>
-        <button type="button" data-action-plan-view="calendar">달력에서 확인</button>
-      </div>
-      <div data-action-plan-panel="list">
-        <div id="action-plan-list" class="action-plan-list" aria-live="polite"></div>
-        <nav id="action-plan-load-more" class="action-plan-pagination" aria-label="액션플랜 페이지" hidden></nav>
-      </div>
-      <div data-action-plan-panel="calendar" hidden>
-        <div id="action-plan-calendar" class="ap-calendar"></div>
-      </div>
-    </section>
-  </main>
+  <div class="toolbar">
+    <div class="chips" role="group" aria-label="완료 상태">
+      <button type="button" class="chip" data-filter="ALL" aria-pressed="true">전체</button>
+      <button type="button" class="chip" data-filter="PENDING" aria-pressed="false">할 일</button>
+      <button type="button" class="chip" data-filter="DONE" aria-pressed="false">완료</button>
+    </div>
+    <span class="seg" role="group" aria-label="보기 방식"><button type="button" data-view="list" aria-pressed="true">분석별 목록</button><button type="button" data-view="cal" aria-pressed="false">달력</button></span>
+  </div>
 
-  <div th:replace="~{fragments/footer :: siteFooter}"></div>
-  <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
-  <script src="/js/common.js" th:src="@{/js/common.js}"></script>
-  <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-  <script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
-  <script src="/js/dashboard-puzzle.js" th:src="@{/js/dashboard-puzzle.js}"></script>
-  <script src="/js/action-plan-deadline.js" th:src="@{/js/action-plan-deadline.js}"></script>
-  <script src="/js/action-plan-calendar.js" th:src="@{/js/action-plan-calendar.js}"></script>
-  <script src="/js/action-plans.js" th:src="@{/js/action-plans.js}"></script>
+  <div id="ap-list" aria-live="polite"></div>
+  <div class="ap-cal" id="ap-cal" hidden>
+    <div class="dcard" id="cal"></div>
+    <aside class="dcard" id="cal-side" aria-live="polite"></aside>
+  </div>
+</main>
+
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+
+<script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
+<script src="/js/common.js" th:src="@{/js/common.js}"></script>
+<script src="/js/header.js" th:src="@{/js/header.js}"></script>
+<script src="/js/ds-ui.js" th:src="@{/js/ds-ui.js}"></script>
+<script src="/js/action-plans.js" th:src="@{/js/action-plans.js}"></script>
 </body>
 </html>

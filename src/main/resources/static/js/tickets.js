@@ -64,7 +64,7 @@
     document.getElementById('ticket-products').innerHTML = data.products.map(function (p) {
       return '<div class="ticket-product"><span class="ticket-product__count">' + esc(p.tickets) + '장</span>' +
         '<span class="ticket-product__price">' + Number(p.price).toLocaleString('ko-KR') + '원</span>' +
-        '<button type="button" class="btn btn--primary" data-product="' + esc(p.code) + '">구매하기</button></div>';
+        '<button type="button" class="dbtn dbtn--navy" data-product="' + esc(p.code) + '">구매하기</button></div>';
     }).join('');
     document.querySelectorAll('[data-product]').forEach(function (button) {
       button.addEventListener('click', function () { buy(button.dataset.product, button); });

@@ -203,6 +203,16 @@ public class InterviewSessionController {
         ));
     }
 
+    // 대시보드 '해결된 약점 태그' 목록
+    @GetMapping("/interview-weakness-tags/resolved")
+    public ResponseEntity<ApiResponse<List<WeaknessTagResponse>>> getResolvedWeaknessTags(
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                interviewSessionService.getResolvedWeaknessTags(user.getUserId())
+        ));
+    }
+
     @GetMapping("/interview-sessions/active-list")
     public ResponseEntity<ApiResponse<List<SessionResponse>>> getActiveSessions(
             @AuthenticationPrincipal(expression = "user") User user

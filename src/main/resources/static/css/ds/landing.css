@@ -1,0 +1,354 @@
+/* 메인 페이지 시안 — preview.css 토큰 위에 얹는 랜딩 전용 스타일
+   리듬: 남색 HERO → 밝은 섹션 → 남색 섹션 → 밝은 섹션 → 남색 CTA */
+
+body.landing { background: var(--surface); }
+
+/* 헤더: 공통 헤더(header.css)를 HERO 위에 고정 */
+.landing .site-header { position: fixed; left: 0; right: 0; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--primary);
+}
+.section { padding: 120px 0; }
+.section__title {
+  margin-top: 12px;
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+}
+.section__sub { margin-top: 14px; font-size: 16px; color: var(--text-2); }
+.section--dark { background: var(--point); color: #fff; }
+.section--dark .eyebrow { color: #8FB4F5; }
+.section--dark .section__sub { color: var(--point-text-2); }
+.section--tint { background: var(--bg); }
+.center { text-align: center; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--point);
+  color: #fff;
+}
+/* 은은한 격자: 퍼즐 판 느낌만 남김 */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+}
+.hero-puzzle-canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+/* HERO 문구 위에서 드래그해도 글자가 선택되지 않고 퍼즐이 돌아가게 */
+.hero--interactive .hero__copy { -webkit-user-select: none; user-select: none; }
+.hero__inner {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 48px;
+  align-items: center;
+  padding-top: 60px;
+  pointer-events: none;
+}
+.hero__inner > * { pointer-events: auto; }
+.hero__title {
+  margin-top: 24px;
+  font-size: clamp(36px, 5vw, 60px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+.hero__line { display: block; overflow: hidden; padding-bottom: .06em; }
+.hero__line > span { display: block; }
+.hero__title strong { color: #F9C74F; font-weight: 800; }
+.hero__desc { margin-top: 24px; font-size: 17px; line-height: 1.7; color: var(--point-text-2); }
+.hero__cta { margin-top: 36px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.btn--lg { height: 50px; padding: 0 26px; font-size: 15px; border-radius: 8px; }
+
+.hero-puzzle-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--point-text-2);
+  pointer-events: none;
+}
+.hero-puzzle-caption span { transition: opacity .14s; }
+.hero-puzzle-caption.is-changing span { opacity: 0; }
+.hero-puzzle-caption i { width: 120px; height: 2px; background: var(--point-line); }
+.hero-puzzle-caption b { display: block; height: 100%; width: 0; background: #fff; transition: width .5s cubic-bezier(.2,.7,.2,1); }
+
+/* 오른쪽 미리보기 카드 (퍼즐 단계와 연동) */
+.hero-hologram {
+  /* 남색 HERO와 어울리도록 반투명 유리 카드: 안쪽 색 토큰만 다크용으로 재정의 */
+  --text: #F1F5FB; --text-2: rgba(226,236,250,.78); --text-3: rgba(186,206,235,.6);
+  --line: rgba(147,197,253,.16); --bg: rgba(147,197,253,.08); --surface-sub: rgba(255,255,255,.08);
+  --point: #93C5FD; --primary: #7DB4F5;
+  --primary-tint: rgba(96,165,250,.18); --success: #6EE7B7; --success-tint: rgba(16,185,129,.16);
+  --warning: #FCD34D; --warning-tint: rgba(245,158,11,.16);
+  position: relative;
+  background: linear-gradient(160deg, rgba(37,62,102,.62), rgba(15,30,51,.5));
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  color: var(--text);
+  border: 1px solid rgba(147,197,253,.28);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -20px rgba(0,0,0,.55), 0 0 40px -12px rgba(59,130,246,.45), inset 0 1px 0 rgba(255,255,255,.12);
+  transition: transform .3s cubic-bezier(.2,.7,.2,1);
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+.hologram-chrome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 10px 20px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: var(--text-3);
+}
+.hologram-chrome b { font-variant-numeric: tabular-nums; color: var(--point); }
+.hologram-arrows { display: flex; align-items: center; gap: 6px; }
+.hologram-arrows b { min-width: 20px; text-align: center; }
+.hologram-arrows button { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--text-2); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+.hologram-arrows button:hover { background: var(--primary-tint); border-color: rgba(147,197,253,.45); color: var(--text); }
+.hologram-arrows button:focus-visible { outline: 2px solid var(--point); outline-offset: 2px; }
+.hologram-arrows svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hologram-screen { position: relative; height: 300px; }
+.hologram-panel {
+  position: absolute;
+  inset: 0;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .38s ease, transform .38s cubic-bezier(.2,.7,.2,1);
+  pointer-events: none;
+}
+.hologram-panel[data-hologram-state="active"],
+.hologram-panel[data-hologram-state="incoming"] { opacity: 1; transform: none; transition-delay: .3s; }
+.hologram-panel[data-hologram-state="outgoing"] { opacity: 0; transform: translateY(-10px); transition-delay: 0s; }
+.hologram-panel[data-hologram-state="active"] { transition-delay: 0s; pointer-events: auto; }
+.hologram-panel footer { margin-top: auto; font-size: 12px; color: var(--text-3); }
+.holo-heading { display: flex; align-items: center; gap: 10px; }
+.holo-heading span { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--primary); }
+.holo-heading h2 { flex: 1; font-size: 16px; font-weight: 700; }
+.holo-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.holo-row p { font-weight: 500; }
+.holo-row small { display: block; font-size: 12px; color: var(--text-3); }
+.holo-bar { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 13px; }
+.holo-bar i { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-sub); overflow: hidden; }
+.holo-bar em { display: block; height: 100%; background: var(--point); border-radius: 3px; transform-origin: left; }
+.hologram-panel[data-hologram-state="active"] .holo-bar em { animation: grow .8s cubic-bezier(.2,.7,.2,1) both; }
+.holo-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.holo-big { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; color: var(--point); }
+.holo-big small { font-size: 16px; color: var(--text-3); font-weight: 600; }
+.holo-note { padding: 12px; border-radius: 8px; background: var(--bg); font-size: 13px; color: var(--text-2); }
+.holo-q { display: flex; gap: 10px; font-size: 13px; padding: 10px 0; border-top: 1px solid var(--line); }
+.holo-q:first-of-type { border-top: 0; }
+.holo-q b { color: var(--primary); }
+.hologram-nav { display: flex; gap: 6px; padding: 14px 20px; border-top: 1px solid var(--line); }
+.hologram-step-dot { width: 18px; height: 3px; border-radius: 2px; background: var(--line); transition: background .3s, width .3s; }
+.hologram-step-dot.is-active { width: 32px; background: var(--point); }
+
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ── WHY 카드: 호버 시 남색 상세가 아래에서 올라옴 ── */
+.why-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 56px; }
+.why-card {
+  position: relative;
+  height: 300px;
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+  outline: none;
+}
+.why-card__num { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--text-3); }
+.why-card h3 { margin-top: 14px; font-size: 20px; font-weight: 700; line-height: 1.4; letter-spacing: -0.02em; }
+.why-card__icon {
+  position: absolute;
+  left: 24px;
+  bottom: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-tint);
+  color: var(--point);
+  font-weight: 800;
+}
+.why-card__back {
+  position: absolute;
+  inset: 0;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  background: var(--point);
+  color: #fff;
+  transform: translateY(100%);
+  transition: transform .45s cubic-bezier(.2,.7,.2,1);
+}
+.why-card__back h3 { margin-top: 14px; }
+.why-card__back p { margin-top: 12px; color: var(--point-text-2); line-height: 1.6; }
+.why-card__back b { margin-top: auto; font-size: 13px; font-weight: 600; color: #8FB4F5; }
+.why-card:hover .why-card__back,
+.why-card:focus-visible .why-card__back { transform: none; }
+
+/* ── 서비스 흐름: 왼쪽 고정 + 오른쪽 단계, 가운데 온 단계만 선명 ── */
+.story { display: grid; grid-template-columns: 1fr 1.2fr; gap: 64px; }
+.story__intro { position: sticky; top: 140px; align-self: start; }
+.story__active { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--point-line); }
+.story__active span { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--point-text-2); }
+.story__active strong { display: block; margin-top: 6px; font-size: 20px; transition: opacity .2s; }
+.story__active.is-changing strong { opacity: 0; }
+.story__progress { margin-top: 16px; height: 2px; background: var(--point-line); }
+.story__progress b { display: block; height: 100%; width: 25%; background: #fff; transition: width .5s cubic-bezier(.2,.7,.2,1); }
+.story__link { display: inline-block; margin-top: 28px; font-weight: 600; color: #fff; border-bottom: 1px solid rgba(255,255,255,.4); padding-bottom: 2px; }
+.story__rail { display: flex; flex-direction: column; gap: 24px; }
+.stage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 28px;
+  border: 1px solid var(--point-line);
+  border-radius: 12px;
+  opacity: .38;
+  transition: opacity .4s, background .4s, border-color .4s;
+}
+.stage.is-current { opacity: 1; background: var(--point-2); border-color: rgba(255,255,255,.2); }
+.stage__label { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: #8FB4F5; }
+.stage h3 { margin-top: 8px; font-size: 19px; font-weight: 700; }
+.stage p { margin-top: 8px; font-size: 14px; color: var(--point-text-2); line-height: 1.6; }
+.stage__mock {
+  /* 흰 패널 대신 HERO 미리보기 카드와 같은 남색 유리 패널 */
+  --text: #F1F5FB; --text-2: rgba(226,236,250,.78); --text-3: rgba(186,206,235,.6);
+  --line: rgba(147,197,253,.16); --surface-sub: rgba(255,255,255,.08); --point: #93C5FD; --primary: #7DB4F5;
+  --primary-tint: rgba(96,165,250,.18); --success: #6EE7B7; --success-tint: rgba(16,185,129,.16); --warning: #FCD34D; --warning-tint: rgba(245,158,11,.16);
+  background: linear-gradient(160deg, rgba(37,62,102,.62), rgba(15,30,51,.5)); border: 1px solid rgba(147,197,253,.28);
+  box-shadow: 0 0 28px -12px rgba(59,130,246,.45), inset 0 1px 0 rgba(255,255,255,.1);
+  color: var(--text); border-radius: 10px; padding: 14px; font-size: 13px; display: flex; flex-direction: column; gap: 8px;
+}
+.stage__mock .holo-row { padding: 8px 10px; }
+
+/* ── 리포트 ── */
+.report { max-width: 640px; margin: 56px auto 0; padding: 32px; }
+.report__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.report__head p { font-weight: 600; }
+.report .holo-bar { margin-bottom: 18px; font-size: 14px; }
+/* 리포트 막대: 퍼즐과 같은 스카이 블루 */
+.report .holo-bar em { background: linear-gradient(90deg, #60A5FA, #3B82F6); }
+.report .holo-bar em { transform: scaleX(0); }
+.report.is-visible .holo-bar em { animation: grow 1s cubic-bezier(.2,.7,.2,1) both; }
+.report.is-visible .holo-bar:nth-child(3) em { animation-delay: .12s; }
+.report.is-visible .holo-bar:nth-child(4) em { animation-delay: .24s; }
+.report__note { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--text-2); }
+
+/* ── 이용 단계: 연결선이 그려지며 순서대로 등장 ── */
+.steps { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 64px; }
+.steps::before {
+  content: "";
+  position: absolute;
+  top: 22px;
+  left: 12.5%;
+  right: 12.5%;
+  height: 1px;
+  background: rgba(255,255,255,.3);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.2s cubic-bezier(.2,.7,.2,1);
+}
+.steps.is-visible::before { transform: scaleX(1); }
+.step { position: relative; text-align: center; }
+.step__num {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--point);
+  border: 1px solid rgba(255,255,255,.4);
+  font-weight: 700;
+}
+.step:last-child .step__num { background: #fff; color: var(--point); border-color: #fff; }
+.step__title { margin-top: 20px; font-size: 17px; font-weight: 700; }
+.step__desc { margin-top: 8px; font-size: 14px; color: var(--point-text-2); line-height: 1.6; }
+
+/* ── CTA / 푸터 ── */
+.cta { padding: 96px 0; text-align: center; }
+.cta .btn { margin-top: 32px; }
+.footer { padding: 32px 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-3); }
+.footer .wrap { display: flex; justify-content: space-between; }
+
+/* ── 등장 모션 ──
+   기존: 18px 위로 + 640ms. 시안: 이동 거리를 줄이고(12px) 순서 간격을 일정하게 */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+[data-reveal].is-visible { opacity: 1; transform: none; }
+/* HERO 제목: 줄마다 아래에서 밀려 올라오는 마스크 모션 */
+.hero__line > span { transform: translateY(105%); transition: transform .9s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--i, 0) * 110ms + 150ms); }
+.is-entered .hero__line > span { transform: none; }
+
+/* ── HERO 배치 (확정안: 배경 퍼즐 격자 · 가운데 아래 빈칸) ──
+   퍼즐 빈칸: #heroPuzzleAnchor(HERO 기준 중심 36%/77%, 폭 28%)를 따라감
+   문구 위 가운데, 카드 오른쪽 아래 */
+.hero__puzzle-anchor { position: absolute; left: 36%; top: 77%; width: 28%; aspect-ratio: 2 / 1; transform: translate(-50%, -50%); pointer-events: none; }
+.hero__inner { z-index: 1; grid-template-areas: "copy card"; }
+.hero__copy { grid-area: copy; }
+.hero__card-wrap { grid-area: card; }
+.hero-puzzle-caption { z-index: 1; }
+.hero--content-stack .hero__inner { grid-template-columns: 1.2fr .8fr; grid-template-areas: "copy copy" ". card"; row-gap: 28px; padding-top: 96px; padding-bottom: 56px; }
+.hero--content-stack .hero__copy { text-align: center; }
+.hero--content-stack .hero__title { margin-top: 0; font-size: clamp(32px, 4vw, 52px); }
+.hero--content-stack .hero__line { display: inline-block; margin: 0 .15em; }
+.hero--content-stack .hero__cta { justify-content: center; }
+/* 배경 퍼즐 격자: 사각 격자선 대신 WebGL 퍼즐 이음선 (같은 1px 흰색 4% 선·같은 흐려짐) */
+.hero--jigsaw::before { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal], .hero__line > span, .why-card__back, .steps::before { transition: none !important; }
+  [data-reveal] { opacity: 1; transform: none; }
+  .hero__line > span { transform: none; }
+}
+
+@media (max-width: 900px) {
+  .hero__inner, .story { grid-template-columns: 1fr; }
+  .hero .hero__inner { grid-template-columns: 1fr !important; grid-template-areas: "copy" "card" !important; }
+  .story__intro { position: static; }
+  .why-grid { grid-template-columns: 1fr 1fr; }
+  .stage { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; row-gap: 40px; }
+  .steps::before { display: none; }
+}
+@media (max-width: 560px) {
+  .why-grid, .steps { grid-template-columns: 1fr; }
+  .site-header .hbtn--ghost { display: none; }
+}

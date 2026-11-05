@@ -1,537 +1,153 @@
-// analysis-result.js — 완료된 맞춤 분석을 읽기 전용 리포트로 표시
+// analysis-result.js — 완료된 맞춤 분석 리포트: 연결도 점수 · 연결 분포 · 요구사항별 근거 · 예상 질문 · 보완 과제
 (function () {
   'use strict';
 
   var root = document.getElementById('analysis-result-root');
   var caseId = root && root.dataset.analysisCaseId;
-  var levelLabel = { HIGH: '충족', MEDIUM: '일부 충족', LOW: '낮은 연결', NONE: '근거 부족', INSUFFICIENT: '판단 보류' };
-  var typeLabel = {
-    REQUIRED: '필수', PREFERRED: '우대', EXPERIENCE: '경험', SKILL: '기술',
-    PROBLEM_SOLVING: '문제 해결', COMPANY_FIT: '직무 적합', GENERAL: '일반'
-  };
-  var readinessLabel = {
-    PARTIAL: '일부 분석 기준을 보완해 주세요',
-    CANDIDATE_LACK: '지원 경험을 조금 더 보완해 주세요',
-    POSTING_LACK: '공고 요구사항을 충분히 확인하기 어려워요',
-    GUIDE_LACK: '직무 기준을 충분히 적용하기 어려워요'
-  };
-  var evaluationFocusLabel = {
-    intentMatch: '질문 의도 이해',
-    specificity: '경험 구체성',
-    ownRole: '본인 역할',
-    problemSolving: '문제 해결 과정',
-    resultExpression: '성과 및 결과 표현',
-    requirementConnection: '공고 요구사항 연결',
-    guideAlignment: '직무 기준 적합성',
-    deliveryClarity: '답변 전달력'
-  };
+  var U = window.JPUI, route = window.JobPuzzleRoutes.path, esc = U.esc;
+  // 화면 등급: 판단 보류(INSUFFICIENT)는 근거 부족과 같은 칸에 넣는다
+  var LV = { HIGH: ['충족', 'high'], MEDIUM: ['일부 충족', 'medium'], LOW: ['낮은 연결', 'low'], NONE: ['근거 부족', 'none'], INSUFFICIENT: ['판단 보류', 'none'] };
+  var TYPE = { EXPERIENCE: '경험', SKILL: '기술', PROBLEM_SOLVING: '문제 해결', COMPANY_FIT: '직무 적합', GENERAL: '일반' };
+  var SRC = { RESUME: '이력서', COVER_LETTER: '자기소개서', PORTFOLIO: '포트폴리오', EXPERIENCE_NOTE: '경험 정리', JOB_POSTING: '채용공고', COMPANY_INFO: '회사정보' };
+  var QUESTION_PREVIEW = 6;
+  var filter = 'ALL', data = null;
 
-  function node(tag, className, text) {
-    var value = document.createElement(tag);
-    if (className) value.className = className;
-    if (text != null) value.textContent = text;
-    return value;
+  function lv(m) { return LV[m.matchLevel] || LV.NONE; }
+  function connected(level) { return level === 'HIGH' || level === 'MEDIUM' || level === 'LOW'; }
+  // 연결도 점수: 충족 100 · 일부 충족 50 · 낮은 연결 25 의 평균(약한 연결이 점수를 부풀리지 않게)
+  function score(matches) {
+    if (!matches.length) return 0;
+    var sum = matches.reduce(function (s, m) { return s + ({ HIGH: 100, MEDIUM: 50, LOW: 25 }[m.matchLevel] || 0); }, 0);
+    return Math.round(sum / matches.length);
+  }
+  function dateDot(v) { if (!v) return ''; var d = new Date(v); return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0'); }
+
+  function renderReqs() {
+    var matches = data.result.requirementMatches || [];
+    var qs = data.questions;
+    document.querySelector('[data-reqs]').innerHTML = matches.filter(function (m) {
+      var k = lv(m)[1];
+      return filter === 'ALL' || (filter === 'high' && k === 'high') || (filter === 'part' && (k === 'medium' || k === 'low')) || (filter === 'none' && k === 'none');
+    }).map(function (m) {
+      var must = m.requirementType === 'REQUIRED';
+      var related = qs.map(function (q, i) { return q.relatedRequirementId === m.requirementId ? (i + 1) + '번' : null; }).filter(Boolean);
+      var refs = (m.candidateSourceRefs || []).map(function (r) { return (SRC[r.documentType] || '지원 자료') + (r.pageNumber ? ' ' + r.pageNumber + '쪽' : ''); })
+        .filter(function (v, i, all) { return all.indexOf(v) === i; });
+      return '<details class="req"><summary><span class="req__kind' + (must ? ' req__kind--must' : '') + '">' + (must ? '필수' : '우대') + '</span>' +
+        '<p class="req__text">' + esc(m.requirement) + '</p><span class="lvp lvp--' + lv(m)[1] + '">' + lv(m)[0] + '</span></summary><div class="req__body">' +
+        (m.candidateEvidence ? '<div class="ev"><small>확인된 근거</small>' + esc(m.candidateEvidence) + '</div>' : '') +
+        (m.missingPoint ? '<div class="ev ev--miss"><small>부족한 근거</small>' + esc(m.missingPoint) + '</div>' : '') +
+        (m.reason ? '<div class="ev ev--wide"><small>판단 이유</small>' + esc(m.reason) + '</div>' : '') +
+        '<div class="ev ev--wide"><small>사용된 자료' + (related.length ? ' · 관련 질문 ' + related.join(', ') : '') + '</small><div class="ev__src">' +
+        (refs.length ? refs.map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') : '<span>연결된 자료 없음</span>') + '</div></div>' +
+        '</div></details>';
+    }).join('') || '<p class="rs-sub">해당하는 요구사항이 없어요.</p>';
   }
 
-  function api(path) {
-    return fetch(path, { credentials: 'same-origin' }).then(function (response) {
-      return response.json().catch(function () { return {}; }).then(function (body) {
-        if (!response.ok || !body.success) {
-          var error = new Error(body.message || '결과를 불러오지 못했습니다.');
-          error.status = response.status;
-          error.code = body.code;
-          throw error;
-        }
-        return body.data;
-      });
-    });
-  }
-
-  function countByLevel(matches) {
-    return matches.reduce(function (result, match) {
-      var key = match.matchLevel || 'NONE';
-      result[key] = (result[key] || 0) + 1;
-      return result;
-    }, { HIGH: 0, MEDIUM: 0, LOW: 0, NONE: 0, INSUFFICIENT: 0 });
-  }
-
-  // 충족도별 연결 강도를 반영해 전체 요구사항 연결 점수를 계산합니다.
-  function calculateConnectionScore(counts, total) {
-    if (!total) return 0;
-    // LOW와 MEDIUM을 완전 충족으로 세지 않아 약한 연결이 점수를 과도하게 높이지 않도록 합니다.
-    var weightedSum = counts.HIGH * 100 + counts.MEDIUM * 50 + counts.LOW * 25;
-    return Math.round(weightedSum / total);
-  }
-
-  function categoryText(category) {
-    if (!category) return '직무 정보 없음';
-    return [category.mainCategory, category.subCategory].filter(Boolean).join(' · ') || '직무 정보 없음';
-  }
-
-  function isConnectedLevel(level) {
-    return level === 'HIGH' || level === 'MEDIUM' || level === 'LOW';
-  }
-
-  function sourceTypeLabel(type) {
-    return {
-      RESUME: '이력서', COVER_LETTER: '자기소개서', PORTFOLIO: '포트폴리오',
-      EXPERIENCE_NOTE: '경험정리', JOB_POSTING: '채용공고', COMPANY_INFO: '회사정보'
-    }[type] || type;
-  }
-
-  function candidateSourceTypes(matches) {
-    var types = [];
-    matches.forEach(function (match) {
-      (Array.isArray(match.candidateSourceRefs) ? match.candidateSourceRefs : []).forEach(function (ref) {
-        var label = sourceTypeLabel(ref.documentType || '지원 자료');
-        if (label && types.indexOf(label) < 0) types.push(label);
-      });
-    });
-    return types;
-  }
-
-  // 분석 생성 당시 선택한 자료명과 버전을 상단에 읽기 쉬운 한 줄로 표시합니다.
-  function analysisSourceText(analysisCase) {
-    var sources = analysisCase && Array.isArray(analysisCase.sources) ? analysisCase.sources : [];
-    if (!sources.length) return '사용 자료를 확인할 수 없음';
-    return sources.map(function (source) {
-      var version = source.majorVersion != null && source.minorVersion != null
-        ? ' v' + source.majorVersion + '.' + source.minorVersion : '';
-      return sourceTypeLabel(source.documentType) + ': ' + (source.displayName || '이름 없는 자료') + version;
-    }).join(' · ');
-  }
-
-  function section(title, description, count) {
-    var card = node('section', 'result-card');
-    var head = node('header', 'result-card__head');
-    var copy = node('div');
-    copy.appendChild(node('h2', null, title));
-    if (description) copy.appendChild(node('p', null, description));
-    head.appendChild(copy);
-    if (count != null) head.appendChild(node('span', 'result-count', String(count)));
-    card.appendChild(head);
-    return card;
-  }
-
-  function appendTextLine(parent, label, value) {
-    var line = node('p');
-    line.appendChild(node('strong', null, label + ': '));
-    line.appendChild(document.createTextNode(value || '확인된 내용이 없습니다.'));
-    parent.appendChild(line);
-  }
-
-  // API의 평가 기준 식별자를 사용자에게 익숙한 표현으로 바꿉니다.
-  function focusText(value) {
-    var values = Array.isArray(value) ? value
-      : value && typeof value === 'object' ? Object.keys(value).map(function (key) { return value[key]; })
-        : value ? [value] : [];
-    if (!values.length) return '질문의 핵심 경험과 답변 내용을 확인합니다.';
-    return values.map(function (focus) {
-      return evaluationFocusLabel[focus] || String(focus);
-    }).join(' · ');
-  }
-
-  // 자료 준비 상태와 실제 요구사항 연결 수준을 구분해 결과 제목을 정합니다.
-  function connectionTitle(result, percent, total) {
-    var readinessStatus = result.readiness && result.readiness.status;
-    if (!total && readinessLabel[readinessStatus]) return readinessLabel[readinessStatus];
-    if (percent >= 70) return '지원 경험이 공고 요구사항과 잘 연결돼 있어요';
-    if (percent >= 40) return '연결된 경험이 있지만 보완할 부분이 있어요';
-    return '지원 경험의 연결 근거를 더 보완해 주세요';
-  }
-
-  // AI의 평가 문장 대신 실제 충족도 개수로 일관된 결과 요약을 제공합니다.
-  function connectionSummary(counts, total) {
-    if (!total) return '채용공고와 지원 자료에서 확인된 연결 근거를 정리했습니다.';
-    var connected = counts.HIGH + counts.MEDIUM;
-    var needsWork = counts.LOW + counts.NONE + counts.INSUFFICIENT;
-    return '전체 요구사항 ' + total + '개 중 ' + connected + '개에서 비교적 분명한 근거를 확인했고, '
-      + needsWork + '개는 연결 근거를 더 보완하면 좋아요. 아래에서 세부 내용과 준비 과제를 확인해 보세요.';
-  }
-
-  function renderTop(result, analysisCase, counts, questions) {
-    var topbar = node('div', 'result-topbar');
-    var back = node('a', 'result-breadcrumb', '면접 준비로 돌아가기');
-    back.href = window.JobPuzzleRoutes.path('/interview');
-    topbar.appendChild(back);
-    var resultInfo = node('span', 'result-date',
-      '분석 #' + result.analysisCaseId + ' · 사용 자료: ' + analysisSourceText(analysisCase));
-    resultInfo.title = resultInfo.textContent;
-    topbar.appendChild(resultInfo);
-    root.appendChild(topbar);
-
-    var total = (result.requirementMatches || []).length;
-    var percent = calculateConnectionScore(counts, total);
-    var hero = node('section', 'result-hero');
-    var copy = node('div', 'result-hero__copy');
-    copy.appendChild(node('p', 'result-eyebrow', 'YOUR JOB FIT REPORT'));
-    copy.appendChild(node('h1', null, connectionTitle(result, percent, total)));
-    copy.appendChild(node('p', 'result-hero__reason', connectionSummary(counts, total)));
-    var meta = node('div', 'result-hero__meta');
-    [categoryText(result.jobCategory), '질문 ' + questions.length + '개']
-      .forEach(function (text) { meta.appendChild(node('span', 'result-meta-chip', text)); });
-    copy.appendChild(meta);
-    hero.appendChild(copy);
-    var puzzle = node('canvas', 'result-puzzle-canvas');
-    puzzle.dataset.jobPuzzleScene = '';
-    puzzle.dataset.resultPuzzle = '';
-    puzzle.setAttribute('aria-hidden', 'true');
-    hero.appendChild(puzzle);
-    var scoreTone = percent >= 70 ? 'good' : percent >= 40 ? 'medium' : 'low';
-    var scoreWrap = node('div', 'result-score-wrap');
-    var score = node('div', 'result-score result-score--' + scoreTone);
-    score.style.setProperty('--result-score', percent);
-    score.appendChild(node('strong', null, percent + '%'));
-    scoreWrap.appendChild(score);
-    scoreWrap.appendChild(node('span', 'result-score-label', '요구사항 연결'));
-    hero.appendChild(scoreWrap);
-    root.appendChild(hero);
-
-    root.appendChild(renderDistribution(result, counts, questions));
-  }
-
-  function renderDistribution(result, counts, questions) {
+  function render(result, analysisCase, plans) {
     var matches = result.requirementMatches || [];
-    var total = matches.length;
-    var required = matches.filter(function (match) { return match.requirementType === 'REQUIRED'; });
-    var preferred = matches.filter(function (match) { return match.requirementType === 'PREFERRED'; });
-    var requiredConnected = required.filter(function (match) { return isConnectedLevel(match.matchLevel); }).length;
-    var preferredConnected = preferred.filter(function (match) { return isConnectedLevel(match.matchLevel); }).length;
-    var sourceTypes = candidateSourceTypes(matches);
-    var gapCount = counts.NONE + counts.INSUFFICIENT;
-    var groups = [
-      ['high', '충족', counts.HIGH],
-      ['medium', '일부 충족', counts.MEDIUM],
-      ['low', '낮은 연결', counts.LOW],
-      ['gap', '근거 부족', gapCount]
-    ];
-    var card = node('section', 'result-distribution');
-    var head = node('div', 'result-distribution__head');
-    var copy = node('div');
-    copy.appendChild(node('p', 'result-distribution__eyebrow', 'REQUIREMENT COVERAGE'));
-    copy.appendChild(node('h2', null, '전체 요구사항 ' + total + '개'));
-    copy.appendChild(node('p', null, '지원 자료와 연결된 정도를 한눈에 확인할 수 있어요.'));
-    head.appendChild(copy);
-    var questionBadge = node('div', 'result-question-badge');
-    questionBadge.appendChild(node('span', null, '예상 질문'));
-    questionBadge.appendChild(node('strong', null, questions.length + '개'));
-    head.appendChild(questionBadge);
-    card.appendChild(head);
+    var questions = (result.questionSet && result.questionSet.questions || []).slice().sort(function (a, b) { return (a.displayOrder || 0) - (b.displayOrder || 0); });
+    data = { result: result, questions: questions };
+    var counts = { high: 0, medium: 0, low: 0, none: 0 };
+    matches.forEach(function (m) { counts[lv(m)[1]]++; });
+    var linked = matches.filter(function (m) { return connected(m.matchLevel); }).length;
+    var req = matches.filter(function (m) { return m.requirementType === 'REQUIRED'; });
+    var pref = matches.filter(function (m) { return m.requirementType === 'PREFERRED'; });
+    var cat = (analysisCase && (analysisCase.mainCategory || analysisCase.subCategory)) ? analysisCase : (result.jobCategory || {});
+    var career = { NEW: '신입', EXPERIENCED: '경력', ANY: '경력 무관' }[analysisCase && analysisCase.careerLevel] || '';
+    var sources = analysisCase && analysisCase.sources || [];
 
-    var bar = node('div', 'result-distribution__bar');
-    bar.setAttribute('role', 'img');
-    bar.setAttribute('aria-label', '요구사항 연결 분포');
-    groups.forEach(function (group) {
-      var ratio = total ? Math.round(group[2] / total * 100) : 0;
-      var segment = node('span', 'result-distribution__segment result-distribution__segment--' + group[0]);
-      segment.style.width = ratio + '%';
-      segment.title = group[1] + ' ' + group[2] + '개 · ' + ratio + '%';
-      bar.appendChild(segment);
-    });
-    card.appendChild(bar);
+    // 면접 연결: 시작 가능 / 이미 연결된 면접(완료·진행 중) / 둘 다 아님
+    var canStart = questions.length > 0 && result.interviewStartAllowed === true;
+    var sid = result.linkedSessionId, completed = result.linkedSessionStatus === 'COMPLETED';
+    var cta = canStart ? ['맞춤 면접 시작', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))]
+      : sid ? (completed ? ['완료한 면접 결과 보기', route('/interview-results?sessionId=' + encodeURIComponent(sid))]
+        : ['진행 중인 면접으로 돌아가기', route('/interview?resumeSessionId=' + encodeURIComponent(sid))])
+        : ['면접 준비로 이동', route('/interview')];
+    var ctaSub = canStart ? '부족한 근거를 중심으로 만든 질문으로 바로 면접을 볼 수 있어요.'
+      : sid ? (completed ? '이 분석으로 본 면접 결과를 다시 확인할 수 있어요.' : '이 분석으로 진행 중인 면접이 있어요.')
+        : '자료를 보완한 뒤 새 분석을 진행해 보세요.';
 
-    var legend = node('div', 'result-distribution__legend');
-    groups.forEach(function (group) {
-      var ratio = total ? Math.round(group[2] / total * 100) : 0;
-      var item = node('div', 'result-distribution__legend-item');
-      item.appendChild(node('i', 'result-distribution__dot result-distribution__dot--' + group[0]));
-      item.appendChild(node('span', null, group[1]));
-      item.appendChild(node('strong', null, group[2] + '개'));
-      item.appendChild(node('small', null, ratio + '%'));
-      legend.appendChild(item);
-    });
-    card.appendChild(legend);
-
-    var facts = node('div', 'result-fact-grid');
-    [
-      ['필수 요구사항', requiredConnected + ' / ' + required.length + '개 연결'],
-      ['우대 요구사항', preferredConnected + ' / ' + preferred.length + '개 연결'],
-      ['사용된 지원 자료', sourceTypes.length ? sourceTypes.join(' · ') : '연결 자료 없음']
-    ].forEach(function (fact) {
-      var item = node('article', 'result-fact');
-      item.appendChild(node('span', null, fact[0]));
-      item.appendChild(node('strong', null, fact[1]));
-      facts.appendChild(item);
-    });
-    card.appendChild(facts);
-
-    var limitations = result.readiness && result.readiness.limitations || [];
-    if (limitations.length) {
-      var warning = node('div', 'result-limitations');
-      warning.appendChild(node('span', 'result-limitations__icon', '!'));
-      var warningCopy = node('div');
-      warningCopy.appendChild(node('strong', null, '분석할 때 함께 확인해 주세요'));
-      var warningList = node('ul');
-      limitations.forEach(function (item) { warningList.appendChild(node('li', null, item)); });
-      warningCopy.appendChild(warningList);
-      warning.appendChild(warningCopy);
-      card.appendChild(warning);
-    }
-    return card;
-  }
-
-  function evidence(label, value, className) {
-    var box = node('div', 'result-evidence' + (className ? ' ' + className : ''));
-    box.appendChild(node('b', null, label));
-    box.appendChild(node('p', null, value || '확인된 내용이 없습니다.'));
-    return box;
-  }
-
-  function sourceSummary(refs) {
-    if (!Array.isArray(refs) || !refs.length) return '연결된 원문 위치가 없습니다.';
-    return refs.map(function (ref) {
-      var sourceType = {
-        RESUME: '이력서', COVER_LETTER: '자기소개서', PORTFOLIO: '포트폴리오',
-        EXPERIENCE_NOTE: '경험정리', JOB_POSTING: '채용공고', COMPANY_INFO: '회사정보'
-      }[ref.documentType] || ref.documentType || '지원 자료';
-      return sourceType + (ref.pageNumber ? ' · ' + ref.pageNumber + '페이지' : '');
-    }).filter(function (value, index, all) {
-      return all.indexOf(value) === index;
-    }).join(', ');
-  }
-
-  function renderMatches(result) {
-    var matches = result.requirementMatches || [];
-    var questions = result.questionSet && result.questionSet.questions || [];
-    var card = section('요구사항 연결 분석', '공고의 조건과 내 자료에서 확인된 근거를 함께 비교해 보세요.', matches.length);
-    var filters = node('div', 'result-filters');
-    var list = node('div', 'result-match-list');
-    [
-      ['ALL', '전체 ' + matches.length],
-      ['HIGH', '충족 ' + matches.filter(function (match) { return match.matchLevel === 'HIGH'; }).length],
-      ['MEDIUM', '일부 충족 ' + matches.filter(function (match) { return match.matchLevel === 'MEDIUM' || match.matchLevel === 'LOW'; }).length],
-      ['GAP', '근거 부족 ' + matches.filter(function (match) { return match.matchLevel === 'NONE' || match.matchLevel === 'INSUFFICIENT'; }).length],
-      ['REQUIRED', '필수 ' + matches.filter(function (match) { return match.requirementType === 'REQUIRED'; }).length],
-      ['PREFERRED', '우대 ' + matches.filter(function (match) { return match.requirementType === 'PREFERRED'; }).length]
-    ].forEach(function (filter, index) {
-      var button = node('button', 'result-filter' + (index === 0 ? ' is-active' : ''), filter[1]);
-      button.type = 'button';
-      button.addEventListener('click', function () {
-        filters.querySelectorAll('.result-filter').forEach(function (item) { item.classList.remove('is-active'); });
-        button.classList.add('is-active');
-        list.querySelectorAll('.result-match').forEach(function (item) {
-          var matchesFilter = filter[0] === 'ALL'
-            || item.dataset.level === filter[0]
-            || item.dataset.type === filter[0]
-            || (filter[0] === 'GAP' && /^(NONE|INSUFFICIENT)$/.test(item.dataset.level));
-          item.hidden = !matchesFilter;
-        });
-      });
-      filters.appendChild(button);
-    });
-    card.appendChild(filters);
-    if (!matches.length) {
-      card.appendChild(node('p', 'result-empty', '표시할 연결 분석이 없습니다.'));
-      return card;
-    }
-    matches.forEach(function (match, index) {
-      var item = node('article', 'result-match');
-      item.dataset.level = match.matchLevel || 'NONE';
-      item.dataset.type = match.requirementType || '';
-      var toggle = node('button', 'result-match__toggle');
-      toggle.type = 'button';
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.appendChild(node('span', 'result-match__index', String(index + 1).padStart(2, '0')));
-      var copy = node('span');
-      copy.appendChild(node('strong', null, match.requirement || '요구사항'));
-      var relatedCount = questions.filter(function (question) {
-        return question.relatedRequirementId === match.requirementId;
-      }).length;
-      copy.appendChild(node('small', null,
-        (typeLabel[match.requirementType] || match.requirementType || '요구사항')
-        + ' · 연결 자료 ' + (Array.isArray(match.candidateSourceRefs) ? match.candidateSourceRefs.length : 0) + '개'
-        + (relatedCount ? ' · 관련 질문 ' + relatedCount + '개' : '')));
-      toggle.appendChild(copy);
-      var aside = node('span', 'result-match__aside');
-      aside.appendChild(node('span', 'result-level result-level--' + (match.matchLevel || 'NONE'),
-        levelLabel[match.matchLevel] || '근거 부족'));
-      var expand = node('span', 'result-match__expand');
-      expand.appendChild(node('span', 'result-match__expand-text', '상세 보기'));
-      expand.appendChild(node('i', 'result-match__chevron'));
-      aside.appendChild(expand);
-      toggle.appendChild(aside);
-      item.appendChild(toggle);
-      var detail = node('div', 'result-match__detail');
-      detail.appendChild(evidence('확인된 지원자 근거', match.candidateEvidence, 'result-evidence--confirmed'));
-      detail.appendChild(evidence('부족한 근거', match.missingPoint, 'result-evidence--missing'));
-      detail.appendChild(evidence('판단 이유', match.reason, 'result-evidence--reason result-evidence--wide'));
-      detail.appendChild(evidence('사용된 자료', sourceSummary(match.candidateSourceRefs), 'result-evidence--source result-evidence--wide'));
-      item.appendChild(detail);
-      toggle.addEventListener('click', function () {
-        var open = item.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', String(open));
-        expand.querySelector('.result-match__expand-text').textContent = open ? '상세 닫기' : '상세 보기';
-      });
-      list.appendChild(item);
-    });
-    card.appendChild(list);
-    return card;
-  }
-
-  function renderQuestions(result) {
-    var questions = result.questionSet && result.questionSet.questions || [];
-    var matches = result.requirementMatches || [];
-    var card = section('예상 면접 질문', '분석 근거를 바탕으로 실제 면접에서 확인할 가능성이 높은 질문입니다.', questions.length);
-    if (!questions.length) {
-      card.appendChild(node('p', 'result-empty', '현재 자료에서는 생성된 질문이 없습니다.'));
-      return card;
-    }
-    var filters = node('div', 'result-filters');
-    var list = node('div', 'result-question-list');
-    var types = ['ALL'].concat(questions.map(function (question) { return question.questionType; })
-      .filter(function (value, index, all) { return all.indexOf(value) === index; }));
-    types.forEach(function (type, index) {
-      var count = type === 'ALL'
-        ? questions.length
-        : questions.filter(function (question) { return question.questionType === type; }).length;
-      var button = node('button', 'result-filter' + (index === 0 ? ' is-active' : ''),
-        (type === 'ALL' ? '전체' : typeLabel[type] || type) + ' ' + count);
-      button.type = 'button';
-      button.addEventListener('click', function () {
-        filters.querySelectorAll('.result-filter').forEach(function (item) { item.classList.remove('is-active'); });
-        button.classList.add('is-active');
-        list.querySelectorAll('.result-question').forEach(function (item) {
-          item.hidden = type !== 'ALL' && item.dataset.type !== type;
-        });
-      });
-      filters.appendChild(button);
-    });
-    card.appendChild(filters);
-    questions.slice().sort(function (a, b) { return a.displayOrder - b.displayOrder; }).forEach(function (question, index) {
-      var item = node('article', 'result-question');
-      item.dataset.type = question.questionType || '';
-      item.appendChild(node('span', 'result-question__no', String(index + 1).padStart(2, '0')));
-      item.appendChild(node('span', 'result-question__type result-question__type--' + (question.questionType || 'GENERAL'),
-        typeLabel[question.questionType] || question.questionType || '질문'));
-      item.appendChild(node('h3', null, question.question));
-      var details = node('details');
-      details.appendChild(node('summary', null, '질문 의도와 평가 포인트'));
-      var detail = node('div', 'result-question__detail');
-      appendTextLine(detail, '이 질문에서 확인하는 내용', question.intent || '지원자의 경험을 구체적으로 확인합니다.');
-      appendTextLine(detail, '평가 포인트', focusText(question.evaluationFocus));
-      if (question.relatedRequirementId) {
-        var relatedMatch = matches.find(function (match) {
-          return match.requirementId === question.relatedRequirementId;
-        });
-        appendTextLine(detail, '관련 요구사항', relatedMatch && relatedMatch.requirement || '공고의 관련 요구사항');
-      }
-      details.appendChild(detail);
-      item.appendChild(details);
-      list.appendChild(item);
-    });
-    card.appendChild(list);
-    return card;
-  }
-
-  function renderPlans(result) {
-    var plans = result.actionPlans || [];
-    var card = section('보완 과제', '분석 결과를 바탕으로 추천된 과제입니다. 일정과 완료 상태는 액션플랜에서 관리할 수 있습니다.', plans.length);
-    if (!plans.length) {
-      card.appendChild(node('p', 'result-empty', '이 분석에서 생성된 액션플랜이 없습니다.'));
-      return card;
-    }
-    var list = node('div', 'result-action-plan-list');
-    // 상단 개수와 실제 목록이 어긋나지 않도록 이 분석에서 생성된 과제를 모두 표시한다.
-    plans.forEach(function (plan, index) {
-      var item = node('article', 'result-action-plan');
-      item.appendChild(node('span', 'result-action-plan__number', String(index + 1)));
-      var copy = node('div', 'result-action-plan__copy');
-      copy.appendChild(node('strong', null, plan.suggestion || '보완 과제'));
-      if (plan.matchLevel) {
-        copy.appendChild(node('span',
-          'result-action-plan__level result-action-plan__level--' + String(plan.matchLevel).toLowerCase(),
-          plan.matchLevel));
-      }
-      copy.appendChild(node('p', null, plan.missingPoint || '보완이 필요한 내용을 확인해 주세요.'));
-      item.appendChild(copy);
-      list.appendChild(item);
-    });
-    card.appendChild(list);
-    var allLink = node('a', 'result-action-plan__all', '액션플랜에서 일정 관리하기 →');
-    allLink.href = window.JobPuzzleRoutes.path('/action-plans') + '?analysisCaseId=' + encodeURIComponent(result.analysisCaseId);
-    card.appendChild(allLink);
-    return card;
-  }
-
-  function renderCta(result, questionCount) {
-    var card = node('section', 'result-cta');
-    var canStart = questionCount > 0 && result.interviewStartAllowed === true;
-    var linkedSessionId = result.linkedSessionId;
-    var completed = result.linkedSessionStatus === 'COMPLETED';
-    card.appendChild(node('h2', null, canStart
-      ? '분석을 연습으로 연결해 보세요'
-      : linkedSessionId ? '이 분석으로 진행한 면접이 있어요' : '분석 결과를 확인했어요'));
-    card.appendChild(node('p', null, canStart
-      ? '생성된 ' + questionCount + '개 질문으로 맞춤 면접을 시작할 수 있어요.'
-      : linkedSessionId
-        ? (completed ? '완료된 면접 결과에서 답변과 평가를 다시 확인할 수 있어요.'
-          : '분석 결과를 확인한 뒤 진행 중인 면접으로 돌아갈 수 있어요.')
-        : '자료를 보완한 뒤 새로운 맞춤 분석을 진행해 보세요.'));
-    var link = node('a', 'result-cta__button', canStart ? '맞춤 면접 시작'
-      : linkedSessionId ? (completed ? '완료한 면접 결과 보기' : '진행 중인 면접으로 돌아가기')
-        : '면접 준비로 이동');
-    link.href = canStart ? window.JobPuzzleRoutes.path('/interview?analysisCaseId=' + encodeURIComponent(caseId))
-      : linkedSessionId ? (completed
-        ? window.JobPuzzleRoutes.path('/interview-results?sessionId=' + encodeURIComponent(linkedSessionId))
-        : window.JobPuzzleRoutes.path('/interview?resumeSessionId=' + encodeURIComponent(linkedSessionId)))
-      : window.JobPuzzleRoutes.path('/interview');
-    card.appendChild(link);
-    return card;
-  }
-
-  function render(result, analysisCase) {
-    root.replaceChildren();
+    var limits = result.readiness && result.readiness.limitations || [];
+    root.innerHTML =
+      '<div class="rs-links"><a href="' + route('/interview') + '">← 면접 준비</a><a href="' + route('/action-plans?analysisCaseId=' + encodeURIComponent(caseId)) + '">액션플랜 →</a></div>' +
+      '<section class="rs-banner"><div><p class="rs-banner__label">JOB FIT REPORT</p>' +
+      '<p class="rs-banner__title">' + esc([cat.mainCategory, cat.subCategory].filter(Boolean).join(' · ') || '맞춤') + ' 지원 분석</p>' +
+      '<p class="rs-banner__meta">' + esc(['분석 #' + result.analysisCaseId, analysisCase && analysisCase.createdAt ? dateDot(analysisCase.createdAt) + ' 분석' : '', career].filter(Boolean).join(' · ')) +
+      (sources.length ? ' · 사용 자료: ' + sources.map(function (s) { return esc(s.displayName || SRC[s.documentType]); }).join(' · ') : '') + '</p></div>' +
+      '<div class="rs-banner__score"><b>' + score(matches) + '</b><small>요구사항 연결도 / 100</small></div></section>' +
+      (limits.length ? '<p class="rs-sub" style="margin:12px 0 0; color:var(--warn)">' + limits.map(esc).join(' · ') + '</p>' : '') +
+      '<div class="ar-top"><section class="dcard"><h2 class="rs-h">요구사항 연결 분포</h2>' +
+      '<p class="rs-sub" style="margin-bottom:0">공고 요구사항 ' + matches.length + '개 중 ' + linked + '개에서 근거를 찾았고, ' + (matches.length - linked) + '개는 근거를 더 채우면 좋아요.</p>' +
+      '<div class="ar-dist">' + Object.keys(counts).map(function (k) { return counts[k] ? '<i class="lv--' + k + '" style="flex:' + counts[k] + '"></i>' : ''; }).join('') + '</div>' +
+      '<div class="ar-legend">' + ['high', 'medium', 'low', 'none'].map(function (k) { return '<span><i class="lv--' + k + '"></i>' + { high: '충족', medium: '일부 충족', low: '낮은 연결', none: '근거 부족' }[k] + ' <b>' + counts[k] + '</b></span>'; }).join('') + '</div>' +
+      '<div class="ar-kind"><div>필수 요구사항<b>' + req.length + '개 중 ' + req.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div>' +
+      '<div>우대 요구사항<b>' + pref.length + '개 중 ' + pref.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div></div></section>' +
+      '<section class="dcard ar-next"><h2 class="rs-h">분석을 연습으로 이어가요</h2><p class="rs-sub" style="margin-bottom:0">' + ctaSub + '</p>' +
+      '<div class="ar-next__row"><span>예상 면접 질문</span><b>' + questions.length + '개</b></div>' +
+      '<div class="ar-next__row"><span>보완 과제</span><b>' + plans.length + '개</b></div>' +
+      '<a href="' + cta[1] + '" class="dbtn dbtn--white" style="margin-top:16px">' + cta[0] + '</a></section></div>' +
+      '<section class="ar-sec" aria-labelledby="req-title"><div class="ar-sec__head"><div><h2 id="req-title">요구사항 연결 분석<small>' + matches.length + '개</small></h2>' +
+      '<p>공고의 조건과 내 자료에서 찾은 근거를 나란히 비교해요. 눌러서 자세히 볼 수 있어요.</p></div>' +
+      '<div class="chips" role="group" aria-label="연결 정도">' + [['ALL', '전체'], ['high', '충족'], ['part', '일부 충족'], ['none', '근거 부족']].map(function (c) {
+        return '<button type="button" class="chip" data-lv="' + c[0] + '" aria-pressed="' + (filter === c[0]) + '">' + c[1] + '</button>';
+      }).join('') + '</div></div><div data-reqs></div></section>' +
+      '<div class="dcols ar-sec" style="align-items:start"><section class="dcard" aria-labelledby="q-title"><h2 class="rs-h" id="q-title">예상 면접 질문</h2>' +
+      '<p class="rs-sub">분석 근거를 바탕으로 실제 면접에서 나올 가능성이 높은 질문이에요.</p>' +
+      (questions.length ? questions.slice(0, QUESTION_PREVIEW).map(function (q, i) {
+        return '<div class="aq"><span class="aq__n">' + (i + 1) + '</span><div><span class="mbadge mbadge--basic">' + (TYPE[q.questionType] || '일반') + '</span>' +
+          '<p class="aq__q">' + esc(q.question) + '</p>' + (q.intent ? '<p class="aq__why"><b>확인하는 것</b> · ' + esc(q.intent) + '</p>' : '') + '</div></div>';
+      }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접 시작 전 질문 고르기에서 볼 수 있어요.</p>' : '')
+        : '<p class="rs-sub">만들어진 질문이 없어요.</p>') + '</section>' +
+      '<section class="dcard" aria-labelledby="p-title"><h2 class="rs-h" id="p-title">보완 과제</h2><p class="rs-sub">마감일과 완료는 액션플랜에서 관리해요.</p>' +
+      (plans.length ? plans.map(function (p) {
+        var done = p.status === 'DONE';
+        return '<div class="ap-row"><div><p>' + esc(p.suggestion || '보완 과제') + '</p><small>' + esc([p.requirement ? '#' + p.requirement : '', p.missingPoint].filter(Boolean).join(' · ')) + '</small></div>' +
+          '<span class="pill ' + (done ? 'pill--done">완료' : 'pill--active">할 일') + '</span></div>';
+      }).join('') : '<p class="rs-sub">보완 과제가 없어요.</p>') +
+      '<a href="' + route('/action-plans?analysisCaseId=' + encodeURIComponent(caseId)) + '" class="dbtn dbtn--line" style="margin-top:12px; width:100%; height:40px">액션플랜에서 일정 관리하기 →</a></section></div>';
     root.setAttribute('aria-busy', 'false');
-    var matches = result.requirementMatches || [];
-    var questions = result.questionSet && result.questionSet.questions || [];
-    var counts = countByLevel(matches);
-    renderTop(result, analysisCase, counts, questions);
-    var layout = node('div', 'result-layout');
-    var main = node('div', 'result-main');
-    main.appendChild(renderMatches(result));
-    main.appendChild(renderQuestions(result));
-    main.appendChild(renderPlans(result));
-    main.appendChild(renderCta(result, questions.length));
-    layout.appendChild(main);
-    root.appendChild(layout);
+    renderReqs();
   }
 
   function renderUnavailable(message, href, label) {
-    root.replaceChildren();
     root.setAttribute('aria-busy', 'false');
-    var card = node('section', 'result-error');
-    card.appendChild(node('h1', null, '분석 결과를 아직 열 수 없어요'));
-    card.appendChild(node('p', null, message));
-    var link = node('a', 'btn btn--primary', label);
-    link.href = href;
-    link.style.textDecoration = 'none';
-    card.appendChild(link);
-    root.appendChild(card);
+    root.innerHTML = '<section class="dcard" style="margin-top:24px; text-align:center; padding:48px 24px"><h1 class="rs-h" style="font-size:20px">분석 결과를 아직 열 수 없어요</h1>' +
+      '<p class="rs-sub">' + esc(message) + '</p><a class="dbtn dbtn--navy" href="' + href + '">' + esc(label) + '</a></section>';
   }
 
   if (!root || !caseId || !/^\d+$/.test(caseId) || Number(caseId) <= 0) {
-    if (root) renderUnavailable('유효하지 않은 분석 결과 주소입니다.', window.JobPuzzleRoutes.path('/interview'), '면접 준비로 이동');
+    if (root) renderUnavailable('잘못된 분석 결과 주소예요.', route('/interview'), '면접 준비로 이동');
     return;
   }
 
-  api(window.JobPuzzleRoutes.path('/analysis/cases/' + caseId + '/status'))
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-lv]');
+    if (!b) return;
+    filter = b.dataset.lv;
+    root.querySelectorAll('[data-lv]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    renderReqs();
+  });
+
+  U.api(route('/analysis/cases/' + caseId + '/status'))
     .then(function (status) {
       if (status.analysisCaseStatus !== 'COMPLETED') {
-        renderUnavailable('분석이 진행 중이거나 결과가 아직 준비되지 않았습니다.',
-          window.JobPuzzleRoutes.path('/analysis/' + encodeURIComponent(caseId)), '분석 상태 확인');
+        renderUnavailable('분석이 진행 중이거나 결과가 아직 준비되지 않았어요.', route('/analysis/' + encodeURIComponent(caseId)), '분석 상태 확인');
         return null;
       }
       return Promise.all([
-        api(window.JobPuzzleRoutes.path('/analysis/cases/' + caseId + '/result')),
-        // 자료 정보 조회 실패가 기존 분석 결과 화면까지 막지 않도록 보조 정보만 선택적으로 사용합니다.
-        api(window.JobPuzzleRoutes.path('/analysis-cases/' + caseId)).catch(function () { return null; })
+        U.api(route('/analysis/cases/' + caseId + '/result')),
+        // 자료 정보·과제 상태는 보조 정보라 실패해도 결과는 보여준다
+        U.api(route('/analysis-cases/' + caseId)).catch(function () { return null; }),
+        U.api(route('/action-plan')).catch(function () { return null; })
       ]);
     })
-    .then(function (values) { if (values) render(values[0], values[1]); })
+    .then(function (v) {
+      if (!v) return;
+      var plans = Array.isArray(v[2]) ? v[2].filter(function (p) { return String(p.analysisCaseId) === String(caseId); }) : (v[0].actionPlans || []);
+      render(v[0], v[1], plans);
+    })
     .catch(function (error) {
-      var message = error.status === 403
-        ? '이 분석 결과를 볼 권한이 없습니다.'
-        : '잠시 후 다시 시도해 주세요.';
-      renderUnavailable(message, window.JobPuzzleRoutes.path('/interview'), '면접 준비로 이동');
+      renderUnavailable(error.status === 403 ? '이 분석 결과를 볼 권한이 없어요.' : '잠시 후 다시 시도해 주세요.', route('/interview'), '면접 준비로 이동');
     });
 })();

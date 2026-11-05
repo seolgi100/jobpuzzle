@@ -134,6 +134,7 @@
           if (result.ok && result.body.success) {
             stopCountdown();
             codeStep.hidden = true;
+            document.getElementById('unlock-form').hidden = true;
             resultBox.hidden = false;
           } else {
             showError(errorEl, result.body.message || '인증 코드가 올바르지 않습니다.');

@@ -3,51 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>리포트 — JobPuzzle</title>
-<link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-<link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-<link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
-<link rel="stylesheet" href="/css/reports.css" th:href="@{/css/reports.css}">
+<title>면접 리포트 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="stylesheet" href="/css/ds/report.css" th:href="@{/css/ds/report.css}">
 </head>
-<body class="jp-app-theme jp-reports-page">
+<body class="app">
 
 <div th:replace="~{fragments/header :: appHeader('reports')}"></div>
 
-<div class="app-shell">
-  <div class="app-container">
-
-    <section class="reports-hero">
-      <div>
-        <p class="eyebrow-label">나의 면접 기록</p>
-        <h1 class="page-title">면접 리포트</h1>
-        <p class="page-subtitle">완료한 면접의 점수와 보완 방향을 다시 확인해 보세요.</p>
-      </div>
-      <canvas class="reports-hero__puzzle" data-job-puzzle-scene data-result-puzzle aria-hidden="true"></canvas>
-    </section>
-
-    <section class="reports-section" aria-labelledby="reports-section-title">
-      <header class="reports-section__head">
-        <div>
-          <p class="reports-section__eyebrow">INTERVIEW HISTORY</p>
-          <h2 id="reports-section-title">완료한 면접</h2>
-        </div>
-        <span class="reports-section__count" id="report-count">0개</span>
-      </header>
-      <div class="report-layout">
-        <div class="report-list" id="report-list" aria-label="완료한 면접 목록"></div>
-        <div class="report-detail" id="report-detail" aria-live="polite"></div>
-      </div>
-    </section>
-
+<main class="dash-wrap">
+  <div class="phead">
+    <div>
+      <p class="phead__eyebrow">INTERVIEW REPORTS</p>
+      <h1 class="phead__title">면접 리포트</h1>
+      <p class="phead__sub">완료한 면접의 점수와 보완 방향을 다시 확인해 보세요.</p>
+    </div>
   </div>
-</div>
+
+  <div class="toolbar">
+    <div class="chips" role="group" aria-label="면접 모드">
+      <button type="button" class="chip" aria-pressed="true" data-mode="all">전체<small>0</small></button>
+      <button type="button" class="chip" aria-pressed="false" data-mode="custom">맞춤 면접<small>0</small></button>
+      <button type="button" class="chip" aria-pressed="false" data-mode="weak">약점 보완<small>0</small></button>
+      <button type="button" class="chip" aria-pressed="false" data-mode="basic">기본 질문<small>0</small></button>
+    </div>
+  </div>
+
+  <div class="rp">
+    <div class="dcard rp-list" id="report-list" aria-label="완료한 면접 목록"></div>
+    <section class="dcard rp-detail" id="report-detail" aria-live="polite"></section>
+  </div>
+</main>
 
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
 <script src="/js/common.js" th:src="@{/js/common.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-<script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
+<script src="/js/ds-ui.js" th:src="@{/js/ds-ui.js}"></script>
 <script src="/js/reports.js" th:src="@{/js/reports.js}"></script>
 </body>
 </html>

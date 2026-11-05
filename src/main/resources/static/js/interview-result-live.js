@@ -1,878 +1,281 @@
+// interview-result-live.js — 면접 결과: 최종 리포트(종합 점수·관점 레이더·약점·추천·서류 보완) + 질문별 결과 + 중간 결과 행동
 (function () {
   'use strict';
 
+  var U = window.JPUI, route = window.JobPuzzleRoutes.path, esc = U.esc;
   var sessionId = new URLSearchParams(window.location.search).get('sessionId');
-  var sessionInfo = null;
-  var remainingQuestions = [];
-  var sessionQuestions = [];
-  var pendingSelectedQuestions = [];
-  var sessionScoreByQuestion = {};
-  var CATEGORY_LABELS = {
-    intentMatch: '질문 의도 이해',
-    specificity: '경험 구체성',
-    ownRole: '본인 역할',
-    problemSolving: '문제 해결 과정',
-    resultExpression: '성과 및 결과 표현',
-    requirementConnection: '공고 요구사항 연결',
-    guideAlignment: '직무 가이드 적합',
-    deliveryClarity: '답변 전달력'
-  };
-
-  // 면접 결과 화면의 안내와 오류를 공통 토스트 디자인으로 표시합니다.
-  function notify(type, message, duration) {
-    if (typeof window.showToast === 'function') {
-      return window.showToast(type, message, duration);
-    }
-    return null;
-  }
-
-  function api(path, options) {
-    options = options || {};
-    var fetchOptions = {
-      method: options.method || 'GET',
-      credentials: 'same-origin',
-      headers: {}
-    };
-    if (options.json !== undefined) {
-      fetchOptions.headers['Content-Type'] = 'application/json; charset=UTF-8';
-      fetchOptions.body = JSON.stringify(options.json);
-    }
-    return fetch(path, fetchOptions).then(function (response) {
-      return response.json().then(function (body) {
-        if (!response.ok || !body.success) {
-          throw new Error(body.message || '결과를 불러오지 못했습니다.');
-        }
-        return body.data;
-      });
-    });
-  }
-
-  function esc(value) {
-    var element = document.createElement('div');
-    element.textContent = value == null ? '' : String(value);
-    return element.innerHTML;
-  }
-
-  function modeLabel(mode) {
-    if (mode === 'BASIC') return '기본 질문';
-    if (mode === 'COMPANY_FIT') return '맞춤 면접';
-    return '약점 보완';
-  }
-
-  function weaknessLabel(tag) {
-    var original = String(tag || '');
-    if (/[가-힣]/.test(original)) return original;
-    var value = original.toLowerCase();
-    var compact = value.replace(/[_\-\s]/g, '');
-    if (compact.indexOf('lackofspecificdetail') >= 0) return '구체성 부족';
-    if (compact.indexOf('lackoftechnicaldepth') >= 0) return '기술적 깊이 부족';
-    if (compact.indexOf('insufficientcloudexperience') >= 0) return '클라우드 경험 부족';
-    if (compact.indexOf('vaguerole') >= 0) return '역할 설명 부족';
-    if (compact.indexOf('limitedownership') >= 0) return '주도성 부족';
-    if (value.indexOf('requirementconnection') >= 0) return '공고 요구사항 연결 부족';
-    if (value.indexOf('specificity') >= 0) return '경험 구체성 부족';
-    if (value.indexOf('ownrole') >= 0) return '본인 역할 설명 부족';
-    if (value.indexOf('problemsolving') >= 0) return '문제 해결 과정 부족';
-    if (value.indexOf('resultexpression') >= 0) return '성과·결과 표현 부족';
-    if (value.indexOf('guidealignment') >= 0) return '직무 기준 연결 부족';
-    if (value.indexOf('deliveryclarity') >= 0) return '답변 전달력 부족';
-    if (value.indexOf('intentmatch') >= 0) return '질문 의도 파악 부족';
-    return '세부 진단 보완 필요';
-  }
-
-  var QUESTION_TYPE_LABELS = {
+  var DIMS = U.DIM_LABELS, DIM_KEYS = Object.keys(DIMS);
+  var COLOR = { good: '#16A34A', mid: '#2F74E8', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' };
+  var QUESTION_TYPE = {
     GENERAL: '일반', COMPANY_FIT: '회사 맞춤', EXPERIENCE: '경험', PROBLEM_SOLVING: '문제 해결', SKILL: '기술',
     SELF_INTRO: '자기소개', MOTIVATION: '지원 동기', STRENGTH_WEAKNESS: '강점·약점',
     FAILURE_CONFLICT: '실패·갈등 경험', JOB_GENERAL: '직무 일반', WEAKNESS_FOLLOWUP: '약점 보완 후속'
   };
-  var IMPROVEMENT_TARGET_LABELS = {
-    resume: '이력서', coverLetter: '자기소개서', portfolio: '포트폴리오', experienceNote: '경험정리'
-  };
+  var DOC_TARGET = { resume: '이력서', coverLetter: '자기소개서', portfolio: '포트폴리오', experienceNote: '경험 정리' };
+  var ASSESSMENT = ['[잘한 점]', '[부족한 점]', '[총평]'];
+  var s = { info: null, score: null, questions: [], byQuestion: {}, remaining: [], pending: [], cur: 0 };
 
-  function jumpToQuestionIndex(index) {
-    var listTabButton = document.querySelector('.tabbar__btn[data-tab="list"]');
-    if (listTabButton) listTabButton.click();
+  function notify(type, msg) { if (window.showToast) window.showToast(type, msg); }
+  function get(p, o) { return U.api(route(p), o); }
+  function badge(n, label) { return '<span class="score score--' + U.tone(n) + '">' + (label || n + '점') + '</span>'; }
 
-    var listButton = document.querySelector('.q-list-item[data-question-index="' + index + '"]');
-    if (listButton) {
-      listButton.click();
-      listButton.scrollIntoView({ block: 'nearest' });
-    }
+  // 약점 태그 이름: 코드(resultExpression_weak)·영문 진단·한글 모두 받아서 한글로
+  function weaknessLabel(tag) {
+    var t = String(tag || '');
+    if (/[가-힣]/.test(t)) return t;
+    var v = t.toLowerCase().replace(/[_\-\s]/g, '');
+    var map = [['lackofspecificdetail', '구체성 부족'], ['lackoftechnicaldepth', '기술적 깊이 부족'], ['insufficientcloudexperience', '클라우드 경험 부족'],
+      ['vaguerole', '역할 설명 부족'], ['limitedownership', '주도성 부족'], ['requirementconnection', '공고 요구사항 연결 부족'],
+      ['specificity', '경험 구체성 부족'], ['ownrole', '본인 역할 설명 부족'], ['problemsolving', '문제 해결 과정 부족'],
+      ['resultexpression', '성과·결과 표현 부족'], ['guidealignment', '직무 기준 연결 부족'], ['deliveryclarity', '답변 전달력 부족'], ['intentmatch', '질문 의도 파악 부족']];
+    for (var i = 0; i < map.length; i++) if (v.indexOf(map[i][0]) >= 0) return map[i][1];
+    return '세부 진단 보완 필요';
   }
 
-  // 이 약점 태그가 달린 질문들의 인덱스를 전부 찾는다. sessionQuestions가 아직 안 채워졌으면 빈 배열.
-  function questionIndicesForTag(tag) {
-    var indices = [];
-    sessionQuestions.forEach(function (question, index) {
-      var item = sessionScoreByQuestion[question.sessionQuestionId];
-      if (item && item.weaknessTags && item.weaknessTags.indexOf(tag) !== -1) {
-        indices.push(index);
-      }
-    });
-    return indices;
+  // ── 질문별 결과 ──
+  function qScore(q) { var x = s.byQuestion[q.sessionQuestionId]; return q.status === 'COMPLETED' && x && x.finalScore != null ? x.finalScore : null; }
+  function qLabel(q) {
+    var sc = qScore(q);
+    if (sc != null) return sc + '점';
+    var conv = q.conversation || [];
+    var answered = conv.some(function (m) { return m.sender === 'USER'; });
+    var failed = conv.some(function (m) { return m.messageType === 'EVALUATION_FAILED_ANSWER' || m.messageType === 'REJECTED_ANSWER'; });
+    if (failed) return '미평가';
+    if (q.status !== 'COMPLETED' && answered) return '진행 중';
+    return answered ? '미평가' : '미응답';
   }
 
-  // 최종 리포트와 질문별 결과(/score) 로딩 순서가 보장되지 않으므로, 둘 중 하나가 끝날 때마다 다시 채운다.
-  function renderWeaknessQuestionLinks() {
-    document.querySelectorAll('.weakness-tag-row__questions[data-tag]').forEach(function (container) {
-      var indices = questionIndicesForTag(container.dataset.tag);
-      container.innerHTML = indices.map(function (index) {
-        return '<button type="button" class="weakness-question-chip" data-question-index="' + index + '">' +
-          (index + 1) + '</button>';
-      }).join('');
-    });
-    document.querySelectorAll('.weakness-question-chip[data-question-index]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        jumpToQuestionIndex(Number(button.dataset.questionIndex));
-      });
-    });
-  }
-
-  // JSON-07 overallAssessment는 "[잘한 점]/[부족한 점] (세션 종합 점수: N점)/[총평]" 형식의 단일 문자열이다.
-  // 마커를 못 찾으면(v1.5 이전 리포트 등) 통짜 텍스트 블록 하나로 대체 표시한다.
-  var ASSESSMENT_SECTIONS = ['[잘한 점]', '[부족한 점]', '[총평]'];
-
-  function formatParagraph(text) {
-    return esc(text).replace(/\n+/g, '<br>');
-  }
-
-  function formatAssessmentBody(text) {
-    var lines = text.split('\n').map(function (line) { return line.trim(); }).filter(Boolean);
-    var isBulletList = lines.length > 0 && lines.every(function (line) { return line.indexOf('-') === 0; });
-    if (!isBulletList) return '<p>' + formatParagraph(text) + '</p>';
-    return '<ul class="final-assessment-bullets">' + lines.map(function (line) {
-      return '<li>' + esc(line.replace(/^-\s*/, '')) + '</li>';
-    }).join('') + '</ul>';
-  }
-
-  function splitAssessmentSections(text) {
-    var positions = ASSESSMENT_SECTIONS.map(function (marker) { return text.indexOf(marker); });
-    if (positions.some(function (position) { return position === -1; })) return null;
-    var sections = {};
-    for (var i = 0; i < ASSESSMENT_SECTIONS.length; i++) {
-      var start = positions[i] + ASSESSMENT_SECTIONS[i].length;
-      var end = i + 1 < ASSESSMENT_SECTIONS.length ? positions[i + 1] : text.length;
-      sections[ASSESSMENT_SECTIONS[i]] = text.slice(start, end).trim();
-    }
-    return sections;
-  }
-
-  // "부족한 점" 섹션 첫 줄에 v1.8 이전 리포트는 "(세션 종합 점수: N점)"이 남아있을 수 있다.
-  // 종합 점수는 이제 그래프로 따로 보여주므로 본문에서는 그냥 잘라내고 버린다.
-  function stripLeadingParenthetical(text) {
-    return text.replace(/^\([^)]*\)\s*/, '');
-  }
-
-  function renderOverallAssessment(rawText) {
-    if (!rawText) return '';
-    var sections = splitAssessmentSections(rawText);
-    if (!sections) {
-      return '<div class="final-assessment"><div class="final-assessment-block">' +
-        formatAssessmentBody(rawText) + '</div></div>';
-    }
-    var blocks = [
-      { title: '잘한 점', body: sections['[잘한 점]'] },
-      { title: '부족한 점', body: stripLeadingParenthetical(sections['[부족한 점]']) },
-      { title: '총평', body: sections['[총평]'] }
-    ];
-    return '<div class="final-assessment">' + blocks.map(function (block) {
-      return '<div class="final-assessment-block">' +
-        '<div class="final-assessment-block__head"><strong>' + esc(block.title) + '</strong></div>' +
-        formatAssessmentBody(block.body) + '</div>';
+  function conversation(q) {
+    var msgs = (q.conversation || []).filter(function (m) { return m.messageType !== 'ORIGINAL_QUESTION'; });
+    if (!msgs.length) return '<p style="margin-top:20px; color:var(--text-3)">이 질문에는 답하지 않았어요.</p>';
+    return '<div class="talk2"><h4>답변 과정</h4><small>점수에 반영된 실제 면접 대화예요</small>' + msgs.map(function (m, i) {
+      var me = m.sender === 'USER';
+      var failed = m.messageType === 'EVALUATION_FAILED_ANSWER' || m.messageType === 'REJECTED_ANSWER';
+      var label = m.messageType === 'ORIGINAL_ANSWER' ? '첫 답변' : !me ? 'AI 추가 질문' : failed ? '평가 처리 실패 답변 · 점수 제외' : '추가 답변';
+      var unanswered = m.messageType === 'FOLLOW_UP_QUESTION' && (!msgs[i + 1] || msgs[i + 1].messageType !== 'FOLLOW_UP_ANSWER');
+      return '<div class="bubble bubble--' + (me ? 'me' : 'ai') + '"><b>' + label + (unanswered ? ' · 미응답' : '') + '</b>' + esc(m.messageText) + '</div>';
     }).join('') + '</div>';
   }
 
-  // 관점별 점수를 상단 요약 영역에 시각화한다. 3개 이상이면 레이더, 1~2개면 큰 도넛, 0개면 빈 상태 문구.
-  function dimensionEntries(categoryScores) {
-    return Object.keys(CATEGORY_LABELS)
-      .filter(function (key) { return categoryScores && categoryScores[key] != null; })
-      .map(function (key) { return { key: key, value: categoryScores[key] }; });
+  function renderQuestions() {
+    var qs = s.questions, sc = s.score;
+    document.getElementById('qlist').innerHTML = qs.length ? qs.map(function (q, i) {
+      return '<button type="button" class="qr-item" data-q="' + i + '" aria-current="' + (i === s.cur) + '"><b>' + (i + 1) + '</b><span>' + esc(q.questionText) + '</span>' + badge(qScore(q), qLabel(q)) + '</button>';
+    }).join('') : '<p style="color:var(--text-3)">표시할 질문이 없어요.</p>';
+    var q = qs[s.cur], el = document.getElementById('qdetail');
+    if (!q) { el.innerHTML = ''; return; }
+    var x = s.byQuestion[q.sessionQuestionId] || {}, done = q.status === 'COMPLETED';
+    var dims = done ? x.dimensionScores || {} : {}, counts = done ? x.dimensionEvaluationCounts || {} : {};
+    var evalCount = Object.keys(counts).reduce(function (m, k) { return Math.max(m, counts[k] || 0); }, 0);
+    el.innerHTML = '<div class="qr-head"><span class="score score--none">질문 ' + (Number(q.displayOrder) > 0 ? q.displayOrder : s.cur + 1) + '</span>' + badge(qScore(q), qLabel(q)) + '</div>' +
+      '<h2 class="qr-q">' + esc(q.questionText) + '</h2><p class="qr-intent">' + esc(q.intent || '질문 의도가 기록되지 않았어요.') + '</p>' +
+      conversation(q) +
+      '<div class="flow"><div>① 답변 분석<b>' + evalCount + '회</b></div><div>② 핵심 평가 기준<b>' + Object.keys(dims).length + '개</b></div><div>③ 질문 종합 점수<b>' + qLabel(q) + '</b></div></div>' +
+      (Object.keys(dims).length ? '<div class="dims" style="margin-top:16px">' + Object.keys(dims).map(function (k) {
+        return '<div class="dim"><span>' + esc(DIMS[k] || k) + '</span><i><b style="width:' + dims[k] + '%; background:' + COLOR[U.tone(dims[k])] + '"></b></i>' + badge(dims[k]) + '</div>';
+      }).join('') + '</div>' : '') +
+      '<div class="summary4"><div>답변한 질문<b>' + sc.submittedQuestionCount + '</b></div><div>평가 성공<b>' + sc.evaluatedQuestionCount + '</b></div>' +
+      '<div>건너뜀<b>' + sc.skippedQuestionCount + '</b></div><div>완료율<b>' + sc.completionRate + '%</b></div></div>';
   }
 
-  // AI 호출 없이 지금 있는 점수만으로 계산하는 한 줄 요약
-  function dimensionSummaryLine(entries) {
-    if (!entries.length) return '';
-    if (entries.length === 1) {
-      var only = entries[0];
-      return '이번 세션은 ' + esc(CATEGORY_LABELS[only.key] || only.key) + ' 관점만 평가됐어요 (' + only.value + '점).';
+  // ── 최종 리포트 ──
+  function assessment(text) {
+    if (!text) return '';
+    var pos = ASSESSMENT.map(function (m) { return text.indexOf(m); });
+    function body(t) {
+      var lines = t.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+      return lines.length && lines.every(function (l) { return l.indexOf('-') === 0; })
+        ? '<ul>' + lines.map(function (l) { return '<li>' + esc(l.replace(/^-\s*/, '')) + '</li>'; }).join('') + '</ul>'
+        : '<p>' + esc(t).replace(/\n+/g, '<br>') + '</p>';
     }
-    var sorted = entries.slice().sort(function (a, b) { return b.value - a.value; });
-    var best = sorted[0];
-    var worst = sorted[sorted.length - 1];
-    if (best.value === worst.value) {
-      return '관점별 점수가 ' + best.value + '점으로 고르게 나왔어요.';
-    }
-    return '가장 강한 관점은 ' + esc(CATEGORY_LABELS[best.key] || best.key) + '(' + best.value + '점), 가장 약한 관점은 ' +
-      esc(CATEGORY_LABELS[worst.key] || worst.key) + '(' + worst.value + '점)이에요.';
+    if (pos.some(function (p) { return p < 0; })) return '<div class="assess"><section>' + body(text) + '</section></div>';
+    var part = function (i) { return text.slice(pos[i] + ASSESSMENT[i].length, i + 1 < ASSESSMENT.length ? pos[i + 1] : text.length).trim(); };
+    var colors = ['var(--score-good)', 'var(--score-low)', 'var(--sky)'], titles = ['잘한 점', '부족한 점', '총평'];
+    return '<div class="assess">' + titles.map(function (t, i) {
+      var b = i === 1 ? part(i).replace(/^\([^)]*\)\s*/, '') : part(i);   // 옛 리포트의 "(세션 종합 점수: N점)" 제거
+      return '<section><h4><i style="background:' + colors[i] + '"></i>' + t + '</h4>' + body(b) + '</section>';
+    }).join('') + '</div>';
   }
 
-  // 모든 점수 그래프가 같은 네 단계 색상 기준을 사용하도록 점수 구간을 반환합니다.
-  function graphScoreTone(value) {
-    if (value >= 70) return 'good';
-    if (value >= 50) return 'blue';
-    if (value >= 25) return 'yellow';
-    return 'danger';
-  }
-
-  // 원형 그래프와 레이더 차트가 공유하는 점수 구간 안내를 표시합니다.
-  function graphScoreLegend() {
-    return '<div class="score-tone-legend" aria-label="점수 색상 기준">' +
-      '<span class="is-good">70점 이상</span><span class="is-blue">50점 이상</span>' +
-      '<span class="is-yellow">25점 이상</span><span class="is-danger">25점 미만</span></div>';
-  }
-
-  function radarChart(entries) {
-    var size = 620;
-    var center = size / 2;
-    var maxRadius = center - 140;
-    var count = entries.length;
-    var averageScore = Math.round(entries.reduce(function (sum, item) {
-      return sum + item.value;
-    }, 0) / count);
-    var chartTone = graphScoreTone(averageScore);
-    // 관점이 적을수록 글자가 잘릴 걱정이 없으니 더 크게, 많을수록 겹치지 않게 작게.
-    var labelFontSize = count <= 4 ? 18 : count <= 6 ? 14 : 11;
-    var scoreFontSize = count <= 4 ? 16 : count <= 6 ? 12 : 10;
-    var points = entries.map(function (item, index) {
-      var angle = (Math.PI * 2 * index / count) - Math.PI / 2;
-      return {
-        angle: angle,
-        cos: Math.cos(angle),
-        sin: Math.sin(angle),
-        item: item
-      };
+  function radar(entries) {
+    var R = 100, n = entries.length, svg = '';
+    function pt(i, v) { var a = -Math.PI / 2 + i * 2 * Math.PI / n; return [Math.cos(a) * R * v / 100, Math.sin(a) * R * v / 100]; }
+    [25, 50, 75, 100].forEach(function (lv) { svg += '<polygon class="grid" points="' + entries.map(function (_, i) { return pt(i, lv).join(','); }).join(' ') + '"/>'; });
+    entries.forEach(function (e, i) {
+      var end = pt(i, 100), l = pt(i, 122);
+      svg += '<line class="grid" x1="0" y1="0" x2="' + end[0] + '" y2="' + end[1] + '"/>' +
+        '<text x="' + l[0] + '" y="' + (l[1] + 4) + '" text-anchor="' + (Math.abs(l[0]) < 5 ? 'middle' : l[0] > 0 ? 'start' : 'end') + '">' + esc(DIMS[e.k]) + '</text>';
     });
-    var axisPoint = function (p, ratio) {
-      return { x: center + maxRadius * ratio * p.cos, y: center + maxRadius * ratio * p.sin };
-    };
-    var toStr = function (pt) { return pt.x.toFixed(1) + ',' + pt.y.toFixed(1); };
-
-    var rings = [0.33, 0.66, 1].map(function (ratio) {
-      return '<polygon points="' + points.map(function (p) { return toStr(axisPoint(p, ratio)); }).join(' ') +
-        '" class="radar-ring" />';
-    }).join('');
-
-    var axes = points.map(function (p) {
-      var end = axisPoint(p, 1);
-      return '<line x1="' + center + '" y1="' + center + '" x2="' + end.x.toFixed(1) +
-        '" y2="' + end.y.toFixed(1) + '" class="radar-axis" />';
-    }).join('');
-
-    var scorePolygon = points.map(function (p) {
-      return toStr(axisPoint(p, p.item.value / 100));
-    }).join(' ');
-
-    // 각 축의 점수선은 해당 관점의 점수 구간 색상을 그대로 사용합니다.
-    var scoreLines = points.map(function (p) {
-      var pt = axisPoint(p, p.item.value / 100);
-      return '<line x1="' + center + '" y1="' + center + '" x2="' + pt.x.toFixed(1) +
-        '" y2="' + pt.y.toFixed(1) + '" class="radar-score-line score-tone--' +
-        graphScoreTone(p.item.value) + '" />';
-    }).join('');
-
-    var dots = points.map(function (p) {
-      var pt = axisPoint(p, p.item.value / 100);
-      return '<circle cx="' + pt.x.toFixed(1) + '" cy="' + pt.y.toFixed(1) +
-        '" r="5.5" class="radar-dot score-tone--' + graphScoreTone(p.item.value) + '" />';
-    }).join('');
-
-    var labels = points.map(function (p) {
-      var labelPt = axisPoint(p, 1.1);
-      var anchor = p.cos > 0.3 ? 'start' : p.cos < -0.3 ? 'end' : 'middle';
-      return '<text x="' + labelPt.x.toFixed(1) + '" y="' + labelPt.y.toFixed(1) +
-        '" text-anchor="' + anchor + '" class="radar-label" style="font-size:' + labelFontSize + 'px">' +
-        esc(CATEGORY_LABELS[p.item.key] || p.item.key) +
-        '</text><text x="' + labelPt.x.toFixed(1) + '" y="' + (labelPt.y + labelFontSize + 4).toFixed(1) +
-        '" text-anchor="' + anchor + '" class="radar-label-score score-tone--' +
-        graphScoreTone(p.item.value) + '" style="font-size:' + scoreFontSize + 'px">' +
-        p.item.value + '점</text>';
-    }).join('');
-
-    return '<svg viewBox="0 0 ' + size + ' ' + size + '" class="radar-chart score-tone--' + chartTone +
-      '" role="img" aria-label="관점별 점수 레이더 차트">' +
-      rings + axes + '<polygon points="' + scorePolygon + '" class="radar-score-area" />' +
-      scoreLines + dots + labels + '</svg>';
+    svg += '<polygon class="area" points="' + entries.map(function (e, i) { return pt(i, e.v).join(','); }).join(' ') + '"/>';
+    entries.forEach(function (e, i) {
+      var p = pt(i, e.v);
+      svg += '<circle class="pt" cx="' + p[0] + '" cy="' + p[1] + '" r="4" style="fill:var(--score-' + U.tone(e.v) + ')"/><circle class="hit" cx="' + p[0] + '" cy="' + p[1] + '" r="12" data-i="' + i + '"/>';
+    });
+    return svg;
   }
 
-  function dimensionDonuts(entries) {
-    var single = entries.length === 1;
-    return '<div class="dimension-donut-list ' + (single ? 'is-single' : 'is-pair') + '">' +
-      entries.map(function (item) {
-      return '<div class="dimension-donut">' +
-        scoreRingMarkup(item.value, single
-          ? { size: 240, stroke: 16, uid: 'dim-' + item.key }
-          : { size: 130, stroke: 10, uid: 'dim-' + item.key, variant: 'sm' }) +
-        '<p>' + esc(CATEGORY_LABELS[item.key] || item.key) + '</p></div>';
-    }).join('') + '</div>';
-  }
-
-  // 종합 점수 및 관점별 점수를 강조하는 그래프 — 얇은 링 + 그라데이션 + 은은한 그림자로 표현한다.
-  function scoreRingMarkup(value, options) {
-    options = options || {};
-    var size = options.size || 240;
-    var stroke = options.stroke || 16;
-    var uid = options.uid || 'main';
-    var gradientId = 'score-ring-gradient-' + uid;
-    var shadowId = 'score-ring-shadow-' + uid;
-    var ringClass = 'score-ring' + (options.variant ? ' score-ring--' + options.variant : '');
-    var center = size / 2;
-    var radius = center - stroke / 2 - 4;
-    var circumference = 2 * Math.PI * radius;
-    var ratio = value == null ? 0 : Math.max(0, Math.min(100, value)) / 100;
-    var dashoffset = circumference * (1 - ratio);
-    var tone = graphScoreTone(value == null ? 0 : value);
-    var colors = {
-      good: ['#83dc91', '#31945b', '#31945b'],
-      blue: ['#65b9ff', '#086bd6', '#086bd6'],
-      yellow: ['#f5dc72', '#c59618', '#c59618'],
-      danger: ['#ff8b82', '#c94450', '#c94450']
-    }[tone];
-    return '<svg viewBox="0 0 ' + size + ' ' + size + '" class="' + ringClass + ' score-tone--' + tone +
-      '" role="img" aria-label="' +
-      (value == null ? '평가 전' : value + '점') + '">' +
-      '<defs>' +
-      '<linearGradient id="' + gradientId + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
-      '<stop offset="0%" stop-color="' + colors[0] + '" /><stop offset="100%" stop-color="' + colors[1] + '" />' +
-      '</linearGradient>' +
-      '<filter id="' + shadowId + '" x="-30%" y="-30%" width="160%" height="160%">' +
-      '<feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="' + colors[2] + '" flood-opacity="0.32" />' +
-      '</filter>' +
-      '</defs>' +
-      '<circle cx="' + center + '" cy="' + center + '" r="' + radius +
-      '" class="score-ring-outline" stroke-width="' + (stroke + 8) + '" fill="none" />' +
-      '<circle cx="' + center + '" cy="' + center + '" r="' + radius + '" class="score-ring-track" stroke-width="' + stroke + '" fill="none" />' +
-      '<circle cx="' + center + '" cy="' + center + '" r="' + radius + '" class="score-ring-progress" stroke-width="' + stroke +
-      '" fill="none" stroke-dasharray="' + circumference.toFixed(1) + '" stroke-dashoffset="' + dashoffset.toFixed(1) +
-      '" transform="rotate(-90 ' + center + ' ' + center + ')" stroke="url(#' + gradientId + ')" filter="url(#' + shadowId + ')" />' +
-      '<text x="' + center + '" y="' + (center + size * 0.02).toFixed(1) + '" text-anchor="middle" class="score-ring-value">' +
-      (value == null ? '-' : value) + '</text>' +
-      '<text x="' + center + '" y="' + (center + size * 0.14).toFixed(1) + '" text-anchor="middle" class="score-ring-label">/ 100점</text>' +
-      '</svg>';
-  }
-
-  function dimensionReasonList(entries, reasons) {
-    return '<div class="dimension-reason-list">' + entries.map(function (item) {
-      var reason = reasons && reasons[item.key];
-      return '<div class="dimension-reason"><div class="dimension-reason__head">' +
-        '<strong>' + esc(CATEGORY_LABELS[item.key] || item.key) + '</strong>' +
-        '<em class="score-tone-badge score-tone--' + graphScoreTone(item.value) + '">' +
-        item.value + '점</em></div>' +
-        '<p>' + esc(reason || '아직 근거 설명이 없어요.') + '</p></div>';
-    }).join('') + '</div>';
-  }
-
-  function renderDimensionVisual(overallScore, categoryScores, categoryScoreReasons, overallAssessment) {
-    var container = document.getElementById('dimension-visual');
-    if (!container) return;
-    var entries = dimensionEntries(categoryScores);
-    var assessment = renderOverallAssessment(overallAssessment) ||
-      '<p class="result-empty-copy">종합 평가 내용이 없습니다.</p>';
-    var overallBlock = '<div class="dimension-visual__overall">' +
-      '<span class="dimension-visual__type">면접 종합 점수</span>' +
-      '<div class="dimension-visual__graphic-wrap">' + scoreRingMarkup(overallScore) + '</div>' +
-      '<div class="dimension-visual__overall-detail">' + assessment + '</div></div>';
-
-    if (!entries.length) {
-      container.innerHTML = '<div class="dimension-visual__graphics">' + overallBlock + '</div>' +
-        '<p class="result-empty-copy">평가에 성공한 관점이 없습니다.</p>';
-      return;
-    }
-    var typeLabel = entries.length >= 3 ? '레이더 차트' : '관점별 점수';
-    var chart = entries.length >= 3 ? radarChart(entries) : dimensionDonuts(entries);
-    var chartBlock = '<div class="dimension-visual__chart">' +
-      '<span class="dimension-visual__type">' + esc(typeLabel) + '</span>' +
-      '<div class="dimension-visual__graphic-wrap">' + chart + '</div>' +
-      '<div class="dimension-visual__chart-detail">' +
-      '<p class="dimension-visual__summary">' + dimensionSummaryLine(entries) + '</p>' +
-      graphScoreLegend() +
-      '<div class="dimension-visual__desc">' +
-      dimensionReasonList(entries, categoryScoreReasons) + '</div></div></div>';
-    container.innerHTML =
-      '<div class="dimension-visual__graphics">' + overallBlock + chartBlock + '</div>';
-  }
-
-  function renderFinalReport(report) {
-    var panel = document.getElementById('final-report-panel');
+  function renderFinal(r) {
+    var entries = DIM_KEYS.filter(function (k) { return r.categoryScores && r.categoryScores[k] != null; }).map(function (k) { return { k: k, v: r.categoryScores[k] }; });
+    var sorted = entries.slice().sort(function (a, b) { return b.v - a.v; });
+    var over70 = entries.filter(function (e) { return e.v >= 70; }).length;
+    document.querySelector('.rs-banner__score b').textContent = r.overallScore != null ? r.overallScore : '-';
+    var weak = r.weaknessTagSummary || [], recs = r.nextPracticeRecommendation || [], learn = r.learningDirection || [], sug = r.improvementSuggestion || {};
+    var docKeys = Object.keys(DOC_TARGET).filter(function (k) { return sug[k] && sug[k].length; });
+    var html = '<div class="rs-grid"><section class="dcard"><h2 class="rs-h">면접 종합 점수</h2>' +
+      '<p class="rs-sub">질문 ' + r.totalQuestionCount + '개 중 답한 ' + r.submittedQuestionCount + '개를 종합한 결과예요.</p>' +
+      '<div class="overall">' + U.ring(r.overallScore) + (entries.length ? '<p style="margin:0; font-size:14px; color:var(--text-2); line-height:1.7">' + entries.length + '가지 관점 중 <b style="color:var(--text)">' + over70 + '개</b>가 70점을 넘었어요.<br>가장 아쉬운 관점은 <b style="color:var(--text)">' + esc(DIMS[sorted[sorted.length - 1].k]) + '</b>이에요.</p>' : '') + '</div>' +
+      (assessment(r.overallAssessment) || '<p class="rs-sub">종합 평가 내용이 없어요.</p>') + '</section>' +
+      '<section class="dcard"><h2 class="rs-h">관점별 점수</h2>' +
+      (entries.length ? '<p class="dim-sum">' + (sorted[0].v === sorted[sorted.length - 1].v ? '관점별 점수가 <b>' + sorted[0].v + '점</b>으로 고르게 나왔어요.'
+        : '가장 강한 관점은 <b>' + esc(DIMS[sorted[0].k]) + '(' + sorted[0].v + '점)</b>, 가장 약한 관점은 <b>' + esc(DIMS[sorted[sorted.length - 1].k]) + '(' + sorted[sorted.length - 1].v + '점)</b>이에요.') + '</p>' +
+        (entries.length >= 3 ? '<div class="radar-wrap"><div style="position:relative"><svg class="radar" id="radar" viewBox="-150 -130 300 260" role="img" aria-label="관점별 점수 레이더 차트">' + radar(entries) + '</svg><div class="tip" id="tip" hidden></div></div>' +
+          '<div class="legend" aria-label="점수 색 기준"><span><i style="background:var(--score-good)"></i>70점 이상</span><span><i style="background:var(--score-mid)"></i>50점 이상</span><span><i style="background:var(--score-low)"></i>25점 이상</span><span><i style="background:var(--score-bad)"></i>25점 미만</span></div></div>' : '') +
+        '<div class="reasons">' + entries.map(function (e) {
+          var reason = r.categoryScoreReasons && r.categoryScoreReasons[e.k];
+          return '<details><summary>' + esc(DIMS[e.k]) + ' ' + badge(e.v) + '</summary><p>' + esc(reason || '아직 근거 설명이 없어요.') + '</p></details>';
+        }).join('') + '</div>'
+        : '<p class="rs-sub">평가에 성공한 관점이 없어요.</p>') + '</section></div>' +
+      '<div class="rs-cols"><section class="dcard"><h2 class="rs-h">답변에서 발견한 약점</h2><p class="rs-sub">번호를 누르면 그 질문으로 이동해요</p>' +
+      (weak.length ? weak.map(function (w) {
+        var idx = [];
+        s.questions.forEach(function (q, i) { var x = s.byQuestion[q.sessionQuestionId]; if (x && (x.weaknessTags || []).indexOf(w.tag) >= 0) idx.push(i); });
+        return '<div class="weakpt"><div class="weakpt__top"><span class="score score--low">' + esc(weaknessLabel(w.tag)) + '</span><small>' + w.count + '회</small></div>' +
+          (w.reason ? '<p>' + esc(w.reason) + '</p>' : '') +
+          (idx.length ? '<div class="weakpt__qs">나온 질문 ' + idx.map(function (i) { return '<button type="button" class="qchip" data-goq="' + i + '">' + (i + 1) + '</button>'; }).join('') + '</div>' : '') + '</div>';
+      }).join('') : '<p class="rs-sub">확인된 약점이 없어요.</p>') + '</section>' +
+      '<section class="dcard"><h2 class="rs-h">다음에 연습하면 좋은 것</h2><p class="rs-sub">이번 면접에서 약했던 부분을 바로 이어서 연습해요</p>' +
+      (recs.length ? recs.map(function (x) {
+        return '<div class="next"><span class="mbadge">' + esc((QUESTION_TYPE[x.questionType] || x.questionType || '추천') + ' 질문') + '</span><p>' + esc(x.reason) + '</p></div>';
+      }).join('') : '<p class="rs-sub">추천 항목이 없어요.</p>') + '</section></div>' +
+      (docKeys.length || learn.length ? '<section class="dcard" style="margin-top:16px">' +
+        (docKeys.length ? '<h2 class="rs-h">서류 보완 제안</h2><p class="rs-sub">면접에서 드러난 약점을 서류에도 반영해 보세요</p><div class="docs">' + docKeys.map(function (k) {
+          return '<section><h4>' + DOC_TARGET[k] + '</h4><ul>' + sug[k].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></section>';
+        }).join('') + '</div>' : '') +
+        (learn.length ? '<h2 class="rs-h" style="margin-top:' + (docKeys.length ? 22 : 0) + 'px">학습 방향</h2><ul class="learn" style="margin-top:8px">' + learn.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
+        '</section>' : '') +
+      '<div class="rs-foot">' + (r.analysisCaseId ? '<a href="' + route('/analysis-results/' + encodeURIComponent(r.analysisCaseId)) + '" class="dbtn dbtn--line" style="height:40px">공고 요구사항 연결 분석 결과 보기</a>' : '') +
+      '<a href="' + route('/interview?mode=weakness') + '" class="dbtn dbtn--navy">약점 보완 연습하기</a></div>';
+    var panel = document.getElementById('p-final');
     panel.setAttribute('aria-busy', 'false');
-    var weaknessTags = report.weaknessTagSummary || [];
-    var recommendations = report.nextPracticeRecommendation || [];
-    var learningDirection = report.learningDirection || [];
-    var suggestion = report.improvementSuggestion || {};
-
-    var html = '<h2>최종 리포트</h2>' +
-      '<p class="result-empty-copy">' + esc(report.totalQuestionCount) + '개 질문, 답변 ' +
-      esc(report.submittedQuestionCount) + '개를 모두 종합해 정리한 결과예요.</p>';
-
-    html += '<div id="dimension-visual" class="dimension-visual"></div>';
-
-    html += '<div class="result-section-title"><span>답변 과정에서 발견 약점 포인트</span><small>번호를 누르면 해당 질문으로 이동해요</small></div>';
-    html += weaknessTags.length
-      ? '<div class="weakness-tag-list">' + weaknessTags.map(function (item) {
-          return '<div class="weakness-tag-row">' +
-            '<div class="weakness-tag-row__head"><strong>' + esc(weaknessLabel(item.tag)) + '</strong><em>' + item.count + '회</em></div>' +
-            (item.reason ? '<p class="weakness-tag-row__reason">' + esc(item.reason) + '</p>' : '') +
-            '<div class="weakness-tag-row__questions-line">' +
-            '<span class="weakness-tag-row__questions-label">약점이 나온 질문</span>' +
-            '<div class="weakness-tag-row__questions" data-tag="' + esc(item.tag) + '"></div>' +
-            '</div></div>';
-        }).join('') + '</div>'
-      : '<p class="result-empty-copy">확인된 약점 태그가 없습니다.</p>';
-
-    html += '<div class="result-section-title" style="margin-top:22px;"><span>다음에 연습하면 좋은 것</span></div>';
-    html += recommendations.length
-      ? '<div class="final-recommend-list">' + recommendations.map(function (item) {
-          return '<article class="final-recommend-card">' +
-            '<span class="eval-scope">' + esc(QUESTION_TYPE_LABELS[item.questionType] || item.questionType) + ' 질문</span>' +
-            '<p>' + esc(item.reason) + '</p></article>';
-        }).join('') + '</div>'
-      : '<p class="result-empty-copy">추천 항목이 없습니다.</p>';
-
-    var suggestionKeys = Object.keys(IMPROVEMENT_TARGET_LABELS).filter(function (key) {
-      return suggestion[key] && suggestion[key].length;
-    });
-    if (suggestionKeys.length) {
-      html += '<div class="result-section-title" style="margin-top:22px;"><span>서류 보완 제안</span></div>';
-      html += '<div class="final-suggestion-list">' + suggestionKeys.map(function (key) {
-        return '<div class="final-suggestion-group"><div class="final-suggestion-group__head">' +
-          '<span class="final-suggestion-icon" aria-hidden="true">▤</span>' +
-          '<strong>' + esc(IMPROVEMENT_TARGET_LABELS[key]) + '</strong></div>' +
-          '<ul>' + suggestion[key].map(function (text) { return '<li>' + esc(text) + '</li>'; }).join('') + '</ul></div>';
-      }).join('') + '</div>';
-    }
-
-    if (learningDirection.length) {
-      html += '<div class="result-section-title" style="margin-top:22px;"><span>학습 방향</span></div>' +
-        '<ul class="final-learning-list">' + learningDirection.map(function (text) {
-          return '<li>' + esc(text) + '</li>';
-        }).join('') + '</ul>';
-    }
-
-    if (report.analysisCaseId) {
-      html += '<div style="margin-top:24px;"><a class="btn btn--secondary" href="' +
-        window.JobPuzzleRoutes.path('/analysis/' + encodeURIComponent(report.analysisCaseId)) +
-        '">공고 요구사항 연결 분석 결과 보기</a></div>';
-    }
-
     panel.innerHTML = html;
-    renderDimensionVisual(
-      report.overallScore,
-      report.categoryScores,
-      report.categoryScoreReasons,
-      report.overallAssessment
-    );
-    renderWeaknessQuestionLinks();
+    var svg = document.getElementById('radar'), tip = document.getElementById('tip');
+    if (svg) {
+      svg.addEventListener('mousemove', function (e) {
+        var h = e.target.closest('.hit');
+        if (!h) { tip.hidden = true; return; }
+        var x = entries[+h.dataset.i], box = svg.getBoundingClientRect(), hb = h.getBoundingClientRect();
+        tip.textContent = DIMS[x.k] + ' ' + x.v + '점';
+        tip.style.left = (hb.left + hb.width / 2 - box.left) + 'px'; tip.style.top = (hb.top - box.top) + 'px'; tip.hidden = false;
+      });
+      svg.addEventListener('mouseleave', function () { tip.hidden = true; });
+    }
   }
 
-  // 최종 리포트 AI 응답을 기다리는 동안 기존 분석 퍼즐과 대기 진행 바를 표시합니다.
-  function renderFinalReportLoading() {
-    var panel = document.getElementById('final-report-panel');
-    var stages = [
-      { progress: 18, copy: '저장된 면접 답변을 모으고 있어요.' },
-      { progress: 42, copy: '답변별 평가 근거를 정리하고 있어요.' },
-      { progress: 68, copy: '강점과 보완 방향을 종합하고 있어요.' },
-      { progress: 88, copy: '최종 리포트를 마무리하고 있어요.' }
-    ];
-    var stageIndex = 0;
-
+  // AI 리포트를 기다리는 동안: 서버가 세부 진행률을 주지 않아서 100%는 표시하지 않는다
+  function renderFinalLoading() {
+    var steps = [[18, '저장된 면접 답변을 모으고 있어요.'], [42, '답변별 평가 근거를 정리하고 있어요.'], [68, '강점과 보완 방향을 종합하고 있어요.'], [88, '최종 리포트를 마무리하고 있어요.']];
+    var i = 0, panel = document.getElementById('p-final');
     panel.setAttribute('aria-busy', 'true');
-    panel.innerHTML =
-      '<div class="final-report-loading" role="status" aria-live="polite">' +
-      '<div class="final-report-loading__puzzle">' +
-      '<canvas data-job-puzzle-scene data-analysis-puzzle data-analysis-stage="1" aria-hidden="true"></canvas>' +
-      '</div><div class="final-report-loading__content">' +
-      '<span class="final-report-loading__badge">AI 리포트 생성 중</span>' +
-      '<h2>면접 답변을 종합하고 있어요</h2>' +
-      '<p id="final-report-loading-copy">' + stages[0].copy + '</p>' +
-      '<div class="final-report-loading__progress" aria-hidden="true"><i style="width:' +
-      stages[0].progress + '%"></i></div>' +
-      '<small>응답이 도착하면 최종 리포트가 자동으로 표시됩니다.</small>' +
-      '</div></div>';
-
-    var canvas = panel.querySelector('[data-analysis-puzzle]');
-    var fill = panel.querySelector('.final-report-loading__progress i');
-    var copy = document.getElementById('final-report-loading-copy');
-
-    // 서버가 세부 진행률을 제공하지 않으므로 완료 전에는 100%로 표시하지 않습니다.
-    return window.setInterval(function () {
-      stageIndex = Math.min(stageIndex + 1, stages.length - 1);
-      canvas.dataset.analysisStage = String(stageIndex + 1);
-      fill.style.width = stages[stageIndex].progress + '%';
-      copy.textContent = stages[stageIndex].copy;
+    panel.innerHTML = '<section class="dcard" role="status" style="text-align:center; padding:48px 24px"><span class="pill pill--active">AI 리포트 생성 중</span>' +
+      '<h2 class="rs-h" style="margin-top:14px; font-size:20px">면접 답변을 종합하고 있어요</h2><p class="rs-sub" id="final-loading-copy">' + steps[0][1] + '</p>' +
+      '<div class="an-bar" style="max-width:420px; margin:16px auto 0; height:8px; border-radius:99px; background:#EEF2F8; overflow:hidden"><i id="final-loading-bar" style="display:block; height:100%; width:' + steps[0][0] + '%; background:var(--sky); transition:width .6s"></i></div>' +
+      '<p class="rs-sub" style="margin-top:12px">응답이 오면 최종 리포트가 자동으로 표시돼요.</p></section>';
+    return setInterval(function () {
+      i = Math.min(i + 1, steps.length - 1);
+      document.getElementById('final-loading-bar').style.width = steps[i][0] + '%';
+      document.getElementById('final-loading-copy').textContent = steps[i][1];
     }, 1800);
   }
 
-  // 질문별 결과의 모든 점수 배지가 최종 리포트 그래프와 같은 구간을 사용하도록 합니다.
-  function scoreTone(score) {
-    return 'question-score-badge ' +
-      (score == null ? 'is-unrated' : 'score-tone--' + graphScoreTone(score));
+  // ── 중간 결과(아직 확정 전) ──
+  function renderInterim() {
+    var el = document.getElementById('interim');
+    if (!s.info || s.info.status === 'COMPLETED') { el.hidden = true; return; }
+    var canFinalize = s.questions.some(function (q) { return qScore(q) != null; });
+    el.hidden = false;
+    el.innerHTML = '<span class="interim__label">중간 결과</span><h2>지금까지의 답변을 확인하고 다음 단계를 골라주세요</h2>' +
+      '<p>아직 리포트가 확정되지 않았어요. 고른 질문을 이어서 답하거나 남은 질문을 추가할 수 있어요.</p><div class="interim__actions">' +
+      (s.pending.length ? '<a class="dbtn dbtn--line" style="height:40px" href="' + route('/interview?resumeSessionId=' + encodeURIComponent(sessionId)) + '">고른 질문 ' + s.pending.length + '개 이어서 답하기</a>' : '') +
+      (s.remaining.length ? '<button type="button" class="dbtn dbtn--line" style="height:40px" data-open-remaining>남은 질문 ' + s.remaining.length + '개 추가</button>'
+        : s.pending.length ? '' : '<span class="rs-sub" style="align-self:center">준비된 질문을 모두 답했어요</span>') +
+      (canFinalize ? '<button type="button" class="dbtn dbtn--navy" data-finalize>면접 끝내고 리포트 확정</button>'
+        : '<span class="rs-sub" style="align-self:center">점수가 나온 질문이 1개 이상 있어야 리포트를 확정할 수 있어요.</span>') + '</div>';
   }
 
-  function dimensionItems(scores, counts) {
-    var entries = Object.keys(scores || {}).map(function (key) {
-      return { key: key, value: scores[key] };
-    });
-    if (!entries.length) {
-      return '<p class="result-empty-copy">평가에 성공한 관점이 없습니다.</p>';
-    }
-    return entries.map(function (item) {
-      var evaluationCount = counts && counts[item.key] ? counts[item.key] : 1;
-      var basis = evaluationCount === 1
-        ? '제출한 답변 1회의 관점 점수'
-        : '답변 과정 ' + evaluationCount + '회의 동일 관점 평균';
-      return '<div class="dimension-row"><div><strong>' +
-        esc(CATEGORY_LABELS[item.key] || item.key) + '</strong>' +
-        '<span><em>질문 평가 관점</em> ' + esc(basis) + '</span></div>' +
-        '<b class="' + scoreTone(item.value) + '">' + item.value + '점</b></div>';
+  function openRemaining() {
+    var m = document.getElementById('remaining');
+    document.getElementById('remaining-list').innerHTML = s.remaining.map(function (q, i) {
+      var focus = (q.evaluationFocus || []).map(function (k) { return DIMS[k] || weaknessLabel(k); }).join(' · ');
+      return '<label class="qr-item" style="cursor:pointer"><input type="checkbox" value="' + q.questionId + '" checked style="margin-top:3px; accent-color:var(--sky)">' +
+        '<span><b style="margin-right:6px">' + (i + 1) + '</b>' + esc(q.questionText) +
+        '<small style="display:block; margin-top:4px; color:var(--text-3)">' + esc(q.intent || '답변의 핵심 근거를 확인해요.') + (focus ? ' · ' + esc(focus) : '') + '</small></span></label>';
     }).join('');
+    m.hidden = false;
   }
 
-  function conversationTimeline(question) {
-    var messages = (question.conversation || []).filter(function (message) {
-      return message.messageType !== 'ORIGINAL_QUESTION';
+  function show(tab) {
+    document.querySelectorAll('.dtab').forEach(function (t) {
+      var on = t.dataset.tab === tab;
+      t.setAttribute('aria-selected', String(on));
+      document.getElementById('p-' + t.dataset.tab).hidden = !on;
     });
-    if (!messages.length) {
-      return '<div class="result-conversation-empty">저장된 답변 기록이 없습니다.</div>';
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button');
+    if (!t || t.disabled) return;
+    if (t.dataset.tab) show(t.dataset.tab);
+    else if (t.dataset.q) { s.cur = +t.dataset.q; renderQuestions(); }
+    else if (t.dataset.goq) { s.cur = +t.dataset.goq; renderQuestions(); show('questions'); window.scrollTo(0, 0); }
+    else if (t.hasAttribute('data-open-remaining')) openRemaining();
+    else if (t.hasAttribute('data-close')) t.closest('.modal').hidden = true;
+    else if (t.hasAttribute('data-add-remaining')) {
+      var ids = Array.prototype.map.call(document.querySelectorAll('#remaining-list input:checked'), function (i) { return Number(i.value); });
+      if (!ids.length) { notify('warning', '이어갈 질문을 하나 이상 골라주세요.'); return; }
+      t.disabled = true;
+      get('/interview-sessions/' + sessionId + '/questions', { method: 'POST', json: { questionIds: ids } }).then(function () {
+        window.location.href = route('/interview?resumeSessionId=' + encodeURIComponent(sessionId));
+      }).catch(function (err) { notify('error', err.message); t.disabled = false; });
     }
-    return '<section class="result-conversation"><div class="result-section-title">' +
-      '<span>답변 과정</span><small>점수에 반영된 실제 면접 대화</small></div>' +
-      '<div class="result-conversation-list">' + messages.map(function (message, index) {
-        var isUser = message.sender === 'USER';
-        var evaluationFailed = message.messageType === 'EVALUATION_FAILED_ANSWER' ||
-          message.messageType === 'REJECTED_ANSWER';
-        var label = message.messageType === 'ORIGINAL_ANSWER'
-          ? '첫 답변'
-          : message.messageType === 'FOLLOW_UP_QUESTION'
-            ? 'AI 추가 질문'
-            : evaluationFailed
-              ? '평가 처리 실패 답변'
-              : '추가 답변';
-        var unanswered = message.messageType === 'FOLLOW_UP_QUESTION' &&
-          (!messages[index + 1] || messages[index + 1].messageType !== 'FOLLOW_UP_ANSWER');
-        return '<article class="result-conversation-item ' + (isUser ? 'is-user' : 'is-ai') +
-          (evaluationFailed ? ' is-evaluation-failed' : '') + '">' +
-          '<div><strong>' + label + '</strong>' +
-          (evaluationFailed
-            ? '<em class="evaluation-failed-label">평가 처리 실패 · 점수 제외</em>'
-            : unanswered ? '<em>미응답 · 점수 제외</em>' : '') + '</div>' +
-          '<p>' + esc(message.messageText) + '</p></article>';
-      }).join('') + '</div></section>';
-  }
-
-  function unevaluatedLabel(question, questionScore) {
-    var finalized = question.status === 'COMPLETED';
-    if (finalized && questionScore && questionScore.finalScore != null) {
-      return questionScore.finalScore + '점';
+    else if (t.hasAttribute('data-finalize')) {
+      if (!window.confirm('이 면접을 확정할까요?\n\n확정하면 고르지 않은 질문은 더 추가할 수 없고, 리포트를 만들어요.')) return;
+      t.disabled = true;
+      get('/interview-sessions/' + sessionId + '/complete', { method: 'POST' }).then(function () {
+        window.location.replace(route('/interview-results?sessionId=' + encodeURIComponent(sessionId)));
+      }).catch(function (err) { notify('error', err.message); t.disabled = false; });
     }
-    var hasUserAnswer = (question.conversation || []).some(function (message) {
-      return message.sender === 'USER' &&
-        (message.messageType === 'ORIGINAL_ANSWER' ||
-          message.messageType === 'FOLLOW_UP_ANSWER' ||
-          message.messageType === 'REJECTED_ANSWER' ||
-          message.messageType === 'EVALUATION_FAILED_ANSWER');
-    });
-    var hasEvaluationFailure = (question.conversation || []).some(function (message) {
-      return message.messageType === 'EVALUATION_FAILED_ANSWER' ||
-        message.messageType === 'REJECTED_ANSWER';
-    });
-    if (hasEvaluationFailure) return '미평가';
-    if (!finalized && hasUserAnswer) return '진행 중';
-    return hasUserAnswer ? '미평가' : '미응답';
-  }
-
-  function renderQuestionDetail(question, questionScore, score) {
-    var detail = document.getElementById('q-detail');
-    var displayOrder = Number(question.displayOrder) > 0
-      ? question.displayOrder
-      : (questions.indexOf(question) + 1);
-    var finalized = question.status === 'COMPLETED';
-    var finalScore = finalized && questionScore && questionScore.finalScore != null
-      ? questionScore.finalScore
-      : null;
-    var dimensionScores = finalized && questionScore ? questionScore.dimensionScores : {};
-    var dimensionCounts = finalized && questionScore ? questionScore.dimensionEvaluationCounts : {};
-    var dimensionCount = Object.keys(dimensionScores || {}).length;
-    var answerEvaluationCount = Object.keys(dimensionCounts || {}).reduce(function (max, key) {
-      return Math.max(max, dimensionCounts[key] || 0);
-    }, 0);
-    detail.innerHTML =
-      '<div class="question-detail-head"><span class="question-number-badge">질문 ' +
-      displayOrder + '</span>' +
-      '<strong class="' + scoreTone(finalScore) + '">' +
-      unevaluatedLabel(question, questionScore) +
-      '</strong></div>' +
-      '<h2>' + esc(question.questionText) + '</h2>' +
-      '<p class="question-intent">' + esc(question.intent || '질문 의도가 기록되지 않았습니다.') + '</p>' +
-      conversationTimeline(question) +
-      '<div class="question-evaluation-row">' +
-      '<div class="question-score-formula"><div><span>① 답변 분석</span><strong>' +
-      answerEvaluationCount + '회</strong></div><i>→</i><div><span>② 핵심 평가 기준</span><strong>' +
-      dimensionCount + '개</strong></div><i>→</i><div><span>③ 질문 종합 점수</span><strong class="' +
-      scoreTone(finalScore) + '">' +
-      unevaluatedLabel(question, questionScore) +
-      '</strong></div></div>' +
-      '<div class="dimension-list">' +
-      dimensionItems(dimensionScores, dimensionCounts) + '</div></div>' +
-      '<div class="progress-summary"><div><strong>' + score.submittedQuestionCount +
-      '</strong><span>답변한 질문</span></div><div><strong>' + score.evaluatedQuestionCount +
-      '</strong><span>평가 성공</span></div><div><strong>' + score.skippedQuestionCount +
-      '</strong><span>건너뜀</span></div><div><strong>' + score.completionRate +
-      '%</strong><span>완료율</span></div></div>';
-  }
-
-  function renderSession(score, questions) {
-    document.getElementById('result-title').textContent = modeLabel(score.mode) + ' 결과';
-    document.getElementById('result-meta').textContent =
-      '질문 ' + score.totalQuestionCount + '개 · 답변 ' + score.submittedQuestionCount +
-      '개 · 평가 성공 ' + score.evaluatedQuestionCount + '개';
-
-    var scoreByQuestion = {};
-    (score.questionScores || []).forEach(function (item) {
-      scoreByQuestion[item.sessionQuestionId] = item;
-    });
-    sessionQuestions = questions;
-    sessionScoreByQuestion = scoreByQuestion;
-    var list = document.getElementById('q-list');
-    list.innerHTML = questions.map(function (question, index) {
-      var item = scoreByQuestion[question.sessionQuestionId];
-      return '<button type="button" class="q-list-item' + (index === 0 ? ' is-active' : '') +
-        '" data-question-index="' + index + '"><span class="q-list-item__num">' +
-        (index + 1) + '</span><span class="q-list-item__summary">' +
-        esc(question.questionText) + '</span><strong class="' +
-        scoreTone(item && item.finalScore != null ? item.finalScore : null) + '">' +
-        unevaluatedLabel(question, item) + '</strong></button>';
-    }).join('');
-    if (questions.length) {
-      renderQuestionDetail(questions[0], scoreByQuestion[questions[0].sessionQuestionId], score);
-    } else {
-      document.getElementById('q-detail').innerHTML =
-        '<p class="result-empty-copy">표시할 질문이 없습니다.</p>';
-    }
-    list.querySelectorAll('[data-question-index]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        list.querySelectorAll('.q-list-item').forEach(function (item) {
-          item.classList.toggle('is-active', item === button);
-        });
-        var question = questions[Number(button.dataset.questionIndex)];
-        renderQuestionDetail(question, scoreByQuestion[question.sessionQuestionId], score);
-      });
-    });
-    renderWeaknessQuestionLinks();
-    renderInterimActions();
-  }
-
-  function focusLabels(items) {
-    return (items || []).map(function (item) {
-      return CATEGORY_LABELS[item] || weaknessLabel(item);
-    }).join(' · ');
-  }
-
-  function closeRemainingModal() {
-    var modal = document.getElementById('remaining-question-modal');
-    if (modal) modal.remove();
-    document.body.classList.remove('has-result-modal');
-  }
-
-  function openRemainingModal() {
-    closeRemainingModal();
-    var modal = document.createElement('div');
-    modal.id = 'remaining-question-modal';
-    modal.className = 'remaining-question-modal question-selection-modal';
-    modal.innerHTML =
-      '<div class="remaining-question-backdrop question-selection-backdrop" data-close-remaining></div>' +
-      '<section class="remaining-question-dialog question-selection-dialog" role="dialog" aria-modal="true">' +
-      '<header><div><span class="question-selection-mode">' + esc(modeLabel(sessionInfo && sessionInfo.mode)) +
-      '</span><h2>연습할 질문을 골라주세요</h2>' +
-      '<p>선택한 순서가 아니라, 아래 표시 순서대로 면접이 진행됩니다.</p></div>' +
-      '<button type="button" class="question-selection-close" data-close-remaining aria-label="닫기">×</button></header>' +
-      '<div class="remaining-question-list q-gen-list">' + remainingQuestions.map(function (question, index) {
-        return '<label class="q-gen-item q-gen-item--detailed"><input type="checkbox" value="' + question.questionId + '" checked>' +
-          '<span class="q-gen-item__num">' + (index + 1) + '</span>' +
-          '<span class="q-gen-item__content"><strong class="q-gen-item__text">' + esc(question.questionText) + '</strong>' +
-          '<button type="button" class="question-hint-toggle" aria-expanded="false"><span>질문 힌트 보기</span><span class="question-hint-chevron" aria-hidden="true"></span></button>' +
-          '<span class="question-hint-panel" hidden><small><b>이 질문의 의도</b>' + esc(question.intent || '답변의 핵심 근거를 확인합니다.') + '</small>' +
-          '<small><b>집중 평가 기준</b>' + esc(focusLabels(question.evaluationFocus)) + '</small></span>' +
-          '</span></label>';
-      }).join('') + '</div>' +
-      '<footer><span>하나 이상 선택해 주세요.</span>' +
-      '<button id="add-remaining-questions" class="btn btn--primary">선택한 질문으로 시작</button></footer>' +
-      '</section>';
-    document.body.appendChild(modal);
-    document.body.classList.add('has-result-modal');
-    modal.querySelectorAll('[data-close-remaining]').forEach(function (button) {
-      button.addEventListener('click', closeRemainingModal);
-    });
-    modal.querySelectorAll('.question-hint-toggle').forEach(function (button) {
-      button.addEventListener('click', function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        var panel = button.parentElement.querySelector('.question-hint-panel');
-        var expanded = button.getAttribute('aria-expanded') === 'true';
-        button.setAttribute('aria-expanded', String(!expanded));
-        button.querySelector('span').textContent = expanded ? '질문 힌트 보기' : '질문 힌트 숨기기';
-        panel.hidden = expanded;
-      });
-    });
-    document.getElementById('add-remaining-questions').addEventListener('click', function () {
-      var ids = Array.prototype.slice.call(
-        modal.querySelectorAll('input[type="checkbox"]:checked')
-      ).map(function (input) { return Number(input.value); });
-      if (!ids.length) {
-        notify('warning', '이어갈 질문을 하나 이상 선택해 주세요.');
-        return;
-      }
-      api(window.JobPuzzleRoutes.path('/interview-sessions/' + sessionId + '/questions'), {
-        method: 'POST',
-        json: { questionIds: ids }
-      }).then(function () {
-        window.location.href = window.JobPuzzleRoutes.path('/interview?resumeSessionId=' + encodeURIComponent(sessionId));
-      }).catch(function (error) { notify('error', error.message); });
-    });
-  }
-
-  function finalizeSession() {
-    if (!window.confirm(
-      '이 면접을 최종 확정할까요?\n\n확정하면 선택하지 않은 질문은 더 이상 추가할 수 없고, 리포트 생성 대상으로 전달됩니다.'
-    )) return;
-    api(window.JobPuzzleRoutes.path('/interview-sessions/' + sessionId + '/complete'), { method: 'POST' })
-      .then(function () {
-        window.location.replace(window.JobPuzzleRoutes.path('/interview-results?sessionId=' + encodeURIComponent(sessionId)));
-      })
-      .catch(function (error) { notify('error', error.message); });
-  }
-
-  function renderInterimActions() {
-    var area = document.getElementById('interim-actions');
-    if (!area || !sessionInfo || sessionInfo.status === 'COMPLETED') {
-      if (area) area.hidden = true;
-      return;
-    }
-    area.hidden = false;
-    var scoreByQuestion = {};
-    (sessionScoreByQuestion ? Object.keys(sessionScoreByQuestion) : []).forEach(function (key) {
-      scoreByQuestion[key] = sessionScoreByQuestion[key];
-    });
-    var selectedQuestions = sessionQuestions || [];
-    var canFinalize = selectedQuestions.some(function (question) {
-      var questionScore = scoreByQuestion[question.sessionQuestionId];
-      return question.status === 'COMPLETED' && questionScore && questionScore.finalScore != null;
-    });
-    var finalizeControl = canFinalize
-      ? '<button id="finalize-session" class="btn btn--primary">면접 끝내고 리포트 확정</button>'
-      : '<span class="interim-actions__blocked">점수가 산출된 완료 질문이 1개 이상 있어야 리포트를 확정할 수 있습니다.</span>';
-    area.innerHTML =
-      '<div><span>중간 결과</span><h2>지금까지의 답변을 확인하고 다음 단계를 선택하세요</h2>' +
-      '<p>아직 리포트가 확정되지 않았습니다. 선택해 둔 질문을 이어서 답하거나 남은 질문을 추가할 수 있습니다.</p></div>' +
-      '<div class="interim-actions__buttons">' +
-      (pendingSelectedQuestions.length
-        ? '<button id="resume-selected-questions" class="btn btn--outline">선택한 질문 ' +
-          pendingSelectedQuestions.length + '개 이어서 답변</button>'
-        : '') +
-      (remainingQuestions.length
-        ? '<button id="open-remaining-questions" class="btn btn--outline">남은 질문 ' +
-          remainingQuestions.length + '개 추가</button>'
-        : (pendingSelectedQuestions.length
-          ? ''
-          : '<span class="interim-actions__done">준비된 질문을 모두 답변했습니다</span>')) +
-      finalizeControl + '</div>';
-    var resumeButton = document.getElementById('resume-selected-questions');
-    if (resumeButton) {
-      resumeButton.addEventListener('click', function () {
-        window.location.href = window.JobPuzzleRoutes.path(
-          '/interview?resumeSessionId=' + encodeURIComponent(sessionId)
-        );
-      });
-    }
-    var addButton = document.getElementById('open-remaining-questions');
-    if (addButton) addButton.addEventListener('click', openRemainingModal);
-    var finalizeButton = document.getElementById('finalize-session');
-    if (finalizeButton) finalizeButton.addEventListener('click', finalizeSession);
-  }
-
-  function formatDate(value) {
-    if (!value) return '';
-    return new Date(value).toLocaleString('ko-KR', {
-      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
-  }
-
-  // 완료된 면접(리포트)을 보고 있을 때는 헤더에서 "면접 준비" 대신 "리포트"를 활성 표시한다.
-  function highlightReportsNav() {
-    var interviewLink = document.querySelector('.site-header__nav a[href="' + window.JobPuzzleRoutes.path('/interview') + '"]');
-    var reportsLink = document.querySelector('.site-header__nav a[href="' + window.JobPuzzleRoutes.path('/reports') + '"]');
-    if (interviewLink) interviewLink.classList.remove('is-active');
-    if (reportsLink) reportsLink.classList.add('is-active');
-  }
-
-  function renderHistory(items) {
-    document.getElementById('result-title').textContent = '완료한 면접';
-    document.getElementById('result-meta').textContent =
-      items.length ? '완료한 면접을 선택해 질문별 점수와 진행 결과를 확인하세요.' :
-        '아직 완료한 면접이 없습니다.';
-    document.querySelector('.result-layout').classList.add('result-layout--history');
-    document.querySelector('.result-tabs').hidden = true;
-    document.getElementById('q-detail').hidden = true;
-    highlightReportsNav();
-    var list = document.getElementById('q-list');
-    list.className = 'history-list';
-    list.innerHTML = items.length ? items.map(function (item) {
-      return '<a class="history-card" href="' +
-        window.JobPuzzleRoutes.path('/interview-results?sessionId=' + encodeURIComponent(item.sessionId)) +
-        '"><div><span>' + esc(modeLabel(item.mode)) +
-        '</span><h2>' + item.questionCount + '개 질문 면접</h2><p>' +
-        esc(formatDate(item.completedAt)) +
-        (item.targetWeaknessTag ? ' · #' + esc(weaknessLabel(item.targetWeaknessTag)) : '') +
-        '</p></div><strong>결과 보기</strong></a>';
-    }).join('') :
-      '<div class="history-empty"><h2>첫 면접을 시작해 보세요</h2>' +
-      '<p>답변을 하나 이상 제출하고 정상 완료하면 이곳에 결과가 저장됩니다.</p>' +
-      '<a class="btn btn--primary" href="' + window.JobPuzzleRoutes.path('/interview') + '">면접 시작</a></div>';
-  }
+  });
 
   document.addEventListener('DOMContentLoaded', function () {
-    if (!sessionId) {
-      api(window.JobPuzzleRoutes.path('/interview-sessions/history')).then(renderHistory).catch(function (error) {
-        document.getElementById('result-meta').textContent = error.message;
-      });
-      return;
-    }
+    if (!sessionId) { window.location.replace(route('/reports')); return; }
     Promise.all([
-      api(window.JobPuzzleRoutes.path('/interview-sessions/' + sessionId)),
-      api(window.JobPuzzleRoutes.path('/interview-sessions/' + sessionId + '/score')),
-      api(window.JobPuzzleRoutes.path('/interview-sessions/' + sessionId + '/questions')),
-      api(window.JobPuzzleRoutes.path('/interview-sessions/' + sessionId + '/questions/remaining'))
-    ]).then(function (values) {
-      sessionInfo = values[0];
-      remainingQuestions = values[3] || [];
-      pendingSelectedQuestions = (values[2] || []).filter(function (question) {
-        return question.status === 'PENDING' || question.status === 'IN_PROGRESS';
-      });
-      renderSession(values[1], values[2]);
-      if (sessionInfo.status !== 'COMPLETED') {
-        var finalTabButton = document.querySelector('.tabbar__btn[data-tab="final"]');
-        var finalPanel = document.querySelector('.tab-panel[data-panel="final"]');
-        if (finalTabButton) finalTabButton.remove();
-        if (finalPanel) finalPanel.remove();
-        var listTabButton = document.querySelector('.tabbar__btn[data-tab="list"]');
-        if (listTabButton) listTabButton.click();
-      } else {
-        highlightReportsNav();
-        var finalReportLoadingTimer = renderFinalReportLoading();
-        api(window.JobPuzzleRoutes.path('/final-report/sessions/' + sessionId))
-          .then(function (report) {
-            window.clearInterval(finalReportLoadingTimer);
-            renderFinalReport(report);
-          })
-          .catch(function (error) {
-            var panel = document.getElementById('final-report-panel');
-            window.clearInterval(finalReportLoadingTimer);
-            panel.setAttribute('aria-busy', 'false');
-            panel.innerHTML =
-              '<p class="result-empty-copy">' + esc(error.message) + '</p>';
-            notify('error', error.message);
-          });
+      get('/interview-sessions/' + sessionId), get('/interview-sessions/' + sessionId + '/score'),
+      get('/interview-sessions/' + sessionId + '/questions'), get('/interview-sessions/' + sessionId + '/questions/remaining')
+    ]).then(function (v) {
+      s.info = v[0]; s.score = v[1]; s.questions = v[2] || []; s.remaining = v[3] || [];
+      s.pending = s.questions.filter(function (q) { return q.status === 'PENDING' || q.status === 'IN_PROGRESS'; });
+      (s.score.questionScores || []).forEach(function (x) { s.byQuestion[x.sessionQuestionId] = x; });
+      var sc = s.score;
+      document.getElementById('result-title').textContent = U.mode(sc.mode)[0] + ' 결과';
+      document.getElementById('result-meta').textContent = '질문 ' + sc.totalQuestionCount + '개 · 답변 ' + sc.submittedQuestionCount + '개 · 평가 성공 ' + sc.evaluatedQuestionCount + '개' +
+        (s.info.completedAt ? ' · ' + U.dateTime(s.info.completedAt) : '');
+      renderQuestions();
+      renderInterim();
+      if (s.info.status !== 'COMPLETED') {
+        document.querySelectorAll('[data-final]').forEach(function (el) { el.hidden = true; });
+        show('questions');
+        return;
       }
-    }).catch(function (error) {
-      document.getElementById('result-meta').textContent = error.message;
-    });
+      // 완료된 면접은 리포트 메뉴를 활성으로
+      document.querySelectorAll('.site-header__nav a').forEach(function (a) { a.classList.toggle('is-active', a.getAttribute('href') === route('/reports')); });
+      document.querySelector('.rs-banner__score b').textContent = sc.overallScore != null ? sc.overallScore : '-';
+      var timer = renderFinalLoading();
+      get('/final-report/sessions/' + sessionId).then(function (report) { clearInterval(timer); renderFinal(report); })
+        .catch(function (err) {
+          clearInterval(timer);
+          document.getElementById('p-final').innerHTML = '<section class="dcard"><p class="rs-sub">' + esc(err.message) + '</p></section>';
+          notify('error', err.message);
+        });
+    }).catch(function (err) { document.getElementById('result-meta').textContent = err.message; });
   });
 })();

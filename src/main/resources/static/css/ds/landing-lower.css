@@ -1,0 +1,28 @@
+/* 메인 하단(HERO 아래) 확정안: 라이트 + 스카이 포인트 (body.lower-light)
+   HERO 아래는 밝게, 이용 흐름·이렇게 준비해요는 연한 회청색, 마지막 CTA만 남색으로 마무리 */
+
+body.lower-light .section--dark { background: #F5F7FB; color: var(--text); }
+body.lower-light .section--tint { background: #fff; }
+body.lower-light .eyebrow { color: #3B82F6; }
+body.lower-light .section--dark .section__sub { color: var(--text-2); }
+body.lower-light .why-card__icon { background: #EAF2FE; color: #3B82F6; }
+body.lower-light .story__active { border-top-color: var(--line); }
+body.lower-light .story__active span { color: var(--text-3); }
+body.lower-light .story__progress { background: var(--line); }
+body.lower-light .story__progress b { background: #3B82F6; }
+body.lower-light .story__link { color: var(--text); border-bottom-color: var(--line-strong); }
+body.lower-light .stage { background: #fff; border-color: var(--line); opacity: .5; }
+body.lower-light .stage.is-current { background: #fff; border-color: rgba(59,130,246,.35); box-shadow: 0 12px 32px -20px rgba(15,30,51,.4); opacity: 1; }
+body.lower-light .stage p { color: var(--text-2); }
+body.lower-light .stage__label { color: #3B82F6; }
+body.lower-light .stage__mock {
+  --text: #111827; --text-2: #4B5563; --text-3: #9CA3AF; --line: #E2E8F3; --surface-sub: #EEF2F8; --point: #2F74E8; --primary: #3B82F6;
+  --primary-tint: #EAF2FE; --success: #16A34A; --success-tint: #F0FDF4; --warning: #D97706; --warning-tint: #FFFBEB;
+  background: #F5F8FF; border-color: rgba(59,130,246,.18); box-shadow: none; color: var(--text);
+}
+body.lower-light .steps::before { background: var(--line-strong); }
+body.lower-light .step__num { background: #fff; color: var(--text); border-color: var(--line-strong); }
+body.lower-light .step:last-child .step__num { background: #3B82F6; color: #fff; border-color: #3B82F6; }
+body.lower-light .step__desc { color: var(--text-2); }
+body.lower-light .cta { background: #0F1E33; color: #fff; }
+body.lower-light .cta .btn--primary { background: #fff; color: #0F1E33; }

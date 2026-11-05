@@ -1,0 +1,205 @@
+/* 공통 헤더 — 메인과 서비스 페이지 모두 같은 남색 헤더 하나
+   손님: 로그인 / 회원가입, 로그인 사용자: 이름 칩. 현재 페이지 메뉴는 스카이 블루 밑줄 */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(15, 30, 51, .9);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(147, 197, 253, .12);
+  color: #fff;
+}
+.site-header__inner {
+  max-width: 1200px;
+  height: 60px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.site-header__brand { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; text-decoration: none; }
+.site-header__brand img { height: 24px; width: auto; }
+.site-header__nav { display: flex; gap: 4px; flex: 1; }
+.site-header__nav a {
+  position: relative;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(226, 236, 250, .72);
+  text-decoration: none;
+  transition: color .2s;
+}
+.site-header__nav a:hover { color: #fff; }
+.site-header__nav a.is-active { color: #fff; font-weight: 700; }
+.site-header__nav a.is-active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px; background: #60A5FA; }
+.site-header__nav a:focus-visible, .site-header__actions :focus-visible { outline: 2px solid #93C5FD; outline-offset: 2px; border-radius: 6px; }
+.site-header__actions { display: flex; align-items: center; gap: 8px; }
+.hbtn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: background .2s; }
+.hbtn--ghost { color: rgba(226, 236, 250, .85); }
+.hbtn--ghost:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+.hbtn--solid { background: #fff; color: #0F1E33; }
+.hbtn--solid:hover { background: #E8F0FD; }
+.user-chip { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px 0 4px; border: 1px solid rgba(147, 197, 253, .2); border-radius: 999px; background: rgba(255, 255, 255, .04); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.user-chip:hover { background: rgba(255, 255, 255, .08); }
+.user-chip__avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #60A5FA, #3B82F6); font-size: 12px; font-weight: 700; }
+.user-chip svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; opacity: .7; }
+@media (max-width: 900px) {
+  .site-header__nav { display: none; }
+  .site-header__inner { justify-content: space-between; }
+}
+
+/* ── 앱 연결용: 사용자 메뉴 · 푸터 (시안에 없는 공통 요소) ── */
+.site-header__actions { position: relative; }
+.site-header .auth-user { position: relative; }
+.user-menu { position: absolute; top: 44px; right: 0; width: 180px; padding: 6px; border: 1px solid var(--card-line, #E2E8F3); border-radius: 12px; background: #fff; box-shadow: 0 16px 36px -12px rgba(15,30,51,.25); z-index: 40; }
+.user-menu[hidden] { display: none !important; }
+.user-menu__item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: var(--text); font-size: 13.5px; text-decoration: none; cursor: pointer; }
+.user-menu__item:hover { background: #F1F5FB; }
+.user-menu__item--danger { color: #DC2626; }
+.user-menu__item--danger:hover { background: #FEF2F2; }
+.user-menu__divider { height: 1px; margin: 4px; background: #E2E8F3; }
+.site-footer { padding: 28px 24px; border-top: 1px solid #E2E8F3; }
+.site-footer__inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.site-footer__brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.site-footer__legal { margin: 0; font-size: 12px; color: var(--text-3); }
+[hidden] { display: none !important; }
+/* =========================================================
+   10. 공통 입체형 토스트 알림
+   ========================================================= */
+.jp-toast-region {
+    position: fixed;
+    z-index: 12000;
+    top: 108px;
+    left: 50%;
+    display: flex;
+    width: min(680px, calc(100vw - 32px));
+    flex-direction: column;
+    gap: 12px;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.jp-toast {
+    --toast-accent: #285A7A;
+    --toast-border: #4B83A8;
+    --toast-bg: #D9E8F1;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 28px;
+    gap: 11px;
+    align-items: start;
+    width: 100%;
+    padding: 14px 13px 14px 14px;
+    border: 2px solid var(--toast-border);
+    border-radius: 12px;
+    color: #17283A;
+    background: var(--toast-bg);
+    box-shadow: 4px 5px 0 color-mix(in srgb, var(--toast-accent) 30%, transparent);
+    opacity: 0;
+    transform: translateX(24px) scale(.98);
+    transition: opacity 180ms ease, transform 220ms ease;
+    pointer-events: auto;
+}
+
+.jp-toast.is-visible {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+.jp-toast.is-leaving {
+    opacity: 0;
+    transform: translateX(18px) scale(.98);
+}
+
+.jp-toast--success {
+    --toast-accent: #2F6857;
+    --toast-border: #43806E;
+    --toast-bg: #DCECE5;
+}
+
+.jp-toast--error {
+    --toast-accent: #8E332D;
+    --toast-border: #B5433D;
+    --toast-bg: #F0E2DE;
+}
+
+.jp-toast--warning {
+    --toast-accent: #76512C;
+    --toast-border: #A8753E;
+    --toast-bg: #F3EBDD;
+}
+
+.jp-toast--info {
+    --toast-accent: #285A7A;
+    --toast-border: #4B83A8;
+    --toast-bg: #D9E8F1;
+}
+
+.jp-toast__icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 2px solid var(--toast-accent);
+    border-radius: 8px;
+    color: #FFFFFF;
+    background: var(--toast-accent);
+    box-shadow: 2px 3px 0 color-mix(in srgb, var(--toast-accent) 28%, transparent);
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.jp-toast--success .jp-toast__icon::before { content: "✓"; }
+.jp-toast--error .jp-toast__icon::before { content: "!"; }
+.jp-toast--warning .jp-toast__icon::before { content: "!"; }
+.jp-toast--info .jp-toast__icon::before { content: "i"; }
+
+.jp-toast__content {
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.jp-toast__title {
+    display: block;
+    color: var(--toast-accent);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.jp-toast__message {
+    margin: 4px 0 0;
+    color: #263F53;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.jp-toast__close {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 7px;
+    color: var(--toast-accent);
+    background: transparent;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.jp-toast__close:hover,
+.jp-toast__close:focus-visible {
+    background: rgba(255, 255, 255, .55);
+    outline: 2px solid color-mix(in srgb, var(--toast-accent) 48%, transparent);
+    outline-offset: 1px;
+}
+

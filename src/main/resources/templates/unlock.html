@@ -1,69 +1,67 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>계정 잠금 해제 — JobPuzzle</title>
-  <link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-  <link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계정 잠금 해제 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="stylesheet" href="/css/ds/auth.css" th:href="@{/css/ds/auth.css}">
 </head>
+<body>
 
-<body class="jp-auth-theme">
+<div th:replace="~{fragments/header :: landingHeader}"></div>
 
-  <div th:replace="~{fragments/header :: landingHeader}"></div>
-
-  <main class="auth-shell">
+<main class="auth-main">
+  <section class="auth-panel">
     <div class="auth-card">
+      <div class="auth-card__logo"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt=""></div>
       <h1 class="auth-card__title">계정 잠금 해제</h1>
-      <p class="auth-card__subtitle">로그인 실패 횟수 초과로 잠긴 계정을 이메일 인증으로 해제할 수 있어요</p>
+      <p class="auth-card__subtitle">이메일 인증을 마치면 바로 다시 로그인할 수 있어요</p>
 
-      <div class="auth-error" id="unlock-error"></div>
-
-      <div class="auth-form">
+      <div class="auth-form" id="unlock-form">
+        <div class="auth-notice auth-notice--lock">
+          <svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          <p>로그인을 여러 번 실패해서 계정을 잠가 두었어요. 비밀번호가 기억나지 않으면 <a href="/jobpuzzle/passwd-reset" th:href="@{/passwd-reset}">비밀번호 재설정</a>을 먼저 해도 돼요.</p>
+        </div>
+        <div class="auth-error" id="unlock-error" role="alert"></div>
         <div class="auth-field" id="info-step">
-          <label class="field-label" for="loginId">아이디</label>
-          <input class="text-input" type="text" id="loginId" name="loginId" autocomplete="username" required>
+          <label for="loginId">아이디</label>
+          <input class="auth-input" type="text" id="loginId" name="loginId" autocomplete="username" placeholder="아이디를 입력해주세요" required>
         </div>
-
         <div class="auth-field">
-          <label class="field-label" for="email">이메일</label>
-          <div class="auth-field-row">
-            <input class="text-input" type="email" id="email" name="email" autocomplete="email" required>
-            <button class="btn-sm" type="button" id="send-code-btn">인증코드 발송</button>
+          <label for="email">이메일</label>
+          <div class="auth-row">
+            <input class="auth-input" type="email" id="email" name="email" autocomplete="email" placeholder="가입할 때 쓴 이메일" required>
+            <button class="auth-sub-btn" type="button" id="send-code-btn">인증코드 발송</button>
           </div>
-          <span class="field-hint" id="send-hint"></span>
+          <span class="auth-hint field-hint" id="send-hint"></span>
         </div>
-
-        <div class="auth-field" id="code-step" hidden>
-          <label class="field-label" for="code">인증 코드</label>
-          <div class="auth-field-row">
-            <input class="text-input" type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required>
-            <button class="btn-sm" type="button" id="verify-btn">잠금 해제</button>
+        <div class="auth-form" id="code-step" hidden>
+          <div class="auth-field">
+            <label for="code">인증 코드</label>
+            <input class="auth-input" type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="6자리 숫자" required>
+            <span class="auth-hint" id="code-hint">이메일로 받은 6자리 코드를 <strong id="countdown">3:00</strong> 안에 입력해주세요.</span>
           </div>
-          <span class="field-hint" id="code-hint">이메일로 받은 6자리 코드를 <strong id="countdown">3:00</strong> 안에 입력해주세요.</span>
-        </div>
-
-        <div class="auth-result" id="unlock-result" hidden>
-          계정 잠금이 해제되었습니다.
-          <a href="/jobpuzzle/login" th:href="@{/login}">로그인하러 가기</a>
+          <button class="auth-submit" type="button" id="verify-btn">잠금 해제</button>
         </div>
       </div>
 
-      <p class="auth-footer-link">
-        <a href="/jobpuzzle/find-id" th:href="@{/find-id}">아이디를 잊으셨나요?</a>
-        &nbsp;·&nbsp;
-        <a href="/jobpuzzle/passwd-reset" th:href="@{/passwd-reset}">비밀번호를 잊으셨나요?</a>
-        &nbsp;·&nbsp;
-        <a href="/jobpuzzle/login" th:href="@{/login}">로그인으로 돌아가기</a>
-      </p>
+      <div id="unlock-result" hidden>
+        <div class="auth-result">
+          <span class="auth-result__icon"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
+          <strong>잠금을 풀었어요</strong>
+          <p>로그인 실패 횟수도 0으로 돌아갔어요.</p>
+        </div>
+        <div class="auth-actions"><a class="auth-submit" href="/jobpuzzle/login" th:href="@{/login}">로그인하러 가기</a></div>
+      </div>
+
+      <p class="auth-foot auth-foot--sub"><a href="/jobpuzzle/find-id" th:href="@{/find-id}">아이디 찾기</a> · <a href="/jobpuzzle/login" th:href="@{/login}">로그인으로 돌아가기</a></p>
     </div>
-  </main>
+  </section>
+</main>
 
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-  <script src="/js/unlock.js" th:src="@{/js/unlock.js}"></script>
+<script src="/js/unlock.js" th:src="@{/js/unlock.js}"></script>
 </body>
-
 </html>

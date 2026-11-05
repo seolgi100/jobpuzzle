@@ -1,150 +1,63 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
   <body>
-    <!-- Landing-page header: guest/user areas are switched by landing.js dummy state. -->
-    <header th:fragment="landingHeader" class="site-header header--dark" data-dynamic-header>
-      <div class="site-scroll-progress" aria-hidden="true"><i></i></div>
-      <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand">
-        <img src="/images/logoB.png" th:src="@{/images/logoB.png}" alt="JobPuzzle" class="site-header__logo site-header__logo--light" />
-        <img src="/images/logoD.png" th:src="@{/images/logoD.png}" alt="" class="site-header__logo site-header__logo--dark" aria-hidden="true" />
-        <span class="site-header__name">JobPuzzle</span>
-      </a>
-
-      <nav class="site-header__nav">
-        <a href="/jobpuzzle/dashboard" th:href="@{/dashboard}">대시보드</a>
-        <a href="/jobpuzzle/my-data" th:href="@{/my-data}">자료 관리</a>
-        <a href="/jobpuzzle/interview" th:href="@{/interview}">면접 준비</a>
-        <a href="/jobpuzzle/reports" th:href="@{/reports}">리포트</a>
-        <a href="/jobpuzzle/action-plans" th:href="@{/action-plans}">액션플랜</a>
-        <a href="/jobpuzzle/admin/users" th:href="@{/admin/users}" id="admin-nav-link" hidden>관리자</a>
-      </nav>
-
-      <div class="site-header__actions">
-        <div class="auth-guest" id="auth-guest" hidden>
-          <a class="btn btn--ghost" href="/jobpuzzle/login" th:href="@{/login}">로그인</a>
-          <a class="btn btn--primary" href="/jobpuzzle/join" th:href="@{/join}">회원가입</a>
-        </div>
-        <div class="auth-user" id="auth-user" hidden>
-          <button class="user-chip" id="user-chip" type="button" data-user-menu-trigger="user-menu" aria-controls="user-menu" aria-expanded="false">
-            <span class="user-chip__avatar" id="user-avatar">김</span>
-            <span class="user-chip__name" id="user-name">김지원님</span>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          <div class="user-menu" id="user-menu" hidden>
-            <a
-              href="/jobpuzzle/settings"
-              th:href="@{/settings}"
-              class="user-menu__item"
-              >설정</a
-            >
-            <div class="user-menu__divider"></div>
-            <a
-              href="/jobpuzzle/"
-              th:href="@{/}"
-              id="logout-link"
-              class="user-menu__item user-menu__item--danger"
-              >로그아웃</a
-            >
+    <!-- 손님용 헤더(메인·로그인·회원가입 등): 로그인 상태면 header.js가 이름 칩으로 바꾼다. -->
+    <header th:fragment="landingHeader" class="site-header" id="header" data-dynamic-header>
+      <div class="site-header__inner">
+        <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt="">JobPuzzle</a>
+        <nav class="site-header__nav" aria-label="주요 메뉴">
+          <a href="/jobpuzzle/dashboard" th:href="@{/dashboard}">대시보드</a>
+          <a href="/jobpuzzle/my-data" th:href="@{/my-data}">자료 관리</a>
+          <a href="/jobpuzzle/interview" th:href="@{/interview}">면접 준비</a>
+          <a href="/jobpuzzle/reports" th:href="@{/reports}">리포트</a>
+          <a href="/jobpuzzle/action-plans" th:href="@{/action-plans}">액션플랜</a>
+          <a href="/jobpuzzle/admin/users" th:href="@{/admin/users}" id="admin-nav-link" hidden>관리자</a>
+        </nav>
+        <div class="site-header__actions">
+          <div class="site-header__actions" id="auth-guest" hidden>
+            <a class="hbtn hbtn--ghost" href="/jobpuzzle/login" th:href="@{/login}">로그인</a>
+            <a class="hbtn hbtn--solid" href="/jobpuzzle/join" th:href="@{/join}">회원가입</a>
+          </div>
+          <div class="auth-user" id="auth-user" hidden>
+            <button class="user-chip" id="user-chip" type="button" data-user-menu-trigger="user-menu" aria-controls="user-menu" aria-expanded="false">
+              <span class="user-chip__avatar" id="user-avatar">김</span><span id="user-name">김지원님</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="user-menu" id="user-menu" hidden>
+              <a href="/jobpuzzle/tickets" th:href="@{/tickets}" class="user-menu__item">티켓 충전</a>
+              <a href="/jobpuzzle/settings" th:href="@{/settings}" class="user-menu__item">설정</a>
+              <div class="user-menu__divider"></div>
+              <a href="/jobpuzzle/" th:href="@{/}" id="logout-link" class="user-menu__item user-menu__item--danger">로그아웃</a>
+            </div>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Logged-in application header. Dummy user values stay hardcoded until backend owners bind them. -->
-    <header th:fragment="appHeader(activePage)" class="site-header header--light" data-dynamic-header>
-      <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand">
-        <img src="/images/logoB.png" th:src="@{/images/logoB.png}" alt="JobPuzzle" class="site-header__logo site-header__logo--light" />
-        <img src="/images/logoD.png" th:src="@{/images/logoD.png}" alt="" class="site-header__logo site-header__logo--dark" aria-hidden="true" />
-        <span class="site-header__name">JobPuzzle</span>
-      </a>
-
-      <nav class="site-header__nav">
-        <a
-          href="/jobpuzzle/dashboard"
-          th:href="@{/dashboard}"
-          th:classappend="${activePage == 'dashboard'} ? 'is-active' : ''"
-          >대시보드</a
-        >
-        <a
-          href="/jobpuzzle/my-data"
-          th:href="@{/my-data}"
-          th:classappend="${activePage == 'mydata'} ? 'is-active' : ''"
-          >자료 관리</a
-        >
-        <a
-          href="/jobpuzzle/interview"
-          th:href="@{/interview}"
-          th:classappend="${activePage == 'interview'} ? 'is-active' : ''"
-          >면접 준비</a
-        >
-        <a
-          href="/jobpuzzle/reports"
-          th:href="@{/reports}"
-          th:classappend="${activePage == 'reports'} ? 'is-active' : ''"
-          >리포트</a
-        >
-        <a
-          href="/jobpuzzle/action-plans"
-          th:href="@{/action-plans}"
-          th:classappend="${activePage == 'actionPlans'} ? 'is-active' : ''"
-          >액션플랜</a
-        >
-        <a
-          href="/jobpuzzle/admin/users"
-          th:href="@{/admin/users}"
-          th:classappend="${activePage == 'admin'} ? 'is-active' : ''"
-          id="app-admin-nav-link"
-          hidden
-          >관리자</a
-        >
-      </nav>
-
-      <div class="site-header__actions">
-        <div class="auth-user">
-          <button class="user-chip" id="app-user-chip" type="button" data-user-menu-trigger="app-user-menu" aria-controls="app-user-menu" aria-expanded="false">
-            <span class="user-chip__avatar" id="app-user-avatar">김</span>
-            <span class="user-chip__name" id="app-user-name">김지원님</span>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          <div class="user-menu" id="app-user-menu" hidden>
-            <a
-              href="/jobpuzzle/tickets"
-              th:href="@{/tickets}"
-              class="user-menu__item"
-              >티켓 충전</a
-            >
-            <a
-              href="/jobpuzzle/settings"
-              th:href="@{/settings}"
-              class="user-menu__item"
-              >설정</a
-            >
-            <div class="user-menu__divider"></div>
-            <a
-              href="/jobpuzzle/"
-              th:href="@{/}"
-              id="app-logout-link"
-              class="user-menu__item user-menu__item--danger"
-              >로그아웃</a
-            >
+    <!-- 로그인 후 서비스 헤더. 이름·관리자 메뉴는 header.js가 /user/me 응답으로 채운다. -->
+    <header th:fragment="appHeader(activePage)" class="site-header" data-dynamic-header>
+      <div class="site-header__inner">
+        <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt="">JobPuzzle</a>
+        <nav class="site-header__nav" aria-label="주요 메뉴">
+          <a href="/jobpuzzle/dashboard" th:href="@{/dashboard}" th:classappend="${activePage == 'dashboard'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'dashboard'} ? 'page' : null">대시보드</a>
+          <a href="/jobpuzzle/my-data" th:href="@{/my-data}" th:classappend="${activePage == 'mydata'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'mydata'} ? 'page' : null">자료 관리</a>
+          <a href="/jobpuzzle/interview" th:href="@{/interview}" th:classappend="${activePage == 'interview'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'interview'} ? 'page' : null">면접 준비</a>
+          <a href="/jobpuzzle/reports" th:href="@{/reports}" th:classappend="${activePage == 'reports'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'reports'} ? 'page' : null">리포트</a>
+          <a href="/jobpuzzle/action-plans" th:href="@{/action-plans}" th:classappend="${activePage == 'actionPlans'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'actionPlans'} ? 'page' : null">액션플랜</a>
+          <a href="/jobpuzzle/admin/users" th:href="@{/admin/users}" th:classappend="${activePage == 'admin'} ? 'is-active' : ''" id="app-admin-nav-link" hidden>관리자</a>
+        </nav>
+        <div class="site-header__actions">
+          <div class="auth-user">
+            <button class="user-chip" id="app-user-chip" type="button" data-user-menu-trigger="app-user-menu" aria-controls="app-user-menu" aria-expanded="false">
+              <span class="user-chip__avatar" id="app-user-avatar">김</span><span id="app-user-name">김지원님</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="user-menu" id="app-user-menu" hidden>
+              <a href="/jobpuzzle/tickets" th:href="@{/tickets}" class="user-menu__item">티켓 충전</a>
+              <a href="/jobpuzzle/settings" th:href="@{/settings}" class="user-menu__item">설정</a>
+              <div class="user-menu__divider"></div>
+              <a href="/jobpuzzle/" th:href="@{/}" id="app-logout-link" class="user-menu__item user-menu__item--danger">로그아웃</a>
+            </div>
           </div>
         </div>
       </div>
