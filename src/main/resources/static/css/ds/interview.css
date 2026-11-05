@@ -17,8 +17,8 @@
 .mode__need { margin-top: auto; padding-top: 14px; border-top: 1px solid #EEF2F8; display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--text-3); }
 .mode__need b { color: var(--sky-strong); font-weight: 700; }
 /* 맞춤 면접: 흰 카드 그대로, 파란 테두리 + 은은한 빛으로 강조 */
-.mode--custom { border: 2px solid var(--sky); padding: 23px; box-shadow: 0 0 0 4px rgba(59,130,246,.1), 0 18px 40px -26px rgba(59,130,246,.6); }
-.mode--custom:hover { border-color: var(--sky-strong); }
+.mode--custom { border: 2px solid var(--sky); padding: 23px; box-shadow: 0 0 0 4px rgba(37,99,201,.1), 0 18px 40px -26px rgba(37,99,201,.6); }
+.mode--custom:hover { border-color: #1D4FA3; }
 .mode--custom .mode__ico { background: var(--sky); color: #fff; }
 .mode__badge { position: absolute; top: 18px; right: 18px; height: 24px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--sky); color: #fff; font-size: 12px; font-weight: 800; }
 
@@ -69,7 +69,7 @@
 .prog__row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-2); }
 .prog__row b { color: var(--text); }
 .bar { margin-top: 6px; height: 6px; border-radius: 3px; background: #E2E8F3; overflow: hidden; }
-.bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #60A5FA, #3B82F6); }
+.bar i { display: block; height: 100%; border-radius: 3px; background: #2563C9; }
 .item--fail { border-color: #F5C2C2; background: #FFFAFA; }
 .item--fail .item__title { color: var(--danger); }
 /* ── 약점 선택 ── */
@@ -147,7 +147,7 @@
 .turn { margin-top: 12px; padding: 14px 16px; border-radius: 14px; background: #fff; border: 1px solid var(--card-line); font-size: 14px; line-height: 1.7; color: var(--text-2); }
 .turn b { display: block; margin-bottom: 4px; font-size: 12.5px; color: var(--text); }
 .turn--ai { background: #F5F8FF; border-color: #D6E4FB; }
-.follow { margin-top: 18px; padding: 18px 20px; border: 1px solid #9CC0F7; border-radius: 16px; background: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,.08); }
+.follow { margin-top: 18px; padding: 18px 20px; border: 1px solid #9CC0F7; border-radius: 16px; background: #fff; box-shadow: 0 0 0 4px rgba(37,99,201,.08); }
 .follow b { font-size: 12.5px; color: var(--sky-strong); letter-spacing: .02em; }
 .follow p { margin: 6px 0 0; font-size: 16.5px; font-weight: 700; line-height: 1.55; }
 .follow small { display: block; margin-top: 8px; font-size: 12.5px; color: var(--text-3); }

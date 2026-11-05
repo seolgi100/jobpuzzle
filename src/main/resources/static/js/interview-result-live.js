@@ -5,7 +5,7 @@
   var U = window.JPUI, route = window.JobPuzzleRoutes.path, esc = U.esc;
   var sessionId = new URLSearchParams(window.location.search).get('sessionId');
   var DIMS = U.DIM_LABELS, DIM_KEYS = Object.keys(DIMS);
-  var COLOR = { good: '#16A34A', mid: '#2F74E8', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' };
+  var COLOR = { good: '#16A34A', mid: '#2563C9', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' };
   var QUESTION_TYPE = {
     GENERAL: '일반', COMPANY_FIT: '회사 맞춤', EXPERIENCE: '경험', PROBLEM_SOLVING: '문제 해결', SKILL: '기술',
     SELF_INTRO: '자기소개', MOTIVATION: '지원 동기', STRENGTH_WEAKNESS: '강점·약점',

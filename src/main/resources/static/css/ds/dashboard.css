@@ -57,7 +57,7 @@ body.dash { background: #F5F7FB; color: var(--text); }
 .srow__score { font-size: 18px; font-weight: 800; color: var(--sky-strong); font-variant-numeric: tabular-nums; }
 .srow--progress { padding: 14px 16px; border: 1px solid #C9D7EE; border-radius: 12px; background: #F5F8FF; }
 .progress { margin-top: 8px; height: 6px; border-radius: 3px; background: #E2E8F3; overflow: hidden; }
-.progress i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #60A5FA, #3B82F6); }
+.progress i { display: block; height: 100%; border-radius: 3px; background: #2563C9; }
 
 .tag { padding: 14px 16px; border-radius: 12px; border: 1px solid var(--card-line); }
 .tag + .tag { margin-top: 10px; }

@@ -21,21 +21,21 @@ body.jp-app-theme .site-header .user-chip__avatar { background: linear-gradient(
 /* 시안 팔레트로 변수 바꾸기: 흰 카드 · 회청 바탕 · 스카이 블루 · 남색, 그림자 없음 · 얇은 선 */
 body.jp-app-theme, body.jp-app-theme.jp-interview-page {
   --jp-canvas-top: #F5F7FB; --jp-canvas-bottom: #F5F7FB;
-  --jp-paper: #FFFFFF; --jp-paper-soft: #F7F9FD; --jp-paper-blue: #EAF2FE;
-  --jp-blue-soft: #DCE8FD; --jp-blue: #3B82F6; --jp-blue-deep: #0F1E33;
-  --jp-cyan-soft: #E0F2FE; --jp-cyan: #2F74E8;
+  --jp-paper: #FFFFFF; --jp-paper-soft: #F7F9FD; --jp-paper-blue: #EEF3FC;
+  --jp-blue-soft: #DCE8FD; --jp-blue: #2563C9; --jp-blue-deep: #0F1E33;
+  --jp-cyan-soft: #E0F2FE; --jp-cyan: #2563C9;
   --jp-ink: #111827; --jp-text-secondary: #4B5563; --jp-text-tertiary: #9CA3AF;
   --jp-line: #E2E8F3; --jp-line-soft: #E2E8F3;
   --jp-danger: #DC2626; --jp-warning: #C2410C; --jp-success: #16A34A;
   --jp-shadow: none; --jp-shadow-small: none;
   --jp-mode-basic: #64748B; --jp-mode-basic-deep: #334155; --jp-mode-basic-soft: #EEF2F8;
-  --jp-mode-company: #3B82F6; --jp-mode-company-deep: #2F74E8; --jp-mode-company-soft: #EAF2FE;
+  --jp-mode-company: #2563C9; --jp-mode-company-deep: #2563C9; --jp-mode-company-soft: #EEF3FC;
   --jp-mode-weakness: #C2410C; --jp-mode-weakness-deep: #9A3412; --jp-mode-weakness-soft: #FFF4ED;
   --color-text: #111827; --color-border: #E2E8F3;
   background: #F5F7FB !important; background-attachment: initial !important;
 }
 body.jp-app-theme .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
-body.jp-app-theme .eyebrow-label { color: #3B82F6; letter-spacing: .12em; font-weight: 700; }
+body.jp-app-theme .eyebrow-label { color: #2563C9; letter-spacing: .12em; font-weight: 700; }
 body.jp-app-theme .btn--primary { background: #0F1E33; border-color: #0F1E33; color: #fff; box-shadow: none; }
 body.jp-app-theme .btn--primary:hover { background: #1A2C47; }
 /* 시안에 없는 예전 장식(청록 퍼즐 조각)은 숨긴다 */

@@ -2,9 +2,9 @@
    밝은 퍼즐 이음선 배경 가운데에 흰 카드 하나 */
 
 :root {
-  --sky: #3B82F6;
-  --sky-strong: #2F74E8;
-  --sky-tint: #EAF2FE;
+  --sky: #2563C9;
+  --sky-strong: #2563C9;
+  --sky-tint: #EEF3FC;
   /* 퍼즐 이음선 패턴(96×72 칸, 오른쪽·아래 변에 홈) — 메인 배경 격자와 같은 결 */
   --jigsaw-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='72'%3E%3Cpath d='M95.5 0V28C95.5 31 93 31 91 30A7 7 0 1 0 91 42C93 41 95.5 41 95.5 44V72M0 71.5H40C43 71.5 43 69 42 67A7 7 0 1 1 54 67C53 69 53 71.5 56 71.5H96' fill='none' stroke='%230F1E33' stroke-opacity='.06'/%3E%3C/svg%3E");
 }
@@ -41,7 +41,7 @@ body.auth { min-height: 100vh; display: flex; flex-direction: column; background
   transition: border-color .2s, box-shadow .2s;
 }
 .auth-input::placeholder { color: #A3ADBD; }
-.auth-input:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 4px rgba(59,130,246,.14); }
+.auth-input:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 4px rgba(37,99,201,.14); }
 .auth-input.is-ok { border-color: #34C38F; }
 .auth-input.is-error { border-color: #EF4444; }
 select.auth-input { appearance: none; padding-right: 34px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238E97A8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center; }

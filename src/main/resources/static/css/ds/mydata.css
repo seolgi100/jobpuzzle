@@ -9,7 +9,7 @@
 
 /* 문서 종류 아이콘 (카테고리별 색) */
 .doc-ico { width: 38px; height: 38px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 12px; font-weight: 800; }
-.doc-ico--job { background: #EAF2FE; color: #2F74E8; }
+.doc-ico--job { background: #EEF3FC; color: #2563C9; }
 .doc-ico--company { background: #EEF0FD; color: #4F46E5; }
 .doc-ico--resume { background: #E8F7F3; color: #0F8A6A; }
 .doc-ico--cover { background: #FDF2F8; color: #BE3E82; }
@@ -69,7 +69,7 @@
 .reg-cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .reg-cat { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--card-line); border-radius: 12px; background: #fff; font: inherit; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; text-align: left; }
 .reg-cat .doc-ico { width: 30px; height: 30px; border-radius: 8px; font-size: 11px; }
-.reg-cat[aria-pressed="true"] { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(59,130,246,.14); }
+.reg-cat[aria-pressed="true"] { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(37,99,201,.14); }
 .drop { display: grid; place-items: center; gap: 6px; padding: 28px 16px; border: 1.5px dashed #C9D7EE; border-radius: 14px; background: #F9FBFE; text-align: center; color: var(--text-2); font-size: 14px; }
 .drop b { color: var(--sky-strong); }
 .drop small { font-size: 12.5px; color: var(--text-3); }

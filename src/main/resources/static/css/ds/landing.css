@@ -260,7 +260,7 @@ body.landing { background: var(--surface); }
 .report__head p { font-weight: 600; }
 .report .holo-bar { margin-bottom: 18px; font-size: 14px; }
 /* 리포트 막대: 퍼즐과 같은 스카이 블루 */
-.report .holo-bar em { background: linear-gradient(90deg, #60A5FA, #3B82F6); }
+.report .holo-bar em { background: #2563C9; }
 .report .holo-bar em { transform: scaleX(0); }
 .report.is-visible .holo-bar em { animation: grow 1s cubic-bezier(.2,.7,.2,1) both; }
 .report.is-visible .holo-bar:nth-child(3) em { animation-delay: .12s; }

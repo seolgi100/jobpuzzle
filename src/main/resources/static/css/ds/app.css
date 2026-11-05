@@ -1,7 +1,7 @@
 /* 서비스 페이지 공통 — preview.css 토큰 + header.css 위에 얹음
    밝은 회청색 바탕 + 흰 카드 + 스카이 블루 포인트. 카드·버튼·탭·상태 배지·세그먼트 */
 :root {
-  --sky: #3B82F6; --sky-strong: #2F74E8; --sky-tint: #EAF2FE;
+  --sky: #2563C9; --sky-strong: #2563C9; --sky-tint: #EEF3FC;
   --danger: #DC2626; --danger-tint: #FEF2F2; --ok: #16A34A; --ok-tint: #ECFDF3; --warn: #C2410C; --warn-tint: #FFF4ED;
   --card-line: #E2E8F3;
 }
@@ -50,7 +50,7 @@ body.app { background: #F5F7FB; color: var(--text); }
 /* ── 입력 ── */
 .input { width: 100%; height: 44px; padding: 0 14px; border: 1px solid #DCE3EE; border-radius: 10px; background: #fff; font: inherit; font-size: 15px; color: var(--text); }
 textarea.input { height: auto; padding: 12px 14px; line-height: 1.6; resize: vertical; }
-.input:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 4px rgba(59,130,246,.14); }
+.input:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 4px rgba(37,99,201,.14); }
 
 /* ── 모달 ── */
 .modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgba(15,30,51,.45); }

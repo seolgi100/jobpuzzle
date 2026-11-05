@@ -1,5 +1,5 @@
 /* 리포트 목록·면접 결과 — app.css 위에 얹는 전용 스타일 */
-:root { --score-good: #16A34A; --score-good-bg: #ECFDF3; --score-mid: #2F74E8; --score-mid-bg: #EAF2FE; --score-low: #B45309; --score-low-bg: #FEF6E4; --score-bad: #DC2626; --score-bad-bg: #FEF2F2; }
+:root { --score-good: #16A34A; --score-good-bg: #ECFDF3; --score-mid: #2563C9; --score-mid-bg: #EEF3FC; --score-low: #B45309; --score-low-bg: #FEF6E4; --score-bad: #DC2626; --score-bad-bg: #FEF2F2; }
 
 /* 점수 배지: 색 + 숫자 (색만으로 구분하지 않음) */
 .score { white-space: nowrap; height: 26px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 8px; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -82,7 +82,7 @@
 .radar { width: 100%; height: auto; overflow: visible; }
 .radar text { font-size: 11px; fill: var(--text-2); font-family: inherit; }
 .radar .grid { fill: none; stroke: #E2E8F3; stroke-width: 1; }
-.radar .area { fill: rgba(59,130,246,.16); stroke: var(--sky); stroke-width: 2; stroke-linejoin: round; }
+.radar .area { fill: rgba(37,99,201,.16); stroke: var(--sky); stroke-width: 2; stroke-linejoin: round; }
 .radar .pt { fill: var(--sky); stroke: #fff; stroke-width: 2; }
 .radar .hit { fill: transparent; cursor: pointer; }
 .tip { position: absolute; z-index: 5; padding: 6px 10px; border-radius: 8px; background: #0F1E33; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; pointer-events: none; transform: translate(-50%, -120%); }

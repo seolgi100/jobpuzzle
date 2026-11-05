@@ -47,7 +47,7 @@
 .ar-top { margin-top: 20px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .ar-dist { display: flex; height: 14px; margin-top: 18px; border-radius: 99px; overflow: hidden; gap: 2px; }
 .ar-dist i { display: block; }
-.lv--high { background: #16A34A; } .lv--medium { background: #3B82F6; } .lv--low { background: #F59E0B; } .lv--none { background: #EF4444; }
+.lv--high { background: #16A34A; } .lv--medium { background: #2563C9; } .lv--low { background: #F59E0B; } .lv--none { background: #EF4444; }
 .ar-legend { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--text-2); }
 .ar-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .ar-legend i { width: 10px; height: 10px; border-radius: 3px; }

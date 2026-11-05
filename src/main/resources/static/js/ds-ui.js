@@ -33,7 +33,7 @@
   // 종합 점수 원형 그래프
   function ring(n) {
     var r = 64, c = 2 * Math.PI * r;
-    var color = { good: '#16A34A', mid: '#2F74E8', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' }[tone(n)];
+    var color = { good: '#16A34A', mid: '#2563C9', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' }[tone(n)];
     var v = n == null ? 0 : Math.max(0, Math.min(100, n));
     return '<div class="ring" role="img" aria-label="종합 점수 ' + (n == null ? '없음' : n + '점') + '"><svg viewBox="0 0 160 160">' +
       '<circle cx="80" cy="80" r="' + r + '" fill="none" stroke="#E2E8F3" stroke-width="14"/>' +
