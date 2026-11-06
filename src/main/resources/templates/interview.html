@@ -4,23 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>면접 준비 — JobPuzzle</title>
-<link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-<link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-<link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
-<link rel="stylesheet" href="/css/mydata.css" th:href="@{/css/mydata.css}">
-<link rel="stylesheet" href="/css/interview.css" th:href="@{/css/interview.css}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="/css/ds/header.css" th:href="@{/css/ds/header.css}">
-<link rel="stylesheet" href="/css/ds/theme-bridge.css" th:href="@{/css/ds/theme-bridge.css}">
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
 <link rel="stylesheet" href="/css/ds/interview-home.css" th:href="@{/css/ds/interview-home.css}">
 <link rel="stylesheet" href="/css/ds/interview-live.css" th:href="@{/css/ds/interview-live.css}">
+<link rel="stylesheet" href="/css/ds/interview-flow.css" th:href="@{/css/ds/interview-flow.css}">
 </head>
-<body class="jp-app-theme jp-mydata-page jp-interview-page">
+<body class="app">
 
 <div th:replace="~{fragments/header :: appHeader('interview')}"></div>
 
-<main class="app-shell" id="main">
-  <div class="app-container">
+<main class="dash-wrap" id="main">
 
     <section class="ih" id="interview-home" aria-labelledby="ih-title">
       <header class="ih-head">
@@ -51,39 +44,41 @@
 
     <div id="step-root"></div>
 
-  </div>
 </main>
 
-<!-- material register modal: 1단계 등록 폼 -> 2단계 추출 결과 확인/확정 (document-flow.js 재사용) -->
-<div class="modal-overlay" id="material-register-modal" hidden>
-  <div class="modal-box modal-box--lg">
-    <div class="flex-row" style="justify-content:space-between; margin-bottom:16px;">
-      <p style="font-size:16px; font-weight:700; margin:0;" id="material-register-title"></p>
-      <button class="modal-x" id="material-register-close" aria-label="자료 등록 닫기">&times;</button>
-    </div>
+<!-- 자료 등록 창: 1단계 등록 폼 -> 2단계 추출 결과 확인/확정 (document-flow.js 재사용) -->
+<div class="qs-layer rg" id="material-register-modal" hidden>
+  <div class="qs-scrim" data-register-close></div>
+  <section class="qs-box" role="dialog" aria-modal="true" aria-labelledby="material-register-title" tabindex="-1">
+    <header class="qs-head">
+      <div><h2 id="material-register-title"></h2><p>등록한 뒤 추출된 내용을 확인하고 확정하면 바로 고를 수 있어요.</p></div>
+      <button type="button" class="qs-x" id="material-register-close" aria-label="자료 등록 닫기">&times;</button>
+    </header>
 
-    <div id="material-register-form">
-      <input class="text-input" id="material-register-name" placeholder="자료명" style="margin-bottom:14px;">
-      <div class="tabbar tabbar--sm" style="margin-bottom:14px;">
-        <button class="tabbar__btn is-active" data-material-method="file">파일 업로드</button>
-        <button class="tabbar__btn" data-material-method="text">직접 입력</button>
+    <div class="rg-body" id="material-register-form">
+      <label class="rg-label" for="material-register-name">자료 이름</label>
+      <input class="fl-input" id="material-register-name" placeholder="예: LUME_채용공고">
+      <div class="rg-tabs" role="group" aria-label="등록 방법">
+        <button type="button" class="rg-tab is-active" aria-pressed="true" data-material-method="file">파일 올리기</button>
+        <button type="button" class="rg-tab" aria-pressed="false" data-material-method="text">직접 입력</button>
       </div>
       <div data-material-method-panel="file">
-        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" id="material-register-file" multiple>
-        <p class="file-name-preview">PDF는 1개, 이미지는 여러 장(최대 20장)을 한 번에 선택할 수 있습니다. 파일당 최대 10MB, 전체 20MB까지 업로드할 수 있습니다.</p>
-        <p class="file-name-preview" id="material-register-file-list"></p>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="rg-file" id="material-register-file" multiple aria-describedby="rg-file-help">
+        <p class="rg-help" id="rg-file-help">PDF는 1개, 이미지는 한 번에 20장까지 올릴 수 있어요. 파일당 10MB, 모두 합쳐 20MB까지예요.</p>
+        <p class="rg-help" id="material-register-file-list" aria-live="polite"></p>
       </div>
       <div data-material-method-panel="text" hidden>
-        <textarea class="textarea-input" id="material-register-content" style="height:180px;" placeholder="내용을 직접 입력해주세요"></textarea>
+        <label class="rg-label" for="material-register-content">내용</label>
+        <textarea class="fl-input rg-text" id="material-register-content" placeholder="내용을 직접 붙여 넣어 주세요"></textarea>
       </div>
-      <div class="flex-row gap-10" style="justify-content:flex-end; margin-top:16px;">
-        <button class="btn btn--ghost" style="border:1px solid #E3E7ED;" id="material-register-cancel">취소</button>
-        <button class="btn btn--primary" id="material-register-submit">등록하기</button>
+      <div class="qs-foot rg-foot">
+        <button type="button" class="fl-btn fl-btn--ghost" id="material-register-cancel">취소</button>
+        <button type="button" class="fl-btn fl-btn--navy" id="material-register-submit">등록하기</button>
       </div>
     </div>
 
-    <div id="material-register-panel" hidden></div>
-  </div>
+    <div class="rg-body rg-panel" id="material-register-panel" hidden></div>
+  </section>
 </div>
 
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
@@ -96,6 +91,5 @@
 <script src="/js/interview.js" th:src="@{/js/interview.js}"></script>
 <script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
 <script src="/js/interview-live.js" th:src="@{/js/interview-live.js}"></script>
-<script src="/js/dashboard-puzzle.js" th:src="@{/js/dashboard-puzzle.js}"></script>
 </body>
 </html>
