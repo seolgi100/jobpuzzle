@@ -17,6 +17,11 @@ public interface AnalysisCaseRepository extends JpaRepository<AnalysisCase, Long
             com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus status
     );
 
+    List<AnalysisCase> findByUser_UserIdAndStatusInOrderByCreatedAtDesc(
+            Long userId,
+            java.util.Collection<com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus> statuses
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<AnalysisCase> findWithLockByAnalysisCaseIdAndUser_UserId(Long analysisCaseId, Long userId);
 

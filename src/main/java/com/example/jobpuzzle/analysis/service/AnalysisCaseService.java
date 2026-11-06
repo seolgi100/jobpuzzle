@@ -99,6 +99,25 @@ public class AnalysisCaseService {
                 .toList();
     }
 
+    // 면접 준비 화면용: 분석을 시작한 모든 케이스(작성 중 DRAFT 제외)를 최신순으로
+    public List<AnalysisCaseResponse> getCases(Long userId) {
+        return analysisCaseRepository
+                .findByUser_UserIdAndStatusInOrderByCreatedAtDesc(userId, List.of(
+                        AnalysisCaseStatus.INPUT_CONFIRMED,
+                        AnalysisCaseStatus.ANALYZING,
+                        AnalysisCaseStatus.COMPLETED,
+                        AnalysisCaseStatus.FAILED
+                ))
+                .stream()
+                .map(analysisCase -> AnalysisCaseResponse.of(
+                        analysisCase,
+                        findSources(analysisCase.getAnalysisCaseId()),
+                        analysisCase.getStatus() == AnalysisCaseStatus.COMPLETED
+                                && hasUnusedCompanyFitQuestionSet(analysisCase)
+                ))
+                .toList();
+    }
+
     private boolean hasUnusedCompanyFitQuestionSet(AnalysisCase analysisCase) {
         return analysisInputSnapshotRepository
                 .findByAnalysisCase_AnalysisCaseIdAndUser_UserId(

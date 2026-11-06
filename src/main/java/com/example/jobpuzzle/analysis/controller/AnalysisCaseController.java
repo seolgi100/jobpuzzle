@@ -30,6 +30,16 @@ public class AnalysisCaseController {
     private final AnalysisCaseService analysisCaseService;
     private final AnalysisVectorIndexService vectorIndexService;
 
+    // 면접 준비 화면의 공고별 묶음용 전체 목록 (DRAFT 제외)
+    @GetMapping("/analysis-cases")
+    public ResponseEntity<ApiResponse<List<AnalysisCaseResponse>>> getCases(
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                analysisCaseService.getCases(user.getUserId())
+        ));
+    }
+
     @GetMapping("/analysis-cases/completed")
     public ResponseEntity<ApiResponse<List<AnalysisCaseResponse>>> getCompletedCases(
             @AuthenticationPrincipal(expression = "user") User user
