@@ -387,29 +387,30 @@
     });
   }
 
-  // ───────────────── 티켓 사용 확인 창 ─────────────────
-  var TicketConfirm = (function () {
+  // ───────────────── 공통 확인 창 틀 ─────────────────
+  // 열면 포커스가 창 안으로 들어가고, Tab은 창 안에서만 돌고, Esc·바깥 누르기로 닫히며, 닫으면 원래 자리로 포커스가 돌아간다.
+  var Layer = (function () {
     var layer = null;
     var returnFocus = null;
+    var handlers = {};
 
-    function close() {
+    function close(fromCancel) {
       if (!layer) return;
+      var onCancel = handlers.onCancel;
       layer.remove();
       layer = null;
+      handlers = {};
       document.removeEventListener('keydown', onKey, true);
       document.body.classList.remove('ih-modal-open');
-      if (returnFocus && returnFocus.focus) returnFocus.focus();
-    }
-
-    function focusables() {
-      return Array.prototype.slice.call(layer.querySelectorAll('a[href], button:not([disabled])'));
+      if (returnFocus && returnFocus.focus && document.contains(returnFocus)) returnFocus.focus();
+      if (fromCancel && onCancel) onCancel();
     }
 
     function onKey(event) {
       if (!layer) return;
-      if (event.key === 'Escape') { event.preventDefault(); close(); return; }
+      if (event.key === 'Escape') { event.preventDefault(); close(true); return; }
       if (event.key !== 'Tab') return;
-      var items = focusables();
+      var items = Array.prototype.slice.call(layer.querySelectorAll('a[href], button:not([disabled])'));
       if (!items.length) return;
       var first = items[0];
       var last = items[items.length - 1];
@@ -417,6 +418,55 @@
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }
 
+    function open(html, h) {
+      close(false);
+      handlers = h || {};
+      returnFocus = document.activeElement;
+      layer = document.createElement('div');
+      layer.className = 'tk-layer';
+      layer.innerHTML = '<div class="tk-scrim" data-tk-cancel></div>' +
+        '<section class="tk-box" role="dialog" aria-modal="true" aria-labelledby="tk-title" tabindex="-1">' + html + '</section>';
+      document.body.appendChild(layer);
+      document.body.classList.add('ih-modal-open');
+      document.addEventListener('keydown', onKey, true);
+      layer.addEventListener('click', function (event) {
+        if (event.target.closest('[data-tk-cancel]')) { close(true); return; }
+        if (event.target.closest('[data-tk-confirm]')) {
+          var fn = handlers.onConfirm;
+          handlers.onCancel = null;
+          close(false);
+          if (fn) fn();
+        }
+      });
+      var box = layer.querySelector('.tk-box');
+      focusIn(box);
+      return box;
+    }
+
+    function focusIn(box) {
+      var target = box.querySelector('[data-tk-confirm], .tk-foot a, [data-tk-cancel]:not(.tk-scrim)');
+      (target || box).focus();
+    }
+
+    function isOpen() { return !!layer; }
+
+    return { open: open, close: close, focusIn: focusIn, isOpen: isOpen };
+  })();
+
+  // 일반 확인 창. opts: title, body, confirmLabel, cancelLabel, onConfirm, onCancel
+  var Dialog = {
+    confirm: function (opts) {
+      Layer.open('<h2 class="tk-title" id="tk-title">' + esc(opts.title) + '</h2>' +
+        (opts.body ? '<p class="tk-what">' + esc(opts.body) + '</p>' : '') +
+        '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>' +
+        esc(opts.cancelLabel || '취소') + '</button>' +
+        '<button type="button" class="ih-btn ih-btn--navy" data-tk-confirm>' + esc(opts.confirmLabel || '확인') + '</button></div>',
+        { onConfirm: opts.onConfirm, onCancel: opts.onCancel });
+    }
+  };
+
+  // ───────────────── 티켓 사용 확인 창 ─────────────────
+  var TicketConfirm = (function () {
     function costFor(usage, tickets, explicit) {
       if (typeof explicit === 'number') return explicit;
       if (usage === 'BASIC') return tickets.costs.basic;
@@ -450,44 +500,24 @@
 
     // opts: usage, what, confirmLabel, onConfirm, cost(선택), note(선택), shortage(서버 402 때 true)
     function open(opts) {
-      close();
-      returnFocus = document.activeElement;
-      layer = document.createElement('div');
-      layer.className = 'tk-layer';
-      layer.innerHTML = '<div class="tk-scrim" data-tk-cancel></div>' +
-        '<section class="tk-box" role="dialog" aria-modal="true" aria-labelledby="tk-title">' +
-        '<p class="tk-loading" role="status">티켓 잔액을 확인하고 있어요.</p></section>';
-      document.body.appendChild(layer);
-      document.body.classList.add('ih-modal-open');
-      document.addEventListener('keydown', onKey, true);
-      layer.addEventListener('click', function (event) {
-        if (event.target.closest('[data-tk-cancel]')) close();
-        if (event.target.closest('[data-tk-confirm]')) {
-          var fn = opts.onConfirm;
-          close();
-          if (fn) fn();
-        }
-      });
-      var box = layer.querySelector('.tk-box');
-      box.setAttribute('tabindex', '-1');
-      box.focus();
+      var box = Layer.open('<p class="tk-loading" role="status">티켓 잔액을 확인하고 있어요.</p>', { onConfirm: opts.onConfirm });
       api('/tickets/me').then(function (tickets) {
-        if (!layer) return;
+        if (!Layer.isOpen() || !document.contains(box)) return;
         box.innerHTML = body(opts, tickets);
-        var target = box.querySelector('[data-tk-confirm], .tk-foot a');
-        if (target) target.focus();
+        Layer.focusIn(box);
       }).catch(function (error) {
-        if (!layer) return;
+        if (!Layer.isOpen() || !document.contains(box)) return;
         box.innerHTML = '<h2 class="tk-title" id="tk-title">티켓 잔액을 확인하지 못했어요</h2>' +
           '<p class="tk-what">' + esc(error.message) + ' 잠시 후 다시 시도해 주세요.</p>' +
           '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>닫기</button></div>';
-        box.querySelector('[data-tk-cancel]').focus();
+        Layer.focusIn(box);
       });
     }
 
-    return { open: open, close: close };
+    return { open: open, close: function () { Layer.close(false); } };
   })();
 
+  window.JPDialog = Dialog;
   window.TicketConfirm = TicketConfirm;
   window.InterviewHome = { load: load, show: show, hide: hide };
 

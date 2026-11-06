@@ -409,7 +409,7 @@
       speechListening = true;
       button.classList.add('is-listening');
       button.setAttribute('aria-pressed', 'true');
-      button.textContent = '음성 입력 중지';
+      button.innerHTML = '<i aria-hidden="true"></i>음성 입력 멈추기';
       status.textContent = '듣고 있습니다. 자연스럽게 답변해 주세요.';
     };
     speechRecognition.onresult = function (event) {
@@ -439,7 +439,7 @@
       speechListening = false;
       button.classList.remove('is-listening');
       button.setAttribute('aria-pressed', 'false');
-      button.textContent = '음성으로 답변';
+      button.innerHTML = '<i aria-hidden="true"></i>음성으로 답하기';
       if (!status.textContent || status.textContent.indexOf('인식 중:') === 0) {
         status.textContent = '음성 입력이 종료되었습니다. 변환된 문장을 확인해 주세요.';
       }
@@ -481,6 +481,16 @@
       message(error.message, true);
     });
   }
+
+  // 브라우저 기본 confirm 대신 디자인 시스템 확인 창(interview-home.js의 JPDialog)을 쓴다
+  function ask(opts) {
+    if (window.JPDialog) { window.JPDialog.confirm(opts); return; }
+    if (window.confirm(opts.title + (opts.body ? '\n' + opts.body : ''))) opts.onConfirm();
+    else if (opts.onCancel) opts.onCancel();
+  }
+
+  var MAX_ANSWER_ATTEMPTS = 3; // 서버 MAX_ADDITIONAL_ANSWER_RETRIES(2) + 첫 제출 1
+  var pendingNotice = null;    // 다음 화면에서 한 번 보여줄 안내(질문이 넘어갈 때)
 
   // 질문 선택을 닫거나 생성이 막혔을 때 면접 준비 홈으로 돌아간다
   function returnHome() {
@@ -603,10 +613,21 @@
 
   function requestCloseSelection() {
     if (!selectionModal) return;
-    if (selectionRequiresExitWarning &&
-        !window.confirm('생성된 질문으로 아직 면접을 시작하지 않았습니다. 질문은 준비 목록에 보관됩니다. 질문 선택을 닫을까요?')) {
+    if (selectionRequiresExitWarning) {
+      ask({
+        title: '질문 고르기를 닫을까요?',
+        body: '만든 질문은 면접 준비 화면의 "만들어 두고 아직 시작하지 않은 질문"에 남아 있어요.',
+        confirmLabel: '닫기',
+        cancelLabel: '계속 고르기',
+        onConfirm: closeSelectionNow
+      });
       return;
     }
+    closeSelectionNow();
+  }
+
+  function closeSelectionNow() {
+    if (!selectionModal) return;
     closeSelectionModal(true);
     window.history.replaceState({}, '', window.location.pathname + window.location.search);
     questionSet = null;
@@ -707,10 +728,20 @@
 
   function scrollLiveQuestionIntoView() {
     window.requestAnimationFrame(function () {
-      var card = root && root.querySelector('.live-interview-card');
+      var card = root && root.querySelector('.lv');
       if (!card) return;
       card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  }
+
+  // 이 질문(현재 부모 질문)에 낸 답 중 다시 답하게 된 수: 마지막 추가 질문 이후의 거절·평가 실패 답변
+  function usedAttempts(question) {
+    var used = 0;
+    (question.conversation || []).forEach(function (item) {
+      if (item.messageType === 'FOLLOW_UP_QUESTION') used = 0;
+      else if (item.messageType === 'REJECTED_ANSWER' || item.messageType === 'EVALUATION_FAILED_ANSWER') used += 1;
+    });
+    return used;
   }
 
   function renderQuestion() {
@@ -722,76 +753,96 @@
     }
     followUpMessageId = question.pendingFollowUpMessageId || null;
     var hasAnyAnswer = questions.some(function (item) { return item.answerSubmitted; });
-    var actionLabel = hasAnyAnswer ? '선택한 질문 답변 마치기' : '답변 전 세션 취소';
     var hasAnotherPendingQuestion = questions.some(function (item, index) {
       return index !== currentIndex &&
         (item.status === 'PENDING' || item.status === 'IN_PROGRESS');
     });
-    var skipQuestionButton = hasAnotherPendingQuestion
-      ? '<button id="skip-current-question" class="btn btn--ghost">건너뛰기</button>'
-      : '';
-    var currentResultButton = '<button id="view-current-result" class="btn btn--outline">현재 결과 확인</button>';
-    var submitLabel = followUpMessageId ? '추가 답변 제출' : '첫 답변 제출';
-    var conversation = (question.conversation || []).filter(function (item) {
-      return item.messageType !== 'ORIGINAL_QUESTION';
+    var finished = questions.filter(function (item) {
+      return item.status === 'COMPLETED' || item.status === 'SKIPPED';
+    }).length;
+    var percent = questions.length ? Math.round(finished / questions.length * 100) : 0;
+    var remaining = Math.max(0, MAX_ANSWER_ATTEMPTS - usedAttempts(question));
+
+    var subActions = [];
+    if (hasAnotherPendingQuestion) {
+      subActions.push('<button type="button" id="skip-current-question" class="lv-text">건너뛰기</button>');
+    }
+    subActions.push('<button type="button" id="view-current-result" class="lv-text">지금까지 결과 보기</button>');
+    if (!hasAnyAnswer) {
+      subActions.push('<button type="button" id="finish-live-session" class="lv-text">면접 취소</button>');
+    } else if (question.answerSubmitted) {
+      subActions.push('<button type="button" id="finish-live-session" class="lv-text">이 질문 마치기</button>');
+    }
+
+    // 아직 답하지 않은 추가 질문은 아래 상자에만 보여준다(대화 목록과 두 번 나오지 않게)
+    var all = question.conversation || [];
+    var lastFollowUp = -1;
+    all.forEach(function (item, index) { if (item.messageType === 'FOLLOW_UP_QUESTION') lastFollowUp = index; });
+    var conversation = all.filter(function (item, index) {
+      if (item.messageType === 'ORIGINAL_QUESTION') return false;
+      return !(followUpMessageId && index === lastFollowUp);
     });
     var conversationHtml = conversation.length
-      ? '<section class="live-answer-process" aria-label="현재 질문의 답변 과정">' +
-        '<div class="live-answer-process-title"><span>답변 과정</span><small>실제 면접 대화</small></div>' +
-        '<div class="live-conversation">' +
+      ? '<section class="lv-talk" aria-labelledby="lv-talk-title">' +
+        '<h2 id="lv-talk-title">답변 과정</h2><small>실제 면접처럼 이어진 대화예요</small>' +
         conversation.map(function (item) {
           var isUser = item.sender === 'USER';
-          var label = item.messageType === 'ORIGINAL_ANSWER'
-            ? '첫 답변'
-            : item.messageType === 'REJECTED_ANSWER'
-              ? '재답변 필요 답변'
-            : item.messageType === 'EVALUATION_FAILED_ANSWER'
-              ? '평가 처리 실패 답변'
-            : item.messageType === 'FOLLOW_UP_QUESTION'
-              ? 'AI 추가 질문'
-              : '추가 답변';
-          var failed = item.messageType === 'EVALUATION_FAILED_ANSWER' ||
-            item.messageType === 'REJECTED_ANSWER';
-          return '<div class="live-conversation-turn ' + (isUser ? 'is-user' : 'is-ai') +
-            (failed ? ' is-evaluation-failed' : '') + '">' +
-            '<span>' + label + (failed ? '<em>점수 제외</em>' : '') +
-            '</span><p>' + esc(item.messageText) + '</p></div>';
-        }).join('') + '</div></section>'
+          var label = item.messageType === 'ORIGINAL_ANSWER' ? '첫 답변'
+            : item.messageType === 'REJECTED_ANSWER' ? '다시 답해 달라고 한 답변'
+            : item.messageType === 'EVALUATION_FAILED_ANSWER' ? '평가가 멈춘 답변'
+            : item.messageType === 'FOLLOW_UP_QUESTION' ? 'AI 추가 질문'
+            : '추가 답변';
+          var note = item.messageType === 'REJECTED_ANSWER' ? '평가에 넣지 않았어요'
+            : item.messageType === 'EVALUATION_FAILED_ANSWER' ? '다시 내면 평가해요' : '';
+          return '<div class="lv-turn' + (isUser ? '' : ' lv-turn--ai') + (note ? ' lv-turn--retry' : '') + '">' +
+            '<b>' + label + (note ? '<span>' + note + '</span>' : '') + '</b>' +
+            '<p>' + esc(item.messageText) + '</p></div>';
+        }).join('') + '</section>'
       : '';
-    root.innerHTML = '<div class="live-interview-toolbar">' +
-      '<button type="button" id="leave-live-interview" class="btn btn--ghost">← 면접 준비로 나가기</button>' +
-      '</div><div class="card card--pad-lg live-interview-card">' +
-      '<div class="live-question-heading"><span class="live-question-position">' +
-      '<strong>질문 <em>' + esc(question.displayOrder || currentIndex + 1) + '</em></strong>' +
-      '<i aria-hidden="true"></i><span>선택 질문 <b>' + (currentIndex + 1) + '</b> / ' + questions.length +
-      '</span></span><strong>' + esc(modeLabel(session.mode)) + '</strong></div>' +
-      '<p class="live-question-label">첫 질문</p>' +
-      '<p class="live-original-question">' + esc(question.questionText) + '</p>' +
+
+    var notice = question.notice || pendingNotice;
+    pendingNotice = null;
+    question.notice = null;
+
+    root.innerHTML = '<div class="lv">' +
+      '<div class="lv-bar"><button type="button" id="leave-live-interview" class="lv-back">' +
+      '<span aria-hidden="true">←</span> 면접 준비로 나가기</button>' +
+      '<span class="lv-bar__right">' +
+      (session.analysisCaseId ? '<a class="lv-link" href="' +
+        window.JobPuzzleRoutes.path('/analysis-results/' + encodeURIComponent(session.analysisCaseId)) + '">분석 결과</a>' : '') +
+      '<span class="lv-mode">' + esc(modeLabel(session.mode)) + '</span></span></div>' +
+      '<div class="lv-progress"><span>질문 <b>' + (currentIndex + 1) + '</b> / ' + questions.length + '</span>' +
+      '<div class="lv-progress__bar" role="progressbar" aria-label="답변을 마친 질문" aria-valuemin="0" aria-valuemax="' +
+      questions.length + '" aria-valuenow="' + finished + '"><i style="width:' + percent + '%"></i></div>' +
+      '<span>' + percent + '%</span></div>' +
+      '<section class="lv-q" aria-labelledby="lv-q-text"><span class="lv-q__label">질문 ' + (currentIndex + 1) + '</span>' +
+      '<p class="lv-q__text" id="lv-q-text">' + esc(question.questionText) + '</p></section>' +
       conversationHtml +
-      '<div id="live-follow-up" class="live-follow-up"' + (followUpMessageId ? '' : ' hidden') + '>' +
-      '<div class="live-follow-up-heading"><span>AI 추가 질문</span></div>' +
-      '<p>' + esc(question.pendingFollowUpQuestion || '') + '</p>' +
-      '<small>답변을 조금 더 확인할 필요가 있을 때만 이어집니다. 여기서 연습을 마쳐도 됩니다.</small></div>' +
-      '<label class="live-answer-label" for="live-answer">' +
-      (followUpMessageId ? 'AI 추가 질문에 답변하기' : '첫 답변 작성하기') + '</label>' +
-      '<textarea id="live-answer" placeholder="상황, 본인 역할, 행동, 결과를 중심으로 답변해 주세요"></textarea>' +
-      '<div class="voice-input-row"><button type="button" id="voice-input-toggle" ' +
-      'class="voice-input-button" aria-pressed="false">음성으로 답변</button>' +
-      '<p id="voice-input-status" aria-live="polite">버튼을 누르면 한국어 음성을 텍스트로 변환합니다.</p></div>' +
-      '<div class="live-session-actions">' +
-      '<div class="live-session-secondary-actions">' +
-      (session.analysisCaseId ? '<a class="btn btn--outline live-analysis-link" href="' +
-        window.JobPuzzleRoutes.path('/analysis-results/' + encodeURIComponent(session.analysisCaseId)) + '">분석 결과 보기</a>' : '') +
-      skipQuestionButton +
-      currentResultButton +
-      '<button id="finish-live-session" class="btn btn--ghost">' + actionLabel + '</button></div>' +
-      '<button id="submit-live-answer" class="btn btn--primary">' + submitLabel + '</button></div></div>';
+      (followUpMessageId
+        ? '<div class="lv-follow" id="live-follow-up"><b>AI 추가 질문</b><p>' + esc(question.pendingFollowUpQuestion || '') + '</p>' +
+          '<small>답변을 조금 더 확인해야 할 때만 이어져요. 여기서 이 질문을 마쳐도 돼요.</small></div>'
+        : '') +
+      '<div class="lv-answer">' +
+      '<label for="live-answer">' + (followUpMessageId ? 'AI 추가 질문에 답하기' : '답변 쓰기') + '</label>' +
+      (notice ? '<p class="lv-notice" role="alert">' + esc(notice) + '</p>' : '') +
+      '<textarea id="live-answer" aria-describedby="lv-attempts" placeholder="상황, 본인 역할, 행동, 결과를 중심으로 답해 주세요"></textarea>' +
+      '<p class="lv-attempts" id="lv-attempts">이 질문에 낼 수 있는 답 <b>' + remaining + '번</b> 남았어요' +
+      (remaining < MAX_ANSWER_ATTEMPTS ? '' : ' · 질문과 관계없는 답은 다시 쓰게 돼요') + '</p>' +
+      '<div class="lv-voice"><button type="button" id="voice-input-toggle" class="lv-voice__btn" aria-pressed="false">' +
+      '<i aria-hidden="true"></i>음성으로 답하기</button>' +
+      '<p id="voice-input-status" aria-live="polite">버튼을 누르면 한국어 음성을 글자로 바꿔 드려요.</p></div>' +
+      '</div>' +
+      '<p class="lv-status" id="lv-status" role="status" aria-live="polite"></p>' +
+      '<div class="lv-foot"><div class="lv-sub">' + subActions.join('') + '</div>' +
+      '<button type="button" id="submit-live-answer" class="lv-submit">' +
+      (followUpMessageId ? '추가 답변 제출' : '답변 제출') + '</button></div></div>';
+
     document.getElementById('submit-live-answer').addEventListener('click', submitAnswer);
-    document.getElementById('finish-live-session').addEventListener('click', finishOrCancel);
+    var finish = document.getElementById('finish-live-session');
+    if (finish) finish.addEventListener('click', finishOrCancel);
     var skipQuestion = document.getElementById('skip-current-question');
     if (skipQuestion) skipQuestion.addEventListener('click', skipCurrentQuestion);
-    var currentResult = document.getElementById('view-current-result');
-    if (currentResult) currentResult.addEventListener('click', viewCurrentResult);
+    document.getElementById('view-current-result').addEventListener('click', viewCurrentResult);
     document.getElementById('leave-live-interview').addEventListener('click', leaveLiveInterview);
     setupSpeechInput();
   }
@@ -801,21 +852,43 @@
     return Boolean(textarea && textarea.value.trim());
   }
 
+  // 작성 중인 답변이 있을 때만 확인하고, 없으면 바로 진행한다(제출한 답은 이미 저장돼 있다)
+  function confirmDraftLoss(opts) {
+    if (!hasUnsubmittedDraft()) { opts.onConfirm(); return; }
+    ask({
+      title: opts.title,
+      body: '작성 중인 답변은 저장되지 않아요.' + (opts.extra ? ' ' + opts.extra : ''),
+      confirmLabel: opts.confirmLabel,
+      cancelLabel: '계속 쓰기',
+      onConfirm: opts.onConfirm
+    });
+  }
+
   function leaveLiveInterview() {
-    if (hasUnsubmittedDraft() && !window.confirm(
-      '작성 중인 답변은 저장되지 않습니다. 면접 준비 화면으로 나갈까요?'
-    )) return;
-    stopSpeechInput();
-    allowLiveNavigation = true;
-    window.location.href = window.JobPuzzleRoutes.path('/interview');
+    confirmDraftLoss({
+      title: '면접 준비로 나갈까요?',
+      extra: '면접은 나중에 이어서 할 수 있어요.',
+      confirmLabel: '나가기',
+      onConfirm: function () {
+        stopSpeechInput();
+        allowLiveNavigation = true;
+        window.location.href = window.JobPuzzleRoutes.path('/interview');
+      }
+    });
   }
 
   function skipCurrentQuestion() {
     var question = questions[currentIndex];
     if (!question) return;
-    if (hasUnsubmittedDraft() && !window.confirm(
-      '제출하지 않은 답변은 저장되지 않습니다. 이 질문을 건너뛸까요?'
-    )) return;
+    confirmDraftLoss({
+      title: '이 질문을 건너뛸까요?',
+      extra: '건너뛴 질문은 다른 질문을 마친 뒤 다시 나와요.',
+      confirmLabel: '건너뛰기',
+      onConfirm: function () { deferQuestion(question); }
+    });
+  }
+
+  function deferQuestion(question) {
     stopSpeechInput();
     api(window.JobPuzzleRoutes.path('/interview-session-questions/' +
       question.sessionQuestionId + '/defer'), { method: 'POST' }).then(function () {
@@ -841,9 +914,11 @@
     var text = textarea.value.trim();
     if (!text) return;
     var button = document.getElementById('submit-live-answer');
+    var status = document.getElementById('lv-status');
     button.disabled = true;
-    button.textContent = 'AI가 평가 중입니다';
-    var liveCard = root.querySelector('.live-interview-card');
+    button.textContent = '평가하는 중';
+    if (status) status.textContent = 'AI가 답변을 평가하고 있어요. 잠시만 기다려 주세요.';
+    var liveCard = root.querySelector('.lv');
     if (liveCard) liveCard.classList.add('is-evaluating');
     textarea.disabled = true;
     api(window.JobPuzzleRoutes.path('/interview-session-questions/' + questions[currentIndex].sessionQuestionId + '/answers'), {
@@ -869,8 +944,8 @@
         questions[currentIndex].pendingFollowUpMessageId = null;
         questions[currentIndex].pendingFollowUpQuestion = null;
         followUpMessageId = null;
-        notify('warning', result.summary ||
-          '답변 제출 3회를 모두 사용해 이 질문은 미평가로 종료합니다.', 7000);
+        pendingNotice = (result.summary || '이 질문은 답을 3번 모두 써서 평가 없이 마쳤어요.') +
+          ' 다음 질문으로 넘어왔어요.';
         moveToNextPendingQuestion();
         return;
       }
@@ -883,10 +958,8 @@
         questions[currentIndex].answerSubmitted = true;
         questions[currentIndex].evaluationFailed = true;
         questions[currentIndex].evaluationRetryDraft = text;
-        notify('warning',
-          result.evaluationRetryMessage ||
-          '평가 처리에 문제가 생겼습니다. 답변은 저장됐으니 잠시 후 다시 제출해 주세요.',
-          7000);
+        questions[currentIndex].notice = result.evaluationRetryMessage ||
+          '평가가 잠시 멈췄어요. 쓴 답변은 그대로 두었으니 잠시 후 다시 제출해 주세요.';
         renderQuestion();
         var retryTextarea = document.getElementById('live-answer');
         if (retryTextarea) {
@@ -901,10 +974,8 @@
           messageType: 'REJECTED_ANSWER',
           messageText: text
         });
-        notify('warning',
-          (result.retryAnswerMessage || result.summary || '질문에 맞게 다시 답변해 주세요.') +
-          ' 남은 재답변 기회: ' + result.remainingAnswerRetries + '회',
-          6000);
+        questions[currentIndex].notice =
+          result.retryAnswerMessage || result.summary || '질문에 맞는 경험이나 생각으로 다시 답해 주세요.';
         renderQuestion();
         return;
       }
@@ -942,6 +1013,7 @@
       button.textContent = '다시 제출';
       textarea.disabled = false;
       if (liveCard) liveCard.classList.remove('is-evaluating');
+      if (status) status.textContent = '';
       notify('error', error.message);
     });
   }
@@ -975,30 +1047,44 @@
   function finishOrCancel() {
     if (!session) return;
     var hasAnyAnswer = questions.some(function (item) { return item.answerSubmitted; });
-    if (hasAnyAnswer) {
-      var currentQuestion = questions[currentIndex];
-      if (!currentQuestion || !currentQuestion.answerSubmitted) {
-        notify('warning', '현재 질문에 제출한 답변이 없습니다.');
-        return;
-      }
-      if (!window.confirm('현재 질문은 지금까지의 답변으로 마칠까요?')) return;
-      api(window.JobPuzzleRoutes.path(
-        '/interview-session-questions/' + currentQuestion.sessionQuestionId + '/finish-current'
-      ), {
-        method: 'POST'
-      }).then(function () {
-        currentQuestion.status = 'COMPLETED';
-        currentQuestion.pendingFollowUpMessageId = null;
-        currentQuestion.pendingFollowUpQuestion = null;
-        followUpMessageId = null;
-        moveToNextPendingQuestion();
-      }).catch(function (error) {
-        notify('error', error.message);
+    if (!hasAnyAnswer) {
+      ask({
+        title: '면접을 취소할까요?',
+        body: '아직 낸 답변이 없어서 기록은 남지 않아요. 고른 질문은 다시 만들어야 해요.',
+        confirmLabel: '면접 취소',
+        cancelLabel: '계속 하기',
+        onConfirm: cancelSessionNow
       });
       return;
     }
-    if (!window.confirm('아직 제출한 답변이 없습니다. 이 세션을 취소할까요?')) return;
-    message('면접 세션을 취소하고 있습니다.');
+    var currentQuestion = questions[currentIndex];
+    if (!currentQuestion || !currentQuestion.answerSubmitted) return;
+    ask({
+      title: '이 질문을 마칠까요?',
+      body: '지금까지 낸 답으로 평가하고 다음 질문으로 넘어가요.' +
+        (hasUnsubmittedDraft() ? ' 작성 중인 답변은 저장되지 않아요.' : ''),
+      confirmLabel: '이 질문 마치기',
+      cancelLabel: '계속 쓰기',
+      onConfirm: function () { finishCurrentQuestion(currentQuestion); }
+    });
+  }
+
+  function finishCurrentQuestion(currentQuestion) {
+    api(window.JobPuzzleRoutes.path(
+      '/interview-session-questions/' + currentQuestion.sessionQuestionId + '/finish-current'
+    ), { method: 'POST' }).then(function () {
+      currentQuestion.status = 'COMPLETED';
+      currentQuestion.pendingFollowUpMessageId = null;
+      currentQuestion.pendingFollowUpQuestion = null;
+      followUpMessageId = null;
+      moveToNextPendingQuestion();
+    }).catch(function (error) {
+      notify('error', error.message);
+    });
+  }
+
+  function cancelSessionNow() {
+    message('면접을 취소하고 있어요.');
     api(window.JobPuzzleRoutes.path('/interview-sessions/' + session.sessionId + '/cancel'), { method: 'POST' })
       .then(function () {
         allowLiveNavigation = true;
@@ -1011,7 +1097,12 @@
   function viewCurrentResult() {
     if (!session) return;
     // 현재 질문을 완료 처리하지 않고, 저장된 답변 현황만 중간 결과에서 조회한다.
-    renderFinish();
+    confirmDraftLoss({
+      title: '지금까지 결과를 볼까요?',
+      extra: '면접은 결과 화면에서 이어서 할 수 있어요.',
+      confirmLabel: '결과 보기',
+      onConfirm: renderFinish
+    });
   }
 
   function moveToNextPendingQuestion() {
@@ -1542,9 +1633,10 @@
   });
   window.addEventListener('popstate', function () {
     if (!selectionModal) return;
-    if (selectionRequiresExitWarning &&
-        !window.confirm('생성된 질문으로 아직 면접을 시작하지 않았습니다. 질문은 준비 목록에 보관됩니다. 질문 선택을 닫을까요?')) {
+    if (selectionRequiresExitWarning) {
+      // 뒤로 가기는 이미 일어났으므로 선택 화면 주소를 되돌려 놓고 확인한다
       window.history.pushState({ interviewSelection: true }, '', '#question-selection');
+      requestCloseSelection();
       return;
     }
     closeSelectionModal(true);
@@ -1561,27 +1653,45 @@
   document.addEventListener('click', function (event) {
     var link = event.target.closest && event.target.closest('a[href]');
     if (!link) return;
+    var href = link.href;
     if (selectionModal) {
-      if (selectionRequiresExitWarning &&
-          !window.confirm('생성된 질문으로 아직 면접을 시작하지 않았습니다. 질문은 준비 목록에 보관됩니다. 다른 화면으로 이동할까요?')) {
+      if (selectionRequiresExitWarning) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        ask({
+          title: '다른 화면으로 갈까요?',
+          body: '만든 질문은 면접 준비 화면의 "만들어 두고 아직 시작하지 않은 질문"에 남아 있어요.',
+          confirmLabel: '이동하기',
+          cancelLabel: '계속 고르기',
+          onConfirm: function () {
+            selectionRequiresExitWarning = false;
+            closeSelectionModal(true);
+            window.location.href = href;
+          }
+        });
         return;
       }
       closeSelectionModal(true);
       questionSet = null;
       selectionRequiresExitWarning = false;
     }
-    if (!session || allowLiveNavigation) return;
-    if (!window.confirm('면접이 진행 중입니다. 현재 화면을 떠나시겠습니까? 입력 중인 답변은 저장되지 않습니다.')) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
-    allowLiveNavigation = true;
+    if (!session || allowLiveNavigation || !hasUnsubmittedDraft()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    confirmDraftLoss({
+      title: '다른 화면으로 갈까요?',
+      extra: '면접은 나중에 이어서 할 수 있어요.',
+      confirmLabel: '이동하기',
+      onConfirm: function () {
+        allowLiveNavigation = true;
+        window.location.href = href;
+      }
+    });
   }, true);
   window.addEventListener('beforeunload', function (event) {
-    if ((!session && (!selectionModal || !selectionRequiresExitWarning)) || allowLiveNavigation) return;
+    var guardSelection = selectionModal && selectionRequiresExitWarning;
+    var guardDraft = session && hasUnsubmittedDraft();
+    if ((!guardSelection && !guardDraft) || allowLiveNavigation) return;
     event.preventDefault();
     event.returnValue = '';
   });
