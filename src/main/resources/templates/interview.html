@@ -12,47 +12,53 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="/css/ds/header.css" th:href="@{/css/ds/header.css}">
 <link rel="stylesheet" href="/css/ds/theme-bridge.css" th:href="@{/css/ds/theme-bridge.css}">
+<link rel="stylesheet" href="/css/ds/interview-home.css" th:href="@{/css/ds/interview-home.css}">
 </head>
 <body class="jp-app-theme jp-mydata-page jp-interview-page">
 
 <div th:replace="~{fragments/header :: appHeader('interview')}"></div>
 
-<div class="app-shell">
+<main class="app-shell" id="main">
   <div class="app-container">
 
-    <p class="eyebrow-label">면접 관리</p>
-    <h1 class="page-title">질문 생성 · 모의면접</h1>
-    <p class="page-subtitle">공고와 자료를 바탕으로 질문을 만들고 실전처럼 연습하세요</p>
+    <section class="ih" id="interview-home" aria-labelledby="ih-title">
+      <header class="ih-head">
+        <div>
+          <h1 class="ih-title" id="ih-title">어느 공고 면접을 준비하나요?</h1>
+          <p class="ih-sub">공고마다 분석, 질문, 면접, 리포트를 차례로 맞춰가요.</p>
+        </div>
+        <p class="ih-balance" data-ih-balance hidden></p>
+      </header>
+
+      <div class="ih-board" data-ih-board></div>
+      <div data-ih-practice></div>
+
+      <details class="ih-guide">
+        <summary>답변은 이렇게 평가해요 <small>질문마다 필요한 기준만 골라요</small></summary>
+        <dl>
+          <div><dt>질문 의도 이해</dt><dd>질문에서 확인하려는 핵심을 정확히 짚었는지 봐요.</dd></div>
+          <div><dt>경험 구체성</dt><dd>상황과 행동을 실제 사례로 구체적으로 설명했는지 봐요.</dd></div>
+          <div><dt>본인 역할</dt><dd>팀의 성과와 본인이 직접 한 일을 구분했는지 봐요.</dd></div>
+          <div><dt>문제 해결 과정</dt><dd>판단 기준과 해결 과정을 논리적으로 설명했는지 봐요.</dd></div>
+          <div><dt>성과 및 결과 표현</dt><dd>행동으로 만든 변화와 결과를 분명히 제시했는지 봐요.</dd></div>
+          <div><dt>공고 요구사항 연결</dt><dd>경험이 지원 직무의 요구사항과 어떻게 이어지는지 봐요.</dd></div>
+          <div><dt>직무 가이드 적합</dt><dd>직무에서 중요하게 보는 역량과 맞는지 봐요.</dd></div>
+          <div><dt>답변 전달력</dt><dd>핵심이 잘 드러나게 명확하게 말했는지 봐요.</dd></div>
+        </dl>
+      </details>
+    </section>
 
     <div id="step-root"></div>
 
-    <details class="evaluation-guide" id="evaluation-guide">
-      <summary>
-        <span>면접 답변을 살펴보는 8가지 기준</span>
-        <canvas class="evaluation-puzzle-canvas" data-puzzle-piece="1" aria-hidden="true"></canvas>
-        <small>질문마다 필요한 기준만 골라 평가합니다</small>
-      </summary>
-      <div class="evaluation-guide__grid">
-        <article><strong>질문 의도 이해</strong><p>질문에서 확인하려는 핵심을 정확히 짚었는지 봅니다.</p></article>
-        <article><strong>경험 구체성</strong><p>상황과 행동을 실제 사례로 구체적으로 설명했는지 봅니다.</p></article>
-        <article><strong>본인 역할</strong><p>팀의 성과와 본인이 직접 수행한 일을 구분했는지 봅니다.</p></article>
-        <article><strong>문제 해결 과정</strong><p>판단 기준과 해결 과정을 논리적으로 설명했는지 봅니다.</p></article>
-        <article><strong>성과 및 결과 표현</strong><p>행동으로 만들어낸 변화와 결과를 분명히 제시했는지 봅니다.</p></article>
-        <article><strong>공고 요구사항 연결</strong><p>경험이 지원 직무의 요구사항과 어떻게 연결되는지 봅니다.</p></article>
-        <article><strong>직무 가이드 적합</strong><p>답변이 직무에서 중요하게 보는 역량과 맞는지 봅니다.</p></article>
-        <article><strong>답변 전달력</strong><p>핵심이 잘 드러나도록 명확하고 이해하기 쉽게 말했는지 봅니다.</p></article>
-      </div>
-    </details>
-
   </div>
-</div>
+</main>
 
 <!-- material register modal: 1단계 등록 폼 -> 2단계 추출 결과 확인/확정 (document-flow.js 재사용) -->
 <div class="modal-overlay" id="material-register-modal" hidden>
   <div class="modal-box modal-box--lg">
     <div class="flex-row" style="justify-content:space-between; margin-bottom:16px;">
       <p style="font-size:16px; font-weight:700; margin:0;" id="material-register-title"></p>
-      <button class="modal-x" id="material-register-close">&times;</button>
+      <button class="modal-x" id="material-register-close" aria-label="자료 등록 닫기">&times;</button>
     </div>
 
     <div id="material-register-form">
@@ -85,6 +91,7 @@
 <script src="/js/common.js" th:src="@{/js/common.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
 <script src="/js/document-flow.js" th:src="@{/js/document-flow.js}"></script>
+<script src="/js/interview-home.js" th:src="@{/js/interview-home.js}"></script>
 <script src="/js/interview.js" th:src="@{/js/interview.js}"></script>
 <script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
 <script src="/js/interview-live.js" th:src="@{/js/interview-live.js}"></script>

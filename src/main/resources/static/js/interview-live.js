@@ -293,7 +293,11 @@
     }
     return fetch(path, fetchOptions).then(function (response) {
       return response.json().then(function (body) {
-        if (!response.ok || !body.success) throw new Error(body.message || '요청에 실패했습니다.');
+        if (!response.ok || !body.success) {
+          var error = new Error(body.message || '요청에 실패했습니다.');
+          error.status = response.status;
+          throw error;
+        }
         return body.data;
       });
     });
@@ -301,6 +305,7 @@
 
   function message(text, error, generationMode) {
     hideActiveSection();
+    if (window.InterviewHome) window.InterviewHome.hide();
     var loadingContent = generationMode
       ? '<div class="question-generation-loading" role="status" aria-live="polite">' +
           '<canvas class="question-generation-loading__puzzle" data-job-puzzle-scene aria-hidden="true"></canvas>' +
@@ -477,6 +482,38 @@
     });
   }
 
+  // 질문 선택을 닫거나 생성이 막혔을 때 면접 준비 홈으로 돌아간다
+  function returnHome() {
+    if (root) root.innerHTML = '';
+    if (window.InterviewPage) window.InterviewPage.showModes();
+    if (window.InterviewHome) window.InterviewHome.load();
+  }
+
+  // 서버가 티켓 부족(402)을 돌려주면 오류 카드 대신 홈으로 돌아가 충전 안내 창을 띄운다
+  function handleGenerationError(error, usage) {
+    if (error && error.status === 402 && window.TicketConfirm) {
+      returnHome();
+      window.TicketConfirm.open({
+        usage: usage,
+        shortage: true,
+        what: '질문을 만들려면 티켓이 더 필요해요. 충전한 뒤 다시 시도해 주세요.'
+      });
+      return;
+    }
+    message(error.message, true);
+  }
+
+  function openQuestionSet(questionSetId) {
+    message('저장된 질문을 불러오고 있습니다.');
+    api(window.JobPuzzleRoutes.path('/question-sets/' + encodeURIComponent(questionSetId)))
+      .then(function (set) {
+        questionSet = set;
+        selectionRequiresExitWarning = false;
+        renderSelection();
+      })
+      .catch(function (error) { message(error.message, true); });
+  }
+
   function startBasic() {
     message('직무 기준에 맞는 기본 질문을 생성하고 있습니다.', false, 'BASIC');
     Promise.all([api(window.JobPuzzleRoutes.path('/user/me')), api(window.JobPuzzleRoutes.path('/job-category'))]).then(function (values) {
@@ -494,7 +531,7 @@
       questionSet = set;
       selectionRequiresExitWarning = true;
       renderSelection();
-    }).catch(function (error) { message(error.message, true); });
+    }).catch(function (error) { handleGenerationError(error, 'BASIC'); });
   }
 
   function startWeakness(tag) {
@@ -506,7 +543,7 @@
       questionSet = set;
       selectionRequiresExitWarning = true;
       renderSelection();
-    }).catch(function (error) { message(error.message, true); });
+    }).catch(function (error) { handleGenerationError(error, 'WEAKNESS_REVIEW'); });
   }
 
   function renderSelection() {
@@ -580,7 +617,7 @@
       );
       return;
     }
-    loadPreparedQuestionItems();
+    returnHome();
   }
 
   function closeSelectionModal(fromHistory) {
@@ -1491,28 +1528,16 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     root = document.getElementById('step-root');
-    var evaluationGuide = document.getElementById('evaluation-guide');
-    if (evaluationGuide && root) root.parentNode.insertBefore(evaluationGuide, root);
     if (analysisCaseId) {
       load();
     } else if (resumeSessionId) {
       api(window.JobPuzzleRoutes.path('/interview-sessions/' + resumeSessionId))
         .then(resumeSession)
         .catch(function (error) { message(error.message, true); });
-    } else {
-      createSectionBoard();
-      loadSectionOrder().finally(function () {
-        loadActiveSessions();
-        loadActiveAnalyses();
-        loadPreparedQuestionItems();
-        loadPreparedAnalysesFromServer();
-      });
-      if (requestedMode === 'weakness') {
-        window.setTimeout(function () {
-          var weaknessCard = document.querySelector('[data-mode="weakness"]');
-          if (weaknessCard) weaknessCard.click();
-        }, 0);
-      }
+    } else if (requestedMode === 'weakness') {
+      window.setTimeout(function () {
+        if (window.InterviewPage) window.InterviewPage.openWeakness();
+      }, 0);
     }
   });
   window.addEventListener('popstate', function () {
@@ -1530,7 +1555,7 @@
         '/analysis-results/' + encodeURIComponent(analysisCaseId)
       ));
     } else {
-      loadPreparedQuestionItems();
+      returnHome();
     }
   });
   document.addEventListener('click', function (event) {
@@ -1560,5 +1585,5 @@
     event.preventDefault();
     event.returnValue = '';
   });
-  window.InterviewLive = { startBasic: startBasic, startWeakness: startWeakness };
+  window.InterviewLive = { startBasic: startBasic, startWeakness: startWeakness, openQuestionSet: openQuestionSet };
 })();

@@ -15,12 +15,6 @@
     return null;
   }
 
-  var MODES = [
-    { id: 'basic', icon: 'basic', label: '기본 질문 모드', desc: '직무 공통 질문으로 빠르게 연습해요' },
-    { id: 'weakness', icon: 'tag', label: '약점 보완 모드', desc: '반복되는 약점 태그를 골라 집중 연습해요' },
-    { id: 'custom', icon: 'sparkle', label: '맞춤 면접 질문', desc: '내 자료와 공고를 분석해 맞춤 질문을 만들어요' }
-  ];
-
   var CAREER_LEVEL_LABEL = { NEW: '신입', EXPERIENCED: '경력', ANY: '경력무관' };
   var COMPANY_TYPES = ['JOB_POSTING', 'COMPANY_INFO'];
   var CANDIDATE_TYPES = ['RESUME', 'COVER_LETTER', 'PORTFOLIO', 'EXPERIENCE_NOTE'];
@@ -106,9 +100,17 @@
     return icons[name] || '';
   }
 
+  // 'mode' 단계 = 면접 준비 홈(interview-home.js). 다른 단계에서는 홈을 숨기고 step-root만 보인다.
   function render() {
     var root = document.getElementById('step-root');
-    if (state.step === 'mode') root.innerHTML = renderModeStep();
+    var home = window.InterviewHome;
+    if (state.step === 'mode') {
+      root.innerHTML = '';
+      if (home) home.show();
+    } else if (home) {
+      home.hide();
+    }
+    if (state.step === 'mode') { /* 홈이 직접 그린다 */ }
     else if (state.step === 'weaknessPick') root.innerHTML = renderWeaknessPick();
     else if (state.step === 'materialSelect') root.innerHTML = renderMaterialSelect();
     else if (state.step === 'materialReview') root.innerHTML = renderMaterialReview();
@@ -122,27 +124,28 @@
     render();
   }
 
-  // ---- step: mode select ----
-  function renderModeStep() {
-    return '<div class="card card--pad-lg">' +
-      '<p style="font-size:14px; font-weight:700; margin:0 0 4px;">질문 모드를 선택하세요</p>' +
-      '<p style="font-size:12.5px; color:#8A93A3; margin:0 0 20px;">선택한 모드에 맞춰 질문을 생성해드려요</p>' +
-      '<div class="mode-grid">' + MODES.map(function (m) {
-        var puzzle = m.id === 'custom'
-          ? '<canvas class="mode-puzzle-canvas" data-puzzle-piece="2" aria-hidden="true"></canvas>'
-          : '';
-        return '<div class="mode-card" data-mode="' + m.id + '">' + puzzle +
-          '<div class="mode-card__icon">' + icon(m.icon) + '</div><p class="mode-card__title">' +
-          m.label + '</p><p class="mode-card__desc">' + m.desc + '</p></div>';
-      }).join('') + '</div></div>';
+  function openWeakness() {
+    DF.api('/interview-weakness-tags/details').then(function (tags) {
+      state.weaknessTags = tags || [];
+      state.selectedWeaknessTag = null;
+      state.step = 'weaknessPick';
+      render();
+      window.scrollTo(0, 0);
+    }).catch(function (e) { notify('error', e.message); });
+  }
+
+  function openCustom() {
+    state.mode = 'custom';
+    enterMaterialSelect();
+    window.scrollTo(0, 0);
   }
 
   // ---- step: weakness pick ----
   function renderWeaknessPick() {
     return '<div class="card card--pad-lg">' +
-      backBtn('backToMode', '모드 다시 선택') +
-      '<p style="font-size:14px; font-weight:700; margin:0 0 4px;">보완할 약점 태그를 선택하세요</p>' +
-      '<p style="font-size:12.5px; color:#8A93A3; margin:0 0 20px;">카드를 누르면 보완 이력을 확인할 수 있어요 · 질문 생성은 이력 아래 버튼으로 시작합니다.</p>' +
+      backBtn('backToMode', '면접 준비로 돌아가기') +
+      '<h2 style="font-size:18px; font-weight:700; margin:0 0 4px;">보완할 약점을 골라주세요</h2>' +
+      '<p style="font-size:14px; color:#4B5563; margin:0 0 20px;">약점을 누르면 보완 기록을 볼 수 있어요. 질문은 기록 아래 버튼으로 만들어요.</p>' +
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
       state.weaknessTags.map(function (item) {
         var tag = typeof item === 'string' ? item : item.tag;
@@ -228,7 +231,7 @@
           esc((item.unresolvedCount || item.occurrenceCount || occurrences.length || 1)) +
           '건</span>' + history +
           (expanded ? '<div class="weak-pick-actions"><button type="button" class="btn btn--primary" ' +
-            'data-generate-weakness="' + esc(tag) + '">이 약점으로 질문 생성</button></div>' : '') +
+            'data-generate-weakness="' + esc(tag) + '">이 약점으로 질문 만들기</button></div>' : '') +
           '</div>';
       }).join('') + '</div></div>';
   }
@@ -301,7 +304,7 @@
 
   function renderMaterialSelect() {
     if (!state.docsLoaded) {
-      return '<div class="card card--pad-lg">' + backBtn('backToMode', '모드 다시 선택') + '<p class="text-faint">불러오는 중...</p></div>';
+      return '<div class="card card--pad-lg">' + backBtn('backToMode', '면접 준비로 돌아가기') + '<p class="text-faint" role="status">자료를 불러오고 있어요.</p></div>';
     }
 
     var mainCategories = uniqueInOrder(state.jobCategories.map(function (c) { return c.mainCategory; }));
@@ -324,8 +327,8 @@
       }).join('');
 
     return '<div class="card card--pad-lg material-select-card">' +
-      backBtn('backToMode', '모드 다시 선택') +
-      '<p style="font-size:14px; font-weight:700; margin:0 0 4px;">면접에 사용할 자료를 선택하세요</p>' +
+      backBtn('backToMode', '면접 준비로 돌아가기') +
+      '<h2 style="font-size:18px; font-weight:700; margin:0 0 4px;">새 공고로 준비할 자료를 골라주세요</h2>' +
       '<p class="material-select-intro">확정된 자료만 선택할 수 있어요. 없으면 새로 등록해주세요</p>' +
       '<div class="material-columns">' +
         '<div><p class="material-column-title">회사 공고 / 회사 정보</p>' +
@@ -418,15 +421,55 @@
           '<header><div><span class="question-selection-mode">회사 맞춤</span><h2 id="material-review-title">분석 전 마지막 확인</h2>' +
           '<p>선택한 자료와 면접 기준이 맞는지 확인해주세요.</p></div>' +
           '<button type="button" class="question-selection-close" data-close-material-review aria-label="닫기">×</button></header>' +
-          '<div class="material-review-scroll">' + materialReviewContent() + '</div>' +
+          '<div class="material-review-scroll">' + materialReviewContent() +
+          '<div class="tk-scope tk-inline" id="material-review-ticket" role="status">티켓 잔액을 확인하고 있어요.</div></div>' +
           '<footer><button type="button" class="btn-sm" data-close-material-review>자료 다시 선택</button>' +
-          '<button type="button" class="btn btn--primary" id="material-review-confirm">이 구성으로 분석 시작</button></footer>' +
+          '<span id="material-review-action"><button type="button" class="btn btn--primary" id="material-review-confirm" disabled>이 구성으로 분석 시작</button></span></footer>' +
         '</section>' +
       '</div>');
     document.querySelectorAll('[data-close-material-review]').forEach(function (el) {
       el.addEventListener('click', closeMaterialReviewModal);
     });
     bindMaterialReviewEvents();
+    renderReviewTicket();
+  }
+
+  // 맞춤 분석 비용: 최소 장수 + (고른 지원자 자료 종류 수 - 1), 최대 장수까지 (TicketService.companyFitCost와 같은 계산)
+  function companyFitCost(costs) {
+    var kinds = {};
+    Object.keys(state.selectedDocIds).forEach(function (id) {
+      var doc = state.allDocs.filter(function (d) { return String(d.documentId) === String(id); })[0];
+      if (doc && CANDIDATE_TYPES.indexOf(doc.documentType) >= 0) kinds[doc.documentType] = true;
+    });
+    var count = Object.keys(kinds).length;
+    return Math.min(costs.companyFitMin + Math.max(0, count - 1), costs.companyFitMax);
+  }
+
+  function renderReviewTicket() {
+    var box = document.getElementById('material-review-ticket');
+    var action = document.getElementById('material-review-action');
+    if (!box || !action) return;
+    DF.api('/tickets/me').then(function (tickets) {
+      if (!document.getElementById('material-review-ticket')) return;
+      var cost = companyFitCost(tickets.costs);
+      var short = cost - tickets.balance;
+      box.innerHTML = '<p class="tk-title">' + (short > 0 ? '티켓이 ' + short + '장 부족해요' : '분석에 티켓 ' + cost + '장을 사용해요') + '</p>' +
+        '<p class="tk-what">고른 지원 자료 종류에 따라 ' + tickets.costs.companyFitMin + '~' + tickets.costs.companyFitMax + '장이 들어요.' +
+        (short > 0 ? '' : ' 분석이 실패하면 티켓은 돌려드려요.') + '</p>' +
+        '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
+        '<div><dt>' + (short > 0 ? '필요' : '분석 후') + '</dt><dd>' + (short > 0 ? cost : tickets.balance - cost) + '장</dd></div></dl>';
+      if (short > 0) {
+        action.innerHTML = '<a class="btn btn--primary" href="' + window.JobPuzzleRoutes.path('/tickets') + '" style="text-decoration:none;">티켓 충전하러 가기</a>';
+      } else {
+        var btn = document.getElementById('material-review-confirm');
+        btn.disabled = false;
+        btn.textContent = cost + '장 쓰고 분석 시작';
+      }
+    }).catch(function () {
+      box.textContent = '티켓 잔액을 확인하지 못했어요. 분석 화면에서 잔액이 모자라면 다시 알려드려요.';
+      var btn = document.getElementById('material-review-confirm');
+      if (btn) btn.disabled = false;
+    });
   }
 
   function submitAnalysisCase() {
@@ -470,7 +513,7 @@
       })
       .catch(function (e) {
         notify('error', e.message);
-        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '이 구성으로 분석 시작'; }
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '다시 시도'; }
       });
   }
 
@@ -706,23 +749,6 @@
 
   // ---- events ----
   function bindStepEvents() {
-    document.querySelectorAll('[data-mode]').forEach(function (el) {
-      el.addEventListener('click', function () {
-        state.mode = el.dataset.mode;
-        if (state.mode === 'basic') {
-          if (window.InterviewLive) window.InterviewLive.startBasic();
-        }
-        else if (state.mode === 'weakness') {
-          DF.api('/interview-weakness-tags/details').then(function (tags) {
-            state.weaknessTags = tags || [];
-            state.step = 'weaknessPick';
-            render();
-          }).catch(function (e) { notify('error', e.message); });
-        }
-        else if (state.mode === 'custom') { enterMaterialSelect(); }
-      });
-    });
-
     document.querySelectorAll('[data-weak-tag]').forEach(function (el) {
       el.addEventListener('click', function (event) {
         if (event.target.closest('a, button')) return;
@@ -744,7 +770,13 @@
       button.addEventListener('click', function (event) {
         event.stopPropagation();
         state.selectedWeaknessTag = button.dataset.generateWeakness;
-        if (window.InterviewLive) window.InterviewLive.startWeakness(state.selectedWeaknessTag);
+        var tag = state.selectedWeaknessTag;
+        window.TicketConfirm.open({
+          usage: 'WEAKNESS_REVIEW',
+          what: '고른 약점을 집중해서 확인하는 질문을 만들어요.',
+          confirmLabel: '질문 만들기',
+          onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startWeakness(tag); }
+        });
       });
     });
 
@@ -814,7 +846,10 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     bindMaterialRegisterModal();
+    // 분석 결과에서 바로 질문 고르기, 진행 중 면접 이어 하기로 들어온 경우에는 홈을 그리지 않는다
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('analysisCaseId') || params.get('resumeSessionId')) return;
     render();
   });
-  window.InterviewPage = { showModes: showModeStep };
+  window.InterviewPage = { showModes: showModeStep, openWeakness: openWeakness, openCustom: openCustom };
 })();
