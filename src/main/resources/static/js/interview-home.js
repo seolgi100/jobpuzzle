@@ -1,5 +1,4 @@
 // interview-home.js — 면접 준비 홈: 공고별 퍼즐판 + 공고 없이 연습 + 티켓 사용 확인 창
-// 설계 기준: .impeccable/surfaces/interview.md
 (function () {
   'use strict';
 
