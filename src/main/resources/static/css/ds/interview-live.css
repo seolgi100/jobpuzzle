@@ -69,6 +69,9 @@ button.lv-link:hover { text-decoration: underline; }
 .lv-notice { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; background: var(--lv-warn-tint); font-size: 14px; line-height: 1.6; color: var(--lv-warn); }
 .lv-attempts { margin: 8px 0 0; font-size: 13px; color: var(--lv-text-2); }
 .lv-attempts b { color: var(--lv-text); font-variant-numeric: tabular-nums; }
+.lv-error { margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--lv-danger); }
+.lv-error:empty { display: none; }
+.lv-answer textarea[aria-invalid="true"] { border-color: var(--lv-danger); }
 .lv-voice { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .lv-voice__btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid var(--lv-line-strong); border-radius: 999px; background: var(--lv-surface); font: inherit; font-size: 14px; font-weight: 700; color: var(--lv-primary); cursor: pointer; }
 .lv-voice__btn:hover { background: var(--lv-primary-tint); }

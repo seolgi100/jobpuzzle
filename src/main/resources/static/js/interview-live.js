@@ -191,6 +191,7 @@
         }
       }
       textarea.value = [baseText, finalText, interimText].filter(Boolean).join(' ').trim();
+      saveDraft();
       status.textContent = interimText
         ? '인식 중: ' + interimText
         : '말한 내용을 글자로 옮겼어요. 계속 말하거나 멈출 수 있어요.';
@@ -421,7 +422,8 @@
       return item.status === 'COMPLETED' || item.status === 'SKIPPED';
     }).length;
     var percent = questions.length ? Math.round(finished / questions.length * 100) : 0;
-    var remaining = Math.max(0, MAX_ANSWER_ATTEMPTS - usedAttempts(question));
+    var used = usedAttempts(question);
+    var remaining = Math.max(0, MAX_ANSWER_ATTEMPTS - used);
 
     // 건너뛰기는 첫 답을 내기 전만. 답이 하나도 없으면 결과를 낼 수 없어 마지막 남은 질문은 건너뛸 수 없다.
     var subActions = [];
@@ -491,9 +493,12 @@
       '<div class="lv-answer">' +
       '<label for="live-answer">' + (followUpMessageId ? 'AI 추가 질문에 답하기' : '답변 쓰기') + '</label>' +
       (notice ? '<p class="lv-notice" role="alert">' + esc(notice) + '</p>' : '') +
-      '<textarea id="live-answer" aria-describedby="lv-attempts" placeholder="상황, 본인 역할, 행동, 결과를 중심으로 답해 주세요"></textarea>' +
-      '<p class="lv-attempts" id="lv-attempts">이 질문에 낼 수 있는 답 <b>' + remaining + '번</b> 남았어요' +
-      (remaining < MAX_ANSWER_ATTEMPTS ? '' : ' · 질문과 관계없는 답은 다시 쓰게 돼요') + '</p>' +
+      '<textarea id="live-answer" aria-describedby="lv-answer-error lv-attempts" placeholder="상황, 본인 역할, 행동, 결과를 중심으로 답해 주세요"></textarea>' +
+      '<p class="lv-error" id="lv-answer-error" role="alert"></p>' +
+      '<p class="lv-attempts" id="lv-attempts">' + (used
+        ? '이 질문에 답을 낼 기회가 <b>' + remaining + '번</b> 남았어요'
+        : '질문과 관계없는 답은 다시 쓰게 돼요') +
+      ' · <span id="lv-saved">쓰는 답은 이 기기에 임시 저장돼요</span></p>' +
       '<div class="lv-voice"><button type="button" id="voice-input-toggle" class="lv-voice__btn" aria-pressed="false">' +
       '<i aria-hidden="true"></i>음성으로 답하기</button>' +
       '<p id="voice-input-status" aria-live="polite">버튼을 누르면 한국어 음성을 글자로 바꿔 드려요.</p></div>' +
@@ -518,15 +523,71 @@
       document.getElementById('lv-hint').hidden = !open;
     });
     document.getElementById('leave-live-interview').addEventListener('click', leaveLiveInterview);
+    var answer = document.getElementById('live-answer');
+    var saved = readDraft();
+    if (saved) {
+      answer.value = saved;
+      document.getElementById('lv-saved').textContent = '임시 저장한 답을 불러왔어요';
+    }
+    answer.addEventListener('input', function () {
+      saveDraft();
+      showAnswerError('');
+    });
     setupSpeechInput();
   }
 
-  function hasUnsubmittedDraft() {
+  // 쓰던 답은 질문(추가 질문)마다 이 기기에 임시 저장해 새로고침·이탈에도 남긴다
+  var draftStorageOk = true;
+
+  function draftKey() {
+    var question = questions[currentIndex];
+    return question
+      ? 'jobpuzzle_answer_draft_' + question.sessionQuestionId + '_' + (followUpMessageId || 'q')
+      : null;
+  }
+
+  function readDraft() {
+    try { return draftKey() ? localStorage.getItem(draftKey()) || '' : ''; } catch (e) { return ''; }
+  }
+
+  function saveDraft() {
+    var textarea = document.getElementById('live-answer');
+    var key = draftKey();
+    if (!textarea || !key) return;
+    try {
+      if (textarea.value.trim()) localStorage.setItem(key, textarea.value);
+      else localStorage.removeItem(key);
+      draftStorageOk = true;
+    } catch (e) {
+      draftStorageOk = false;
+      var label = document.getElementById('lv-saved');
+      if (label) label.textContent = '이 브라우저에서는 임시 저장이 안 돼요';
+    }
+  }
+
+  function clearDraft() {
+    try { if (draftKey()) localStorage.removeItem(draftKey()); } catch (e) { /* 저장소를 못 쓰면 지울 것도 없다 */ }
+  }
+
+  function showAnswerError(text) {
+    var error = document.getElementById('lv-answer-error');
+    var textarea = document.getElementById('live-answer');
+    if (!error || !textarea) return;
+    error.textContent = text;
+    if (text) textarea.setAttribute('aria-invalid', 'true');
+    else textarea.removeAttribute('aria-invalid');
+  }
+
+  function hasDraftText() {
     var textarea = document.getElementById('live-answer');
     return Boolean(textarea && textarea.value.trim());
   }
 
-  // 작성 중인 답변이 있을 때만 확인하고, 없으면 바로 진행한다(제출한 답은 이미 저장돼 있다)
+  // 임시 저장이 되면 쓰던 답은 남으니 확인 없이 진행하고, 저장이 안 되는 브라우저에서만 묻는다
+  function hasUnsubmittedDraft() {
+    return hasDraftText() && !draftStorageOk;
+  }
+
   function confirmDraftLoss(opts) {
     if (!hasUnsubmittedDraft()) { opts.onConfirm(); return; }
     ask({
@@ -557,7 +618,7 @@
     ask({
       title: '이 질문을 건너뛸까요?',
       body: '건너뛴 질문은 다시 나오지 않고 평가에서도 빠져요.' +
-        (hasUnsubmittedDraft() ? ' 작성 중인 답변은 저장되지 않아요.' : ''),
+        (hasDraftText() ? ' 쓰던 답은 지워져요.' : ''),
       confirmLabel: '건너뛰기',
       cancelLabel: '계속 답하기',
       onConfirm: function () { skipQuestion(question); }
@@ -568,6 +629,7 @@
     stopSpeechInput();
     api(window.JobPuzzleRoutes.path('/interview-session-questions/' +
       question.sessionQuestionId + '/skip'), { method: 'POST' }).then(function () {
+      clearDraft();
       question.status = 'SKIPPED';
       followUpMessageId = null;
       moveToNextPendingQuestion();
@@ -580,7 +642,11 @@
     stopSpeechInput();
     var textarea = document.getElementById('live-answer');
     var text = textarea.value.trim();
-    if (!text) return;
+    if (!text) {
+      showAnswerError('답을 써야 제출할 수 있어요.');
+      textarea.focus();
+      return;
+    }
     var button = document.getElementById('submit-live-answer');
     var status = document.getElementById('lv-status');
     button.disabled = true;
@@ -597,6 +663,7 @@
         parentQuestionMessageId: followUpMessageId
       }
     }).then(function (result) {
+      clearDraft();
       questions[currentIndex].conversation = questions[currentIndex].conversation || [];
       if (result.answerAttemptsExhausted) {
         questions[currentIndex].conversation.push({
@@ -632,6 +699,7 @@
         var retryTextarea = document.getElementById('live-answer');
         if (retryTextarea) {
           retryTextarea.value = text;
+          saveDraft();
           retryTextarea.focus();
         }
         return;
@@ -712,7 +780,7 @@
     ask({
       title: '이 질문을 마칠까요?',
       body: '지금까지 낸 답으로 평가하고 다음 질문으로 넘어가요.' +
-        (hasUnsubmittedDraft() ? ' 작성 중인 답변은 저장되지 않아요.' : ''),
+        (hasDraftText() ? ' 쓰던 답은 지워져요.' : ''),
       confirmLabel: '이 질문 마치기',
       cancelLabel: '계속 쓰기',
       onConfirm: function () { finishCurrentQuestion(currentQuestion); }
@@ -723,6 +791,7 @@
     api(window.JobPuzzleRoutes.path(
       '/interview-session-questions/' + currentQuestion.sessionQuestionId + '/finish-current'
     ), { method: 'POST' }).then(function () {
+      clearDraft();
       currentQuestion.status = 'COMPLETED';
       currentQuestion.pendingFollowUpMessageId = null;
       currentQuestion.pendingFollowUpQuestion = null;
