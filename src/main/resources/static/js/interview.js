@@ -383,53 +383,18 @@
       }).join('') + '</dl>';
   }
 
-  var reviewReturnFocus = null;
-
-  function closeMaterialReviewModal() {
-    var modal = document.getElementById('material-review-modal');
-    if (modal) modal.remove();
-    document.body.classList.remove('ih-modal-open');
-    document.removeEventListener('keydown', onReviewKey, true);
-    if (reviewReturnFocus && document.contains(reviewReturnFocus)) reviewReturnFocus.focus();
-    reviewReturnFocus = null;
-  }
-
-  function onReviewKey(event) {
-    var modal = document.getElementById('material-review-modal');
-    if (!modal) return;
-    if (event.key === 'Escape') { event.preventDefault(); closeMaterialReviewModal(); return; }
-    if (event.key !== 'Tab') return;
-    var items = Array.prototype.slice.call(modal.querySelectorAll('a[href], button:not([disabled])'));
-    if (!items.length) return;
-    var first = items[0];
-    var last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-  }
-
+  // 분석 전 확인 창: 공통 창 틀(interview-home.js의 JPLayer)로 포커스 가두기·Esc·바깥 누르기·포커스 복귀를 처리한다
   function openMaterialReviewModal() {
-    closeMaterialReviewModal();
-    reviewReturnFocus = document.activeElement;
-    document.body.classList.add('ih-modal-open');
-    document.body.insertAdjacentHTML('beforeend',
-      '<div class="qs-layer" id="material-review-modal">' +
-        '<div class="qs-scrim" data-close-material-review></div>' +
-        '<section class="qs-box qs-box--narrow" role="dialog" aria-modal="true" aria-labelledby="material-review-title" tabindex="-1">' +
-          '<header class="qs-head"><div><div class="qs-chips"><span class="qs-mode">맞춤 면접</span></div>' +
-          '<h2 id="material-review-title">분석 전 마지막 확인</h2>' +
-          '<p>이 구성으로 분석을 시작하면 나중에 바꿀 수 없어요.</p></div>' +
-          '<button type="button" class="qs-x" data-close-material-review aria-label="확인 창 닫기">×</button></header>' +
-          '<div class="mr-body">' + materialReviewContent() +
-          '<div class="tk-scope tk-inline" id="material-review-ticket" role="status">티켓 잔액을 확인하고 있어요.</div></div>' +
-          '<footer class="qs-foot"><button type="button" class="fl-btn fl-btn--ghost" data-close-material-review>자료 다시 고르기</button>' +
-          '<span id="material-review-action"><button type="button" class="fl-btn fl-btn--navy" id="material-review-confirm" disabled>이 구성으로 분석 시작</button></span></footer>' +
-        '</section>' +
-      '</div>');
-    document.querySelectorAll('[data-close-material-review]').forEach(function (el) {
-      el.addEventListener('click', closeMaterialReviewModal);
-    });
-    document.addEventListener('keydown', onReviewKey, true);
-    document.querySelector('#material-review-modal .qs-box').focus();
+    var box = window.JPLayer.open(
+      '<p class="mr-mode"><span class="qs-mode is-fit">맞춤 면접</span></p>' +
+      '<h2 class="tk-title" id="tk-title">분석 전 마지막 확인</h2>' +
+      '<p class="tk-what">이 구성으로 분석을 시작하면 나중에 바꿀 수 없어요.</p>' +
+      materialReviewContent() +
+      '<div class="tk-scope tk-inline" id="material-review-ticket" role="status">티켓 잔액을 확인하고 있어요.</div>' +
+      '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>자료 다시 고르기</button>' +
+      '<span id="material-review-action"><button type="button" class="ih-btn ih-btn--navy" id="material-review-confirm" disabled>이 구성으로 분석 시작</button></span></div>'
+    );
+    box.classList.add('tk-box--wide');
     bindMaterialReviewEvents();
     renderReviewTicket();
   }
@@ -459,7 +424,7 @@
         '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
         '<div><dt>' + (short > 0 ? '필요' : '분석 후') + '</dt><dd>' + (short > 0 ? cost : tickets.balance - cost) + '장</dd></div></dl>';
       if (short > 0) {
-        action.innerHTML = '<a class="fl-btn fl-btn--navy" href="' + window.JobPuzzleRoutes.path('/tickets') + '">티켓 충전하러 가기</a>';
+        action.innerHTML = '<a class="ih-btn ih-btn--navy" href="' + window.JobPuzzleRoutes.path('/tickets') + '">티켓 충전하러 가기</a>';
       } else {
         var btn = document.getElementById('material-review-confirm');
         btn.disabled = false;
@@ -555,7 +520,16 @@
     document.getElementById('material-register-close').addEventListener('click', closeMaterialRegisterModal);
     document.querySelector('#material-register-modal [data-register-close]').addEventListener('click', closeMaterialRegisterModal);
     document.getElementById('material-register-modal').addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') { event.preventDefault(); closeMaterialRegisterModal(); }
+      if (event.key === 'Escape') { event.preventDefault(); closeMaterialRegisterModal(); return; }
+      if (event.key !== 'Tab') return;
+      var items = Array.prototype.filter.call(
+        this.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])'),
+        function (el) { return el.offsetParent !== null; });
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
     document.getElementById('material-register-cancel').addEventListener('click', closeMaterialRegisterModal);
     document.getElementById('material-register-file').addEventListener('change', function () {

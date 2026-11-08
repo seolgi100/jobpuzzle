@@ -104,6 +104,10 @@
   }
 
 
+  function modeClass(mode) {
+    return mode === 'COMPANY_FIT' ? 'is-fit' : mode === 'WEAKNESS_REVIEW' ? 'is-weak' : 'is-basic';
+  }
+
   function weaknessLabel(tag) {
     var value = String(tag || '').toLowerCase();
     var compact = value.replace(/[_\-\s]/g, '');
@@ -473,7 +477,7 @@
       (hasAnyAnswer ? '<button type="button" id="view-current-result" class="lv-link">지금까지 결과</button>' : '') +
       (session.analysisCaseId ? '<a class="lv-link" href="' +
         window.JobPuzzleRoutes.path('/analysis-results/' + encodeURIComponent(session.analysisCaseId)) + '">분석 결과</a>' : '') +
-      '<span class="lv-mode">' + esc(modeLabel(session.mode)) + '</span></span></div>' +
+      '<span class="lv-mode ' + modeClass(session.mode) + '">' + esc(modeLabel(session.mode)) + '</span></span></div>' +
       '<div class="lv-progress"><span>질문 <b>' + (currentIndex + 1) + '</b> / ' + questions.length + '</span>' +
       '<div class="lv-progress__bar" role="progressbar" aria-label="답변을 마친 질문" aria-valuemin="0" aria-valuemax="' +
       questions.length + '" aria-valuenow="' + finished + '"><i style="width:' + percent + '%"></i></div>' +

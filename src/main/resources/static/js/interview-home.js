@@ -12,6 +12,7 @@
   var data = null;
   var showAllPostings = false;
   var openRecords = {};
+  var scores = {}; // sessionId -> 종합 점수(약점 보완은 null)
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -139,6 +140,7 @@
       status: status,
       busy: !!(active || review || running),
       practiced: !!done,
+      doneSessionId: done ? done.sessionId : null,
       lastActivity: lastActivity,
       cases: cases,
       sessions: sessions
@@ -198,16 +200,39 @@
 
   function postingCard(p) {
     return '<article class="ih-card' + (p.busy ? ' is-busy' : '') + '">' +
+      (p.busy ? '<span class="ih-card__flag">지금 할 일</span>' : '') +
       '<header class="ih-card__head"><h3 class="ih-card__title">' + esc(p.title) + '</h3>' +
       (p.meta ? '<p class="ih-card__meta">' + esc(p.meta) + '</p>' : '') + '</header>' +
       stepsHtml(p.steps) +
-      '<p class="ih-card__status">' + esc(p.status) + '</p>' +
+      '<p class="ih-card__status">' + esc(p.status) +
+      (p.doneSessionId ? '<span class="ih-card__score" data-score-for="' + p.doneSessionId + '">' + scoreText(p.doneSessionId) + '</span>' : '') +
+      '</p>' +
       '<div class="ih-card__foot">' +
-      '<a class="ih-btn ih-btn--navy" href="' + R.path(p.action.href) + '">' + esc(p.action.label) + '</a>' +
+      '<a class="ih-btn ' + (p.busy ? 'ih-btn--navy' : 'ih-btn--line') + '" href="' + R.path(p.action.href) + '">' + esc(p.action.label) + '</a>' +
       (p.practiced && data.weakness.length
         ? '<button type="button" class="ih-btn ih-btn--line" data-open-weakness>약점 연습</button>' : '') +
       recordsBlock(p.key, '이 공고 기록 보기', p) +
       '</div></article>';
+  }
+
+  function scoreText(sessionId) {
+    var score = scores[sessionId];
+    return typeof score === 'number' ? ' · 최근 점수 <b>' + score + '점</b>' : '';
+  }
+
+  // 카드마다 최근 완료 면접 점수를 따로 불러와 채운다.
+  // ponytail: 공고 수만큼 요청, 공고가 많아지면 history 응답에 점수를 실어 보내기
+  function loadScores() {
+    data.postings.forEach(function (p) {
+      var id = p.doneSessionId;
+      if (!id || id in scores) return;
+      scores[id] = null;
+      api('/interview-sessions/' + id + '/score').then(function (summary) {
+        scores[id] = summary && typeof summary.overallScore === 'number' ? summary.overallScore : null;
+        var slot = home.querySelector('[data-score-for="' + id + '"]');
+        if (slot) slot.innerHTML = scoreText(id);
+      }).catch(function () { /* 점수는 보조 정보라 못 불러와도 카드는 그대로 */ });
+    });
   }
 
   function newPostingTile(empty) {
@@ -350,6 +375,7 @@
       data.postings = groupPostings(data);
       data.looseSessions = sessions.filter(function (s) { return !s.analysisCaseId; });
       render();
+      loadScores();
     }).catch(function (error) {
       renderError(error.message);
     });
@@ -520,6 +546,7 @@
   })();
 
   window.JPDialog = Dialog;
+  window.JPLayer = Layer;
   window.TicketConfirm = TicketConfirm;
   window.InterviewHome = { load: load, show: show, hide: hide };
 
