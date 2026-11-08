@@ -33,6 +33,10 @@
     selectedJobCategoryId: null,
     selectedDocIds: {}, // documentId -> true
     selectedExtractionIds: {}, // documentId -> CONFIRMED extractionId
+    materialStage: 'company', // company(공고) -> candidate(내 자료)
+    materialError: null,      // 다음 단계로 못 갈 때 버튼 옆에 보여줄 이유
+    loadError: null,
+    tickets: null,
     registerTargetType: null,
     materialRegisterMethod: 'file',
     analysisCaseId: null
@@ -166,17 +170,44 @@
   // ---- step: material select (실제 API 연동) ----
   function enterMaterialSelect() {
     state.step = 'materialSelect';
+    state.materialStage = 'company';
+    state.materialError = null;
+    window.history.pushState({ materialStage: 'company' }, '');
+    reloadMaterials();
+  }
+
+  function reloadMaterials() {
+    state.loadError = null;
+    state.docsLoaded = false;
     render();
     loadMaterialSelectData().then(render);
   }
+
+  function setMaterialStage(stage) {
+    state.materialStage = stage;
+    state.materialError = null;
+    render();
+    window.scrollTo(0, 0);
+    var title = document.getElementById('fl-title');
+    if (title) { title.tabIndex = -1; title.focus(); }
+  }
+
+  // 단계 이동은 history.back으로 해서 화면 버튼과 브라우저 뒤로 가기가 같은 길을 쓴다
+  window.addEventListener('popstate', function (event) {
+    if (state.step !== 'materialSelect') return;
+    if (event.state && event.state.materialStage === 'company') setMaterialStage('company');
+    else showModeStep();
+  });
 
   function loadMaterialSelectData() {
     return Promise.all([
       DF.api('/documents?size=100'),
       state.jobCategories.length ? Promise.resolve(state.jobCategories) : DF.api('/job-category'),
-      DF.api('/user/me')
+      DF.api('/user/me'),
+      DF.api('/tickets/me').catch(function () { return null; })
     ]).then(function (results) {
       state.allDocs = (results[0] && results[0].content) || [];
+      state.tickets = results[3];
       state.jobCategories = results[1] || [];
       state.docsLoaded = true;
 
@@ -190,7 +221,7 @@
           state.selectedJobCategoryId = match.jobCategoryId;
         }
       }
-    }).catch(function (e) { notify('error', e.message); });
+    }).catch(function (e) { state.loadError = e.message || '자료를 불러오지 못했어요.'; });
   }
 
   function docListHtml(type) {
@@ -222,10 +253,53 @@
       '<button type="button" class="ms-add" data-open-register="' + type + '">+ ' + DF.CATEGORY_LABEL[type] + ' 등록하기</button></fieldset>';
   }
 
+  function selectedDocsOf(types) {
+    return state.allDocs.filter(function (d) {
+      return state.selectedDocIds[d.documentId] && types.indexOf(d.documentType) >= 0;
+    });
+  }
+
+  // 시작 전에 비용과 잔액을 먼저 알려 마지막 확인 창에서 처음 알게 되는 일을 막는다
+  function ticketLineHtml() {
+    var t = state.tickets;
+    if (!t) return '';
+    var range = t.costs.companyFitMin + '~' + t.costs.companyFitMax + '장';
+    var short = t.balance < t.costs.companyFitMin;
+    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + range + '</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
+      (short ? ' · 모자라요. <a class="fl-link" href="' + window.JobPuzzleRoutes.path('/tickets') + '">충전하기</a>' : '') + '</p>';
+  }
+
+  function footHtml(summary, nextLabel) {
+    return '<div class="ms-foot"><span class="ms-summary" aria-live="polite">' + summary + '</span>' +
+      (state.materialError ? '<p class="ms-error" role="alert">' + esc(state.materialError) + '</p>' : '') +
+      '<button type="button" class="fl-btn fl-btn--navy" id="material-select-next">' + nextLabel + '</button></div>';
+  }
+
   function renderMaterialSelect() {
+    var back = state.materialStage === 'candidate'
+      ? backBtn('historyBack', '공고 다시 고르기')
+      : backBtn('historyBack', '면접 준비로 돌아가기');
+    if (state.loadError) {
+      return '<section class="fl-panel">' + back +
+        '<div class="ms-load" role="alert"><p class="fl-sub">' + esc(state.loadError) + '</p>' +
+        '<button type="button" class="fl-btn fl-btn--ghost" data-action="retryMaterials">다시 불러오기</button></div></section>';
+    }
     if (!state.docsLoaded) {
-      return '<section class="fl-panel">' + backBtn('backToMode', '면접 준비로 돌아가기') +
+      return '<section class="fl-panel">' + back +
         '<p class="fl-sub" role="status">자료를 불러오고 있어요.</p></section>';
+    }
+
+    if (state.materialStage === 'company') {
+      var postings = selectedDocsOf(['JOB_POSTING']).length;
+      var infos = selectedDocsOf(['COMPANY_INFO']).length;
+      return '<section class="fl-panel" aria-labelledby="fl-title">' + back +
+        '<p class="ms-stage">1 / 2 단계</p>' +
+        '<h1 class="fl-title" id="fl-title">어느 공고로 준비하나요?</h1>' +
+        '<p class="fl-sub">채용공고를 하나 이상 골라주세요. 회사 정보는 있으면 함께 써요.</p>' +
+        ticketLineHtml() +
+        '<div class="ms-cols"><div class="ms-col">' + COMPANY_TYPES.map(docListHtml).join('') + '</div></div>' +
+        footHtml('채용공고 <b>' + postings + '개</b> · 회사 정보 <b>' + infos + '개</b>', '다음: 내 자료 고르기') +
+      '</section>';
     }
 
     var mainCategories = uniqueInOrder(state.jobCategories.map(function (c) { return c.mainCategory; }));
@@ -244,32 +318,40 @@
       levelMatches.map(function (c) {
         return '<option value="' + c.jobCategoryId + '"' + (String(c.jobCategoryId) === String(state.selectedJobCategoryId) ? ' selected' : '') + '>' + (CAREER_LEVEL_LABEL[c.careerLevel] || c.careerLevel) + '</option>';
       }).join('');
-    var picked = Object.keys(state.selectedDocIds).length;
+    var posting = selectedDocsOf(['JOB_POSTING'])[0];
+    var mine = selectedDocsOf(CANDIDATE_TYPES).length;
 
-    return '<section class="fl-panel" aria-labelledby="fl-title">' +
-      backBtn('backToMode', '면접 준비로 돌아가기') +
-      '<h1 class="fl-title" id="fl-title">새 공고로 준비할 자료를 골라주세요</h1>' +
+    return '<section class="fl-panel" aria-labelledby="fl-title">' + back +
+      '<p class="ms-stage">2 / 2 단계' + (posting ? ' · ' + esc(posting.displayName) : '') + '</p>' +
+      '<h1 class="fl-title" id="fl-title">이 공고에 낼 내 자료를 골라주세요</h1>' +
       '<p class="fl-sub">확정된 자료만 고를 수 있어요. 없으면 바로 등록할 수 있어요.</p>' +
       '<div class="ms-cols">' +
-        '<div class="ms-col"><h2 class="ms-h">지원할 회사</h2>' + COMPANY_TYPES.map(docListHtml).join('') + '</div>' +
-        '<div class="ms-col">' +
-          '<div class="ms-job"><h2 class="ms-h">희망 직무</h2><div class="ms-selects">' +
-            '<select id="material-main-select" class="fl-select" aria-label="직무 대분류">' + mainOpts + '</select>' +
-            '<select id="material-sub-select" class="fl-select" aria-label="직무 중분류"' + (state.selectedMainCategory ? '' : ' disabled') + '>' + subOpts + '</select>' +
-            '<select id="material-level-select" class="fl-select" aria-label="경력"' + (levelMatches.length ? '' : ' disabled') + '>' + levelOpts + '</select>' +
-          '</div><p class="ms-note">고른 직무·경력을 면접 기준으로 써요. 공고의 요구 경력과 다르면 분석 결과에서 차이를 알려드려요.</p></div>' +
-          '<h2 class="ms-h">내 지원 자료</h2>' + CANDIDATE_TYPES.map(docListHtml).join('') +
-        '</div>' +
+        '<div class="ms-col"><div class="ms-job"><h2 class="ms-h">희망 직무</h2><div class="ms-selects">' +
+          '<select id="material-main-select" class="fl-select" aria-label="직무 대분류">' + mainOpts + '</select>' +
+          '<select id="material-sub-select" class="fl-select" aria-label="직무 중분류"' + (state.selectedMainCategory ? '' : ' disabled') + '>' + subOpts + '</select>' +
+          '<select id="material-level-select" class="fl-select" aria-label="경력"' + (levelMatches.length ? '' : ' disabled') + '>' + levelOpts + '</select>' +
+        '</div><p class="ms-note">고른 직무·경력을 면접 기준으로 써요. 공고의 요구 경력과 다르면 분석 결과에서 차이를 알려드려요.</p></div></div>' +
+        '<div class="ms-col"><h2 class="ms-h">내 지원 자료</h2>' + CANDIDATE_TYPES.map(docListHtml).join('') + '</div>' +
       '</div>' +
-      '<div class="ms-foot"><span class="ms-summary" aria-live="polite">고른 자료 <b>' + picked + '개</b></span>' +
-      '<button type="button" class="fl-btn fl-btn--navy" id="material-select-next">확인하고 분석 준비</button></div>' +
+      footHtml('내 자료 <b>' + mine + '개</b>', '확인하고 분석 준비') +
     '</section>';
   }
 
+  function goCandidateStage() {
+    if (!selectedDocsOf(['JOB_POSTING']).length) {
+      state.materialError = '채용공고를 하나 이상 골라주세요.';
+      render();
+      return;
+    }
+    window.history.pushState({ materialStage: 'candidate' }, '');
+    setMaterialStage('candidate');
+  }
+
   function goMaterialReview() {
-    if (!state.selectedJobCategoryId) { notify('warning', '희망 직무를 선택해주세요.'); return; }
+    var problem = !state.selectedJobCategoryId ? '희망 직무와 경력을 골라주세요.'
+      : !selectedDocsOf(CANDIDATE_TYPES).length ? '내 자료를 하나 이상 골라주세요.' : null;
+    if (problem) { state.materialError = problem; render(); return; }
     var selectedIds = Object.keys(state.selectedDocIds);
-    if (!selectedIds.length) { notify('warning', '자료를 1개 이상 선택해주세요.'); return; }
 
     Promise.all(selectedIds.map(function (id) {
       if (state.selectedExtractionIds[id]) return Promise.resolve();
@@ -556,6 +638,8 @@
     });
 
     bindAction('backToMode', function () { state.step = 'mode'; render(); });
+    bindAction('historyBack', function () { window.history.back(); });
+    bindAction('retryMaterials', reloadMaterials);
     if (state.step === 'materialSelect') bindMaterialSelectEvents();
   }
 
@@ -574,12 +658,16 @@
       render();
     });
     var levelSel = document.getElementById('material-level-select');
-    if (levelSel) levelSel.addEventListener('change', function () { state.selectedJobCategoryId = levelSel.value || null; });
+    if (levelSel) levelSel.addEventListener('change', function () {
+      state.selectedJobCategoryId = levelSel.value || null;
+      if (state.materialError) { state.materialError = null; render(); }
+    });
 
     document.querySelectorAll('[data-toggle-doc]').forEach(function (el) {
       el.addEventListener('click', function () {
         var id = el.dataset.toggleDoc;
         if (state.selectedDocIds[id]) delete state.selectedDocIds[id]; else state.selectedDocIds[id] = true;
+        state.materialError = null;
         render();
         var again = document.querySelector('[data-toggle-doc="' + id + '"]');
         if (again) again.focus();
@@ -589,7 +677,7 @@
       el.addEventListener('click', function () { openMaterialRegisterModal(el.dataset.openRegister); });
     });
     var nextBtn = document.getElementById('material-select-next');
-    if (nextBtn) nextBtn.addEventListener('click', goMaterialReview);
+    if (nextBtn) nextBtn.addEventListener('click', state.materialStage === 'company' ? goCandidateStage : goMaterialReview);
   }
 
   function bindMaterialReviewEvents() {

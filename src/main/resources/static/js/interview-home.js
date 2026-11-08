@@ -109,7 +109,7 @@
     } else if (running) {
       action = { label: '분석 상태 확인', href: '/analysis/' + latest.analysisCaseId };
     } else if (readyCase) {
-      action = { label: '질문 골라 면접 시작', href: '/interview?analysisCaseId=' + readyCase.analysisCaseId };
+      action = { label: '면접 시작', href: '/interview?analysisCaseId=' + readyCase.analysisCaseId };
     } else if (failed && !completedCase) {
       action = { label: '멈춘 분석 확인', href: '/analysis/' + latest.analysisCaseId };
     } else if (done) {
@@ -139,6 +139,7 @@
       action: action,
       status: status,
       busy: !!(active || review || running),
+      practiced: !!done,
       lastActivity: lastActivity,
       cases: cases,
       sessions: sessions
@@ -204,6 +205,8 @@
       '<p class="ih-card__status">' + esc(p.status) + '</p>' +
       '<div class="ih-card__foot">' +
       '<a class="ih-btn ih-btn--navy" href="' + R.path(p.action.href) + '">' + esc(p.action.label) + '</a>' +
+      (p.practiced && data.weakness.length
+        ? '<button type="button" class="ih-btn ih-btn--line" data-open-weakness>약점 연습</button>' : '') +
       recordsBlock(p.key, '이 공고 기록 보기', p) +
       '</div></article>';
   }
@@ -267,7 +270,7 @@
           : '기본 질문 · ' + (set.displayTitle || '')) + '</span>' +
         '<span class="ih-rec__state">질문 ' + esc(set.questionCount) + '개</span>' +
         '<span class="ih-rec__when">' + esc(day(set.createdAt)) + '</span>' +
-        '<button type="button" class="ih-link" data-open-set="' + esc(set.questionSetId) + '">질문 고르기</button></li>';
+        '<button type="button" class="ih-link" data-open-set="' + esc(set.questionSetId) + '">면접 시작</button></li>';
     }).join('');
 
     var loose = { key: 'loose', cases: [], sessions: data.looseSessions };
@@ -377,7 +380,7 @@
       } else if (t.hasAttribute('data-start-basic')) {
         TicketConfirm.open({
           usage: 'BASIC',
-          what: '희망 직무의 공통 질문을 만들어요. 질문을 고른 뒤 바로 면접을 시작해요.',
+          what: '희망 직무의 공통 질문을 만들고 바로 면접을 시작해요. 원치 않는 질문은 면접 중에 건너뛸 수 있어요.',
           confirmLabel: '질문 만들기',
           onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startBasic(); }
         });

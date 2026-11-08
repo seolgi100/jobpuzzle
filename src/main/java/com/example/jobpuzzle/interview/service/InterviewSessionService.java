@@ -857,7 +857,8 @@ public class InterviewSessionService {
         return SessionResponse.from(session, questions.size(), hasAnyAnswer(sessionId));
     }
 
-    public SessionQuestionResponse deferCurrentQuestion(
+    // 면접 중 건너뛰기: 첫 답변을 내지 않은 질문만 SKIPPED로 빼고, 평가 비용은 들지 않는다.
+    public SessionQuestionResponse skipQuestion(
             Long userId,
             Long sessionQuestionId
     ) {
@@ -869,7 +870,10 @@ public class InterviewSessionService {
                 || question.getStatus() == InterviewSessionQuestionStatus.SKIPPED) {
             throw new CustomException(ErrorCode.SESSION_QUESTION_NOT_FOUND);
         }
-        question.defer();
+        if (hasOriginalAnswer(sessionQuestionId)) {
+            throw new CustomException(ErrorCode.ANSWER_ALREADY_CONFIRMED);
+        }
+        question.skip();
         question.getSession().touch();
         return toSessionQuestionResponse(question);
     }

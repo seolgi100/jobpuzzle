@@ -97,7 +97,7 @@
       (questions.length ? questions.slice(0, QUESTION_PREVIEW).map(function (q, i) {
         return '<div class="aq"><span class="aq__n">' + (i + 1) + '</span><div><span class="mbadge mbadge--basic">' + (TYPE[q.questionType] || '일반') + '</span>' +
           '<p class="aq__q">' + esc(q.question) + '</p>' + (q.intent ? '<p class="aq__why"><b>확인하는 것</b> · ' + esc(q.intent) + '</p>' : '') + '</div></div>';
-      }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접 시작 전 질문 고르기에서 볼 수 있어요.</p>' : '')
+      }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접에서 차례로 나와요.</p>' : '')
         : '<p class="rs-sub">만들어진 질문이 없어요.</p>') + '</section>' +
       '<section class="dcard" aria-labelledby="p-title"><h2 class="rs-h" id="p-title">보완 과제</h2><p class="rs-sub">마감일과 완료는 액션플랜에서 관리해요.</p>' +
       (plans.length ? plans.map(function (p) {

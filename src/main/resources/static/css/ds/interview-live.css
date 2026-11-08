@@ -19,7 +19,10 @@
 .lv-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--lv-text-2); cursor: pointer; }
 .lv-back:hover { color: var(--lv-primary); }
 .lv-bar__right { display: inline-flex; align-items: center; gap: 12px; }
-.lv-link { font-size: 14px; font-weight: 600; color: var(--lv-primary); text-underline-offset: 3px; }
+.lv-back, .lv-link, .lv-mode { white-space: nowrap; }
+.lv-link { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--lv-primary); text-underline-offset: 3px; cursor: pointer; }
+button.lv-link { min-height: 44px; }
+button.lv-link:hover { text-decoration: underline; }
 .lv-mode { height: 24px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 7px; background: var(--lv-sub); font-size: 12px; font-weight: 700; color: var(--lv-text-2); }
 
 /* 진행 막대 */
@@ -32,6 +35,12 @@
 .lv-q { margin-top: 18px; padding: 28px; border-radius: 20px; background: var(--lv-navy); color: #fff; }
 .lv-q__label { font-size: 13px; font-weight: 700; color: #8FB4F5; }
 .lv-q__text { margin: 10px 0 0; font-size: 22px; font-weight: 800; line-height: 1.5; letter-spacing: -0.02em; text-wrap: pretty; }
+.lv-hintbtn { margin-top: 16px; min-height: 36px; padding: 0 12px; border: 1px solid rgba(255, 255, 255, .28); border-radius: 8px; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; }
+.lv-hintbtn:hover { background: rgba(255, 255, 255, .08); }
+.lv-hint { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin-top: 12px; padding: 14px 16px; border-radius: 12px; background: var(--lv-navy-raised); font-size: 14px; line-height: 1.6; }
+.lv-hint[hidden] { display: none; }
+.lv-hint b { color: #fff; }
+.lv-hint span { color: #C9D7EE; }
 
 /* 답변 과정 */
 .lv-talk { margin-top: 24px; }
@@ -94,6 +103,8 @@
 @media (max-width: 560px) {
   .lv-q { padding: 22px 20px; }
   .lv-q__text { font-size: 19px; }
+  .lv-hint { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  a.lv-link { display: none; } /* 휴대폰에선 위쪽 막대를 나가기·결과·모드만 남긴다 */
   .lv-answer { padding: 16px; }
   .lv-foot { position: sticky; bottom: 0; z-index: 5; margin-top: 16px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); flex-direction: column-reverse; align-items: stretch; gap: 4px; background: var(--lv-canvas); box-shadow: 0 -1px 0 var(--lv-line), -16px 0 0 var(--lv-canvas), 16px 0 0 var(--lv-canvas); }
   .lv-submit { width: 100%; }

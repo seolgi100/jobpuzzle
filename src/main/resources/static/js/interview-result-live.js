@@ -194,8 +194,8 @@
     var canFinalize = s.questions.some(function (q) { return qScore(q) != null; });
     el.hidden = false;
     el.innerHTML = '<span class="interim__label">중간 결과</span><h2>지금까지의 답변을 확인하고 다음 단계를 골라주세요</h2>' +
-      '<p>아직 리포트가 확정되지 않았어요. 고른 질문을 이어서 답하거나 남은 질문을 추가할 수 있어요.</p><div class="interim__actions">' +
-      (s.pending.length ? '<a class="dbtn dbtn--line" style="height:40px" href="' + route('/interview?resumeSessionId=' + encodeURIComponent(sessionId)) + '">고른 질문 ' + s.pending.length + '개 이어서 답하기</a>' : '') +
+      '<p>아직 리포트가 확정되지 않았어요. 남은 질문을 이어서 답할 수 있어요.</p><div class="interim__actions">' +
+      (s.pending.length ? '<a class="dbtn dbtn--line" style="height:40px" href="' + route('/interview?resumeSessionId=' + encodeURIComponent(sessionId)) + '">남은 질문 ' + s.pending.length + '개 이어서 답하기</a>' : '') +
       (s.remaining.length ? '<button type="button" class="dbtn dbtn--line" style="height:40px" data-open-remaining>남은 질문 ' + s.remaining.length + '개 추가</button>'
         : s.pending.length ? '' : '<span class="rs-sub" style="align-self:center">준비된 질문을 모두 답했어요</span>') +
       (canFinalize ? '<button type="button" class="dbtn dbtn--navy" data-finalize>면접 끝내고 리포트 확정</button>'

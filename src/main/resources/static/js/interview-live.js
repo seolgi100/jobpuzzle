@@ -22,10 +22,6 @@
   var followUpMessageId = null;
   var speechRecognition = null;
   var speechListening = false;
-  var selectionModal = null;
-  var selectionReturnFocus = null;
-  var selectionHistoryActive = false;
-  var selectionRequiresExitWarning = false;
   var allowLiveNavigation = false;
 
   function esc(value) {
@@ -244,11 +240,10 @@
       return api(window.JobPuzzleRoutes.path('/analysis/cases/' + analysisCaseId + '/question-set'));
     }).then(function (set) {
       if (!set.canGenerateQuestions || !set.questions || !set.questions.length) {
-        throw new Error('고를 수 있는 맞춤 질문이 없어요.');
+        throw new Error('면접에 쓸 맞춤 질문이 없어요.');
       }
       questionSet = set;
-      selectionRequiresExitWarning = false;
-      renderSelection();
+      createSession();
     }).catch(function (error) {
       message(error.message, true);
     });
@@ -264,7 +259,7 @@
   var MAX_ANSWER_ATTEMPTS = 3; // 서버 MAX_ADDITIONAL_ANSWER_RETRIES(2) + 첫 제출 1
   var pendingNotice = null;    // 다음 화면에서 한 번 보여줄 안내(질문이 넘어갈 때)
 
-  // 질문 선택을 닫거나 생성이 막혔을 때 면접 준비 홈으로 돌아간다
+  // 질문 생성이 막혔을 때 면접 준비 홈으로 돌아간다
   function returnHome() {
     if (root) root.innerHTML = '';
     if (window.InterviewPage) window.InterviewPage.showModes();
@@ -290,8 +285,7 @@
     api(window.JobPuzzleRoutes.path('/question-sets/' + encodeURIComponent(questionSetId)))
       .then(function (set) {
         questionSet = set;
-        selectionRequiresExitWarning = false;
-        renderSelection();
+        createSession();
       })
       .catch(function (error) { message(error.message, true); });
   }
@@ -311,8 +305,7 @@
       });
     }).then(function (set) {
       questionSet = set;
-      selectionRequiresExitWarning = true;
-      renderSelection();
+      createSession();
     }).catch(function (error) { handleGenerationError(error, 'BASIC'); });
   }
 
@@ -323,144 +316,19 @@
       json: { targetWeaknessTag: tag }
     }).then(function (set) {
       questionSet = set;
-      selectionRequiresExitWarning = true;
-      renderSelection();
+      createSession();
     }).catch(function (error) { handleGenerationError(error, 'WEAKNESS_REVIEW'); });
   }
 
-  function renderSelection() {
-    var rows = questionSet.questions.map(function (question, index) {
-      var id = 'qs-' + question.questionId;
-      return '<li class="qs-item"><div class="qs-row">' +
-        '<input type="checkbox" id="' + id + '" name="question" value="' + question.questionId + '" checked>' +
-        '<label for="' + id + '" class="qs-text"><span class="qs-no" aria-hidden="true">' + (index + 1) + '</span>' +
-        esc(question.question) + '</label>' +
-        '<button type="button" class="qs-hintbtn" aria-expanded="false" aria-controls="' + id + '-hint">힌트 보기</button></div>' +
-        '<div class="qs-hint" id="' + id + '-hint" hidden><b>이 질문의 의도</b><span>' +
-        esc(koreanizeEvaluationTerms(question.intent || '답변의 구체적인 근거와 본인 역할을 확인해요.')) +
-        '</span><b>집중 평가 기준</b><span>' + esc(koreanizeEvaluationTerms(focusLabels(question.evaluationFocus))) + '</span>' +
-        weaknessOriginHtml(question) + '</div></li>';
-    }).join('');
-    if (window.InterviewPage && window.InterviewPage.showModes) window.InterviewPage.showModes();
-    closeSelectionModal(true);
-    selectionReturnFocus = document.activeElement;
-    selectionModal = document.createElement('div');
-    selectionModal.className = 'qs-layer';
-    selectionModal.innerHTML =
-      '<div class="qs-scrim" data-close-selection></div>' +
-      '<section class="qs-box" role="dialog" aria-modal="true" aria-labelledby="qs-title" tabindex="-1">' +
-      '<header class="qs-head"><div><div class="qs-chips"><span class="qs-mode">' + esc(modeLabel(questionSet.mode)) + '</span>' +
-      (questionSet.mode === 'WEAKNESS_REVIEW'
-        ? '<span class="qs-tag">#' + esc(questionSet.targetWeaknessDisplayName || weaknessLabel(questionSet.targetWeaknessTag) || '고른 약점') + '</span>'
-        : '') + '</div>' +
-      '<h2 id="qs-title">연습할 질문을 골라주세요</h2>' +
-      '<p>고른 순서가 아니라 아래 순서대로 면접이 진행돼요.</p></div>' +
-      '<button type="button" class="qs-x" data-close-selection aria-label="질문 고르기 닫기">×</button></header>' +
-      '<ol class="qs-list">' + rows + '</ol>' +
-      '<footer class="qs-foot"><span class="qs-count" id="qs-count" aria-live="polite"></span>' +
-      '<button type="button" id="create-live-session" class="fl-btn fl-btn--navy">고른 질문으로 시작</button></footer></section>';
-    document.body.appendChild(selectionModal);
-    document.body.classList.add('ih-modal-open');
-    window.history.pushState({ interviewSelection: true }, '', '#question-selection');
-    selectionHistoryActive = true;
-    selectionModal.querySelectorAll('[data-close-selection]').forEach(function (button) {
-      button.addEventListener('click', requestCloseSelection);
-    });
-    selectionModal.querySelectorAll('.qs-hintbtn').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var panel = document.getElementById(button.getAttribute('aria-controls'));
-        var expanded = button.getAttribute('aria-expanded') === 'true';
-        button.setAttribute('aria-expanded', String(!expanded));
-        button.textContent = expanded ? '힌트 보기' : '힌트 숨기기';
-        panel.hidden = expanded;
-      });
-    });
-    var start = document.getElementById('create-live-session');
-    function updateCount() {
-      var count = selectionModal.querySelectorAll('input[name="question"]:checked').length;
-      document.getElementById('qs-count').textContent = count
-        ? count + '개 골랐어요'
-        : '질문을 하나 이상 골라야 해요';
-      start.disabled = count === 0;
-    }
-    selectionModal.addEventListener('change', updateCount);
-    selectionModal.addEventListener('keydown', trapSelectionFocus);
-    start.addEventListener('click', createSession);
-    updateCount();
-    var firstBox = selectionModal.querySelector('input[name="question"]');
-    (firstBox || selectionModal.querySelector('.qs-box')).focus();
-  }
-
-  // 질문 고르기 창: Tab은 창 안에서만 돌고 Esc로 닫는다
-  function trapSelectionFocus(event) {
-    if (event.key === 'Escape') {
-      if (document.querySelector('.tk-layer')) return; // 위에 확인 창이 떠 있으면 그 창이 처리한다
-      event.preventDefault();
-      requestCloseSelection();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    var items = Array.prototype.slice.call(selectionModal.querySelectorAll('button:not([disabled]), input'))
-      .filter(function (el) { return el.offsetParent !== null; });
-    if (!items.length) return;
-    var first = items[0];
-    var last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-  }
-
-  function requestCloseSelection() {
-    if (!selectionModal) return;
-    if (selectionRequiresExitWarning) {
-      ask({
-        title: '질문 고르기를 닫을까요?',
-        body: '만든 질문은 면접 준비 화면의 "만들어 두고 아직 시작하지 않은 질문"에 남아 있어요.',
-        confirmLabel: '닫기',
-        cancelLabel: '계속 고르기',
-        onConfirm: closeSelectionNow
-      });
-      return;
-    }
-    closeSelectionNow();
-  }
-
-  function closeSelectionNow() {
-    if (!selectionModal) return;
-    closeSelectionModal(true);
-    window.history.replaceState({}, '', window.location.pathname + window.location.search);
-    questionSet = null;
-    selectionRequiresExitWarning = false;
-    if (analysisCaseId) {
-      window.location.href = window.JobPuzzleRoutes.path(
-        '/analysis-results/' + encodeURIComponent(analysisCaseId)
-      );
-      return;
-    }
-    returnHome();
-  }
-
-  function closeSelectionModal(fromHistory) {
-    if (selectionModal) selectionModal.remove();
-    selectionModal = null;
-    document.body.classList.remove('ih-modal-open');
-    if (selectionReturnFocus && document.contains(selectionReturnFocus)) selectionReturnFocus.focus();
-    selectionReturnFocus = null;
-    if (fromHistory) selectionHistoryActive = false;
-  }
-
-
+  // 질문을 고르지 않고 만든 질문을 모두 넣어 시작한다. 원치 않는 질문은 면접 중에 건너뛴다.
   function createSession() {
-    var selected = Array.prototype.slice.call(
-      (selectionModal || document).querySelectorAll('input[name="question"]:checked')
-    )
-      .map(function (input) { return Number(input.value); });
+    var selected = (questionSet.questions || []).filter(function (question) {
+      return !question.reviewStatus || question.reviewStatus === 'PASS';
+    }).map(function (question) { return Number(question.questionId); });
     if (!selected.length) {
-      notify('warning', '질문을 하나 이상 선택해주세요.');
+      message('면접에 쓸 수 있는 질문이 없어요.', true);
       return;
     }
-    closeSelectionModal(true);
-    selectionRequiresExitWarning = false;
-    window.history.replaceState({}, '', window.location.pathname + window.location.search);
     message('면접을 준비하고 있어요.');
     api(window.JobPuzzleRoutes.path('/interview-sessions'), {
       method: 'POST',
@@ -555,11 +423,11 @@
     var percent = questions.length ? Math.round(finished / questions.length * 100) : 0;
     var remaining = Math.max(0, MAX_ANSWER_ATTEMPTS - usedAttempts(question));
 
+    // 건너뛰기는 첫 답을 내기 전만. 답이 하나도 없으면 결과를 낼 수 없어 마지막 남은 질문은 건너뛸 수 없다.
     var subActions = [];
-    if (hasAnotherPendingQuestion) {
-      subActions.push('<button type="button" id="skip-current-question" class="lv-text">건너뛰기</button>');
+    if (!question.answerSubmitted && (hasAnotherPendingQuestion || hasAnyAnswer)) {
+      subActions.push('<button type="button" id="skip-current-question" class="lv-text">이 질문 건너뛰기</button>');
     }
-    subActions.push('<button type="button" id="view-current-result" class="lv-text">지금까지 결과 보기</button>');
     if (!hasAnyAnswer) {
       subActions.push('<button type="button" id="finish-live-session" class="lv-text">면접 취소</button>');
     } else if (question.answerSubmitted) {
@@ -600,6 +468,7 @@
       '<div class="lv-bar"><button type="button" id="leave-live-interview" class="lv-back">' +
       '<span aria-hidden="true">←</span> 면접 준비로 나가기</button>' +
       '<span class="lv-bar__right">' +
+      (hasAnyAnswer ? '<button type="button" id="view-current-result" class="lv-link">지금까지 결과</button>' : '') +
       (session.analysisCaseId ? '<a class="lv-link" href="' +
         window.JobPuzzleRoutes.path('/analysis-results/' + encodeURIComponent(session.analysisCaseId)) + '">분석 결과</a>' : '') +
       '<span class="lv-mode">' + esc(modeLabel(session.mode)) + '</span></span></div>' +
@@ -608,7 +477,12 @@
       questions.length + '" aria-valuenow="' + finished + '"><i style="width:' + percent + '%"></i></div>' +
       '<span>' + percent + '%</span></div>' +
       '<section class="lv-q" aria-labelledby="lv-q-text"><span class="lv-q__label">질문 ' + (currentIndex + 1) + '</span>' +
-      '<p class="lv-q__text" id="lv-q-text">' + esc(question.questionText) + '</p></section>' +
+      '<p class="lv-q__text" id="lv-q-text">' + esc(question.questionText) + '</p>' +
+      '<button type="button" class="lv-hintbtn" id="lv-hint-toggle" aria-expanded="false" aria-controls="lv-hint">힌트 보기</button>' +
+      '<div class="lv-hint" id="lv-hint" hidden><b>이 질문의 의도</b><span>' +
+      esc(koreanizeEvaluationTerms(question.intent || '답변의 구체적인 근거와 본인 역할을 확인해요.')) +
+      '</span><b>집중 평가 기준</b><span>' + esc(koreanizeEvaluationTerms(focusLabels(question.evaluationFocus))) + '</span>' +
+      weaknessOriginHtml(question) + '</div></section>' +
       conversationHtml +
       (followUpMessageId
         ? '<div class="lv-follow" id="live-follow-up"><b>AI 추가 질문</b><p>' + esc(question.pendingFollowUpQuestion || '') + '</p>' +
@@ -634,7 +508,15 @@
     if (finish) finish.addEventListener('click', finishOrCancel);
     var skipQuestion = document.getElementById('skip-current-question');
     if (skipQuestion) skipQuestion.addEventListener('click', skipCurrentQuestion);
-    document.getElementById('view-current-result').addEventListener('click', viewCurrentResult);
+    var viewResult = document.getElementById('view-current-result');
+    if (viewResult) viewResult.addEventListener('click', viewCurrentResult);
+    var hintToggle = document.getElementById('lv-hint-toggle');
+    hintToggle.addEventListener('click', function () {
+      var open = hintToggle.getAttribute('aria-expanded') !== 'true';
+      hintToggle.setAttribute('aria-expanded', String(open));
+      hintToggle.textContent = open ? '힌트 숨기기' : '힌트 보기';
+      document.getElementById('lv-hint').hidden = !open;
+    });
     document.getElementById('leave-live-interview').addEventListener('click', leaveLiveInterview);
     setupSpeechInput();
   }
@@ -672,29 +554,23 @@
   function skipCurrentQuestion() {
     var question = questions[currentIndex];
     if (!question) return;
-    confirmDraftLoss({
+    ask({
       title: '이 질문을 건너뛸까요?',
-      extra: '건너뛴 질문은 다른 질문을 마친 뒤 다시 나와요.',
+      body: '건너뛴 질문은 다시 나오지 않고 평가에서도 빠져요.' +
+        (hasUnsubmittedDraft() ? ' 작성 중인 답변은 저장되지 않아요.' : ''),
       confirmLabel: '건너뛰기',
-      onConfirm: function () { deferQuestion(question); }
+      cancelLabel: '계속 답하기',
+      onConfirm: function () { skipQuestion(question); }
     });
   }
 
-  function deferQuestion(question) {
+  function skipQuestion(question) {
     stopSpeechInput();
     api(window.JobPuzzleRoutes.path('/interview-session-questions/' +
-      question.sessionQuestionId + '/defer'), { method: 'POST' }).then(function () {
-      question.status = 'PENDING';
-      for (var offset = 1; offset < questions.length; offset += 1) {
-        var index = (currentIndex + offset) % questions.length;
-        if (questions[index].status === 'PENDING' || questions[index].status === 'IN_PROGRESS') {
-          currentIndex = index;
-          renderQuestion();
-          return;
-        }
-      }
-      // 마지막 남은 질문도 결과 화면으로 보내지 않고 다시 이어서 답한다.
-      renderQuestion();
+      question.sessionQuestionId + '/skip'), { method: 'POST' }).then(function () {
+      question.status = 'SKIPPED';
+      followUpMessageId = null;
+      moveToNextPendingQuestion();
     }).catch(function (error) {
       notify('error', error.message);
     });
@@ -824,7 +700,7 @@
     if (!hasAnyAnswer) {
       ask({
         title: '면접을 취소할까요?',
-        body: '아직 낸 답변이 없어서 기록은 남지 않아요. 고른 질문은 다시 만들어야 해요.',
+        body: '아직 낸 답변이 없어서 기록은 남지 않아요. 질문은 다시 만들어야 해요.',
         confirmLabel: '면접 취소',
         cancelLabel: '계속 하기',
         onConfirm: cancelSessionNow
@@ -905,50 +781,10 @@
       }, 0);
     }
   });
-  window.addEventListener('popstate', function () {
-    if (!selectionModal) return;
-    if (selectionRequiresExitWarning) {
-      // 뒤로 가기는 이미 일어났으므로 선택 화면 주소를 되돌려 놓고 확인한다
-      window.history.pushState({ interviewSelection: true }, '', '#question-selection');
-      requestCloseSelection();
-      return;
-    }
-    closeSelectionModal(true);
-    questionSet = null;
-    selectionRequiresExitWarning = false;
-    if (analysisCaseId) {
-      window.location.replace(window.JobPuzzleRoutes.path(
-        '/analysis-results/' + encodeURIComponent(analysisCaseId)
-      ));
-    } else {
-      returnHome();
-    }
-  });
   document.addEventListener('click', function (event) {
     var link = event.target.closest && event.target.closest('a[href]');
     if (!link) return;
     var href = link.href;
-    if (selectionModal) {
-      if (selectionRequiresExitWarning) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        ask({
-          title: '다른 화면으로 갈까요?',
-          body: '만든 질문은 면접 준비 화면의 "만들어 두고 아직 시작하지 않은 질문"에 남아 있어요.',
-          confirmLabel: '이동하기',
-          cancelLabel: '계속 고르기',
-          onConfirm: function () {
-            selectionRequiresExitWarning = false;
-            closeSelectionModal(true);
-            window.location.href = href;
-          }
-        });
-        return;
-      }
-      closeSelectionModal(true);
-      questionSet = null;
-      selectionRequiresExitWarning = false;
-    }
     if (!session || allowLiveNavigation || !hasUnsubmittedDraft()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -963,9 +799,7 @@
     });
   }, true);
   window.addEventListener('beforeunload', function (event) {
-    var guardSelection = selectionModal && selectionRequiresExitWarning;
-    var guardDraft = session && hasUnsubmittedDraft();
-    if ((!guardSelection && !guardDraft) || allowLiveNavigation) return;
+    if (!session || !hasUnsubmittedDraft() || allowLiveNavigation) return;
     event.preventDefault();
     event.returnValue = '';
   });
