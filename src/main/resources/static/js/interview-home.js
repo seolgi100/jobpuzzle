@@ -149,12 +149,23 @@
   }
 
   // ───────────────── 렌더 ─────────────────
-  // 4단계(분석·질문·면접·리포트)를 작은 점으로: 채움=완료, 강조=지금 단계, 빈 점=아직
-  function stepsHtml(steps) {
+  // 4단계(분석·질문·면접·리포트)를 맞물리는 퍼즐 조각으로: 맞춘 조각은 노랑, 지금 조각은 굵은 테두리, 남은 조각은 흐린 선
+  // 16×16 조각을 이어 붙이고, 오른쪽 꼭지가 다음 조각의 왼쪽 홈에 꼭 맞게 들어간다(목이 좁은 버섯 모양)
+  function piecePath(i) {
+    var x = i * 16;
+    var r = x + 16;
+    return 'M' + x + ' 0H' + r + 'V6.2' + (i < 3 ? 'A3 3 0 1 1 ' + r + ' 9.8' : '') + 'V16H' + x + 'V9.8' +
+      (i > 0 ? 'A3 3 0 1 0 ' + x + ' 6.2' : '') + 'Z';
+  }
+
+  function stepsHtml(steps, big) {
     var stateText = { done: '완료', next: '지금', wait: '아직', running: '진행 중', failed: '멈춤' };
-    var label = steps.map(function (st, i) { return STEPS[i] + ' ' + stateText[st]; }).join(', ');
-    return '<span class="ih-dots" role="img" aria-label="' + label + '" title="' + label + '">' +
-      steps.map(function (st) { return '<i class="ih-dot is-' + st + '"></i>'; }).join('') + '</span>';
+    var label = big ? STEPS.join(', ') + ' 순서'
+      : steps.map(function (st, i) { return STEPS[i] + ' ' + stateText[st]; }).join(', ');
+    var w = big ? 268 : 72;
+    return '<svg class="ih-pz' + (big ? ' ih-pz--big' : '') + '" viewBox="-1.5 -1.5 67 19" width="' + w + '" height="' + Math.round(w * 19 / 67) +
+      '" role="img" aria-label="' + label + '"><title>' + label + '</title>' +
+      steps.map(function (st, i) { return '<path class="pz-' + st + '" d="' + piecePath(i) + '"/>'; }).join('') + '</svg>';
   }
 
   function recordRows(posting) {
@@ -206,7 +217,7 @@
       (p.doneSessionId && !p.busy ? '<span data-score-for="' + p.doneSessionId + '">' + scoreText(p.doneSessionId) + '</span>' : '') +
       '</span></div>' +
       '<div class="ih-row__act">' +
-      '<a class="ih-btn ' + (p.busy ? 'ih-btn--navy' : 'ih-btn--line') + '" href="' + R.path(p.action.href) + '">' + esc(p.action.label) + '</a>' +
+      '<a class="ih-btn ' + (p.busy ? 'ih-btn--ink' : 'ih-btn--line') + '" href="' + R.path(p.action.href) + '">' + esc(p.action.label) + '</a>' +
       '<details class="ih-menu"><summary class="ih-menu__btn" aria-label="' + esc(p.title) + ' 메뉴">' + dotsIcon() + '</summary>' +
       '<div class="ih-menu__pop">' + menu + '</div></details>' +
       '</div>' + recordsList(p.key, p) + '</li>';
@@ -236,13 +247,15 @@
     });
   }
 
-  // ───────────────── 모드 3개 ─────────────────
-  function modeCard(opts) {
-    return '<li class="ih-mode' + (opts.disabled ? ' is-disabled' : '') + '">' +
-      '<div class="ih-mode__top"><h3 class="ih-mode__title">' + esc(opts.title) + '</h3>' +
-      (opts.cost ? '<span class="ih-mode__cost">' + esc(opts.cost) + '</span>' : '') + '</div>' +
-      '<p class="ih-mode__desc">' + esc(opts.desc) + '</p>' +
-      opts.button + '</li>';
+  // ───────────────── 시작하기: 공고 맞춤 + 빠른 연습 둘 ─────────────────
+  function fare(n, free) {
+    return '<span class="ih-fare">' + (free ? '첫 1회 무료' : '티켓 <b>' + esc(n) + '</b>장') + '</span>';
+  }
+
+  function quickRow(opts) {
+    return '<li class="ih-quick__row' + (opts.disabled ? ' is-disabled' : '') + '">' +
+      '<div class="ih-quick__text"><h3>' + esc(opts.title) + '</h3><p>' + esc(opts.note) + '</p></div>' +
+      opts.fare + opts.button + '</li>';
   }
 
   function modesHtml() {
@@ -252,33 +265,31 @@
       return String(c.jobCategoryId) === String(user.defaultJobCategoryId);
     })[0];
     var tags = data.weakness || [];
-    var fit = modeCard({
-      title: '공고 맞춤 면접',
-      cost: t ? '티켓 ' + t.costs.companyFit + '장' : '',
-      desc: '채용공고와 내 자료로 그 공고에서 나올 질문을 만들어요.',
-      button: '<button type="button" class="ih-btn ih-btn--navy" data-new-posting>공고 고르기</button>'
-    });
-    var basic = modeCard({
+    var fit = '<section class="ih-fit ih-box" aria-labelledby="ih-fit-title">' +
+      '<h2 class="ih-fit__title" id="ih-fit-title">공고 맞춤 면접</h2>' +
+      '<p class="ih-fit__desc">채용공고와 내 자료를 맞춰, 그 공고에서 나올 질문으로 연습해요.</p>' +
+      '<div class="ih-fit__board">' + stepsHtml(['idle', 'idle', 'idle', 'idle'], true) +
+      '<ol class="ih-fit__steps">' + STEPS.map(function (name) { return '<li>' + name + '</li>'; }).join('') + '</ol></div>' +
+      '<div class="ih-fit__foot">' + (t ? fare(t.costs.companyFit) : '') +
+      '<button type="button" class="ih-btn ih-btn--ink ih-btn--lg" data-new-posting>공고 고르기</button></div></section>';
+    var basic = quickRow({
       title: '기본 질문',
-      cost: t ? (t.freeBasicAvailable ? '첫 1회 무료' : '티켓 ' + t.costs.basic + '장') : '',
-      desc: category
-        ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') + ' 공통 질문으로 빠르게 연습해요.'
-        : '희망 직무를 정하면 그 직무의 공통 질문으로 연습해요.',
+      note: category ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') : '희망 직무를 먼저 정해 주세요',
       disabled: !category,
+      fare: t ? fare(t.costs.basic, t.freeBasicAvailable) : '',
       button: category
-        ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>바로 시작</button>'
-        : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">희망 직무 정하기</a>'
+        ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>시작</button>'
+        : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">직무 정하기</a>'
     });
-    var weak = modeCard({
+    var weak = quickRow({
       title: '약점 보완',
-      cost: t ? '티켓 ' + t.costs.weakness + '장' : '',
-      desc: tags.length
-        ? '답변에서 찾은 약점 ' + tags.length + '개 중 골라 집중 연습해요.'
-        : '면접을 한 번 마치면 답변에서 찾은 약점으로 연습할 수 있어요.',
+      note: tags.length ? '보완할 약점 ' + tags.length + '개' : '면접을 한 번 마치면 열려요',
       disabled: !tags.length,
-      button: '<button type="button" class="ih-btn ih-btn--line" data-open-weakness' + (tags.length ? '' : ' disabled') + '>약점 고르기</button>'
+      fare: t ? fare(t.costs.weakness) : '',
+      button: '<button type="button" class="ih-btn ih-btn--line" data-open-weakness' + (tags.length ? '' : ' disabled') + '>고르기</button>'
     });
-    return '<ul class="ih-modes">' + fit + basic + weak + '</ul>';
+    return '<div class="ih-start">' + fit +
+      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + basic + weak + '</ul></div></div>';
   }
 
   // ───────────────── 진행 중 / 전체 기록 ─────────────────
@@ -290,7 +301,7 @@
       '<p class="ih-row__meta">' + esc(day(s.lastActivityAt || s.createdAt)) + ' 시작</p></div>' +
       '<div class="ih-row__state"><span class="ih-row__status">' +
       esc(active ? '면접 중 ' + (s.currentQuestionOrder || 1) + '/' + s.questionCount : '결과 확인 전') + '</span></div>' +
-      '<div class="ih-row__act"><a class="ih-btn ih-btn--navy" href="' + R.path(href) + '">' +
+      '<div class="ih-row__act"><a class="ih-btn ih-btn--ink" href="' + R.path(href) + '">' +
       (active ? '이어서 하기' : '중간 결과 확인') + '</a><span class="ih-menu-gap"></span></div></li>';
   }
 
@@ -314,7 +325,7 @@
   function ongoingPanel(items) {
     return items.length
       ? '<ul class="ih-list">' + items.join('') + '</ul>'
-      : '<p class="ih-empty">진행 중인 면접이 없어요. 위에서 모드를 골라 시작해 보세요.</p>';
+      : '<p class="ih-empty">진행 중인 면접이 없어요.</p>';
   }
 
   function allPanel() {
@@ -328,7 +339,7 @@
     var loose = { key: 'loose', cases: [], sessions: data.looseSessions };
     return (postings.length
         ? '<h3 class="ih-h3">공고별</h3><ul class="ih-list">' + visible.map(postingRow).join('') + '</ul>' + more
-        : '<p class="ih-empty">아직 공고로 준비한 면접이 없어요.</p>') +
+        : '<p class="ih-empty">공고로 준비한 면접이 아직 없어요.</p>') +
       (data.looseSessions.length
         ? '<h3 class="ih-h3 ih-h3--gap">공고 없이 한 연습</h3>' +
           '<ul class="ih-rec ih-rec--open">' + recordRows(loose) + '</ul>'
@@ -343,7 +354,7 @@
     };
     return '<div class="ih-tabs" role="tablist" aria-label="면접 기록">' +
       tab('ongoing', '진행 중 <span class="ih-count">' + ongoing.length + '</span>') +
-      tab('all', '전체 기록') + '</div>' +
+      tab('all', '지난 기록') + '</div>' +
       '<div class="ih-panel" id="ih-panel" role="tabpanel" aria-labelledby="ih-tab-' + activeTab + '">' +
       (activeTab === 'ongoing' ? ongoingPanel(ongoing) : allPanel()) + '</div>';
   }
@@ -356,13 +367,13 @@
     home.querySelector('[data-ih-board]').innerHTML = tabsHtml(ongoing);
     var balance = home.querySelector('[data-ih-balance]');
     if (balance && data.tickets) {
-      balance.innerHTML = '보유 티켓 <b>' + esc(data.tickets.balance) + '장</b> · <a href="' + R.path('/tickets') + '">충전</a>';
+      balance.innerHTML = '내 티켓 <b>' + esc(data.tickets.balance) + '장</b><a href="' + R.path('/tickets') + '">충전</a>';
       balance.hidden = false;
     }
     var jump = home.querySelector('[data-ih-jump]');
     if (jump) {
       jump.hidden = !ongoing.length;
-      jump.innerHTML = '진행 중인 면접 <b>' + ongoing.length + '</b>';
+      jump.textContent = '진행 중인 면접 ' + ongoing.length + '개';
     }
   }
 
@@ -377,8 +388,8 @@
 
   function renderLoading() {
     var board = home.querySelector('[data-ih-board]');
-    home.querySelector('[data-ih-modes]').innerHTML = '<div class="ih-modes" aria-busy="true" aria-label="불러오는 중">' +
-      '<div class="ih-skel"></div><div class="ih-skel"></div><div class="ih-skel"></div></div>';
+    home.querySelector('[data-ih-modes]').innerHTML = '<div class="ih-start" aria-busy="true" aria-label="불러오는 중">' +
+      '<div class="ih-skel"></div><div class="ih-skel"></div></div>';
     board.innerHTML = '';
   }
 
@@ -555,7 +566,7 @@
         (opts.body ? '<p class="tk-what">' + esc(opts.body) + '</p>' : '') +
         '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>' +
         esc(opts.cancelLabel || '취소') + '</button>' +
-        '<button type="button" class="ih-btn ih-btn--navy" data-tk-confirm>' + esc(opts.confirmLabel || '확인') + '</button></div>',
+        '<button type="button" class="ih-btn ih-btn--ink" data-tk-confirm>' + esc(opts.confirmLabel || '확인') + '</button></div>',
         { onConfirm: opts.onConfirm, onCancel: opts.onCancel });
     }
   };
@@ -586,8 +597,8 @@
       }
       if (opts.note && short <= 0) lines += '<p class="tk-note">' + esc(opts.note) + '</p>';
       var primary = short > 0 && !free
-        ? '<a class="ih-btn ih-btn--navy" href="' + R.path('/tickets') + '">티켓 충전하러 가기</a>'
-        : '<button type="button" class="ih-btn ih-btn--navy" data-tk-confirm>' +
+        ? '<a class="ih-btn ih-btn--ink" href="' + R.path('/tickets') + '">티켓 충전하러 가기</a>'
+        : '<button type="button" class="ih-btn ih-btn--ink" data-tk-confirm>' +
           esc(free ? opts.confirmLabel || '시작하기' : cost + '장 쓰고 ' + (opts.confirmLabel || '시작하기')) + '</button>';
       return '<h2 class="tk-title" id="tk-title">' + esc(title) + '</h2>' + lines +
         '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>취소</button>' + primary + '</div>';

@@ -499,13 +499,11 @@
       (notice ? '<p class="lv-notice" role="alert">' + esc(notice) + '</p>' : '') +
       '<textarea id="live-answer" aria-describedby="lv-answer-error lv-attempts" placeholder="상황, 본인 역할, 행동, 결과를 중심으로 답해 주세요"></textarea>' +
       '<p class="lv-error" id="lv-answer-error" role="alert"></p>' +
-      '<p class="lv-attempts" id="lv-attempts">' + (used
-        ? '이 질문에 답을 낼 기회가 <b>' + remaining + '번</b> 남았어요'
-        : '질문과 관계없는 답은 다시 쓰게 돼요') +
-      ' · <span id="lv-saved">쓰는 답은 이 기기에 임시 저장돼요</span></p>' +
+      '<p class="lv-attempts" id="lv-attempts">' + (used ? '남은 기회 <b>' + remaining + '번</b> · ' : '') +
+      '<span id="lv-saved"></span></p>' +
       '<div class="lv-voice"><button type="button" id="voice-input-toggle" class="lv-voice__btn" aria-pressed="false">' +
       '<i aria-hidden="true"></i>음성으로 답하기</button>' +
-      '<p id="voice-input-status" aria-live="polite">버튼을 누르면 한국어 음성을 글자로 바꿔 드려요.</p></div>' +
+      '<p id="voice-input-status" aria-live="polite"></p></div>' +
       '</div>' +
       '<p class="lv-status" id="lv-status" role="status" aria-live="polite"></p>' +
       '<div class="lv-foot"><div class="lv-sub">' + subActions.join('') + '</div>' +
@@ -562,6 +560,8 @@
       if (textarea.value.trim()) localStorage.setItem(key, textarea.value);
       else localStorage.removeItem(key);
       draftStorageOk = true;
+      var savedLabel = document.getElementById('lv-saved');
+      if (savedLabel) savedLabel.textContent = textarea.value.trim() ? '임시 저장됨' : '';
     } catch (e) {
       draftStorageOk = false;
       var label = document.getElementById('lv-saved');

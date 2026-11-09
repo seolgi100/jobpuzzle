@@ -1,12 +1,12 @@
-/* 면접 진행 화면 — 확정 시안(design-preview/interview.html 실전 면접)을 DESIGN.md 토큰으로 옮김
-   주 버튼은 남색 "답변 제출" 하나, 나머지는 조용한 글자 줄. 옛 CSS와 섞이지 않게 .lv 범위 안에서만 정의한다. */
+/* 면접 진행 화면 — 질문은 먹색 판 위, 답은 흰 바탕 넓은 칸, 주 버튼은 먹색 "답변 제출" 하나
+   나머지는 조용한 글자 줄. 옛 CSS와 섞이지 않게 .lv 범위 안에서만 정의한다. */
 .lv {
   max-width: 860px; margin: 0 auto;
   scroll-margin-top: 84px; /* 위에 붙은 헤더(60px)에 가리지 않게 */
   font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
   color: var(--iv-text);
 }
-.lv :focus-visible { outline: 2px solid var(--iv-primary); outline-offset: 2px; }
+.lv :focus-visible { outline: 2px solid var(--iv-text); outline-offset: 2px; }
 
 /* 위: 나가기 · 모드 */
 .lv-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -14,63 +14,62 @@
 .lv-back:hover { color: var(--iv-primary); }
 .lv-bar__right { display: inline-flex; align-items: center; gap: 12px; }
 .lv-back, .lv-link, .lv-mode { white-space: nowrap; }
-.lv-link { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--iv-primary); text-underline-offset: 3px; cursor: pointer; }
+.lv-link { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--iv-text); text-decoration: underline; text-decoration-color: var(--iv-line-strong); text-underline-offset: 4px; cursor: pointer; }
 button.lv-link { min-height: 44px; }
-button.lv-link:hover { text-decoration: underline; }
-.lv-mode.is-fit { background: var(--iv-primary-tint); color: var(--iv-primary); }
-.lv-mode.is-weak { background: var(--iv-warn-tint); color: var(--iv-warn); }
-.lv-mode { height: 24px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 7px; background: var(--iv-sub); font-size: 12px; font-weight: 700; color: var(--iv-text-2); }
+.lv-link:hover { text-decoration-color: currentColor; }
+.lv-mode { font-size: 14px; font-weight: 700; color: var(--iv-text-2); }
+.lv-mode.is-weak { color: var(--iv-warn); }
 
 /* 진행 막대 */
 .lv-progress { margin-top: 12px; display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--iv-text-2); font-variant-numeric: tabular-nums; }
 .lv-progress b { color: var(--iv-text); }
-.lv-progress__bar { flex: 1; height: 6px; border-radius: 3px; background: var(--iv-line); overflow: hidden; }
-.lv-progress__bar i { display: block; height: 100%; border-radius: 3px; background: var(--iv-primary); transition: width .5s cubic-bezier(.2, .7, .2, 1); }
+.lv-progress__bar { flex: 1; height: 4px; background: var(--iv-line); overflow: hidden; }
+.lv-progress__bar i { display: block; height: 100%; background: var(--iv-text); transition: width .5s cubic-bezier(.2, .7, .2, 1); }
 
 /* 질문: 남색 무대 위 */
-.lv-q { margin-top: 18px; padding: 28px; border-radius: 20px; background: var(--iv-navy); color: #fff; }
-.lv-q__label { font-size: 13px; font-weight: 700; color: #8FB4F5; }
-.lv-q__text { margin: 10px 0 0; font-size: 22px; font-weight: 800; line-height: 1.5; letter-spacing: -0.02em; text-wrap: pretty; }
-.lv-hintbtn { margin-top: 16px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(255, 255, 255, .28); border-radius: 8px; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; }
+.lv-q { margin-top: 18px; padding: 32px; border-radius: 12px; background: var(--iv-navy); color: #fff; }
+.lv-q__label { font-size: 14px; font-weight: 700; color: var(--iv-accent); font-variant-numeric: tabular-nums; }
+.lv-q__text { margin: 10px 0 0; font-size: 24px; font-weight: 800; line-height: 1.5; letter-spacing: -0.02em; text-wrap: pretty; }
+.lv-hintbtn { margin-top: 18px; min-height: 44px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 8px; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; }
 .lv-hintbtn:hover { background: rgba(255, 255, 255, .08); }
-.lv-hint { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin-top: 12px; padding: 14px 16px; border-radius: 12px; background: var(--iv-navy-raised); font-size: 14px; line-height: 1.6; }
+.lv-hint { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin-top: 12px; padding: 14px 16px; border-radius: 8px; background: var(--iv-navy-raised); font-size: 14px; line-height: 1.6; }
 .lv-hint[hidden] { display: none; }
 .lv-hint b { color: #fff; }
-.lv-hint span { color: #C9D7EE; }
+.lv-hint span { color: #D6D6D2; }
 
 /* 답변 과정 */
 .lv-talk { margin-top: 24px; }
 .lv-talk h2 { margin: 0; font-size: 15px; font-weight: 700; }
 .lv-talk > small { font-size: 13px; color: var(--iv-text-2); }
-.lv-turn { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--iv-line); border-radius: 14px; background: var(--iv-surface); }
+.lv-turn { margin-top: 10px; padding: 14px 16px; border: 1px solid var(--iv-line); border-radius: 8px; background: var(--iv-surface); }
 .lv-turn b { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--iv-text); }
 .lv-turn b span { font-size: 12px; font-weight: 600; color: var(--iv-text-2); }
 .lv-turn p { margin: 4px 0 0; font-size: 15px; line-height: 1.7; color: var(--iv-text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
-.lv-turn--ai { border-color: #D6E4FB; background: #F5F8FF; }
-.lv-turn--retry { border-style: dashed; background: var(--iv-canvas); }
+.lv-turn--ai { border-color: var(--iv-line-strong); background: var(--iv-sub); }
+.lv-turn--retry { border-style: dashed; color: var(--iv-text-2); }
 
 /* AI 추가 질문 */
-.lv-follow { margin-top: 18px; padding: 18px 20px; border: 1px solid var(--iv-primary); border-radius: 16px; background: var(--iv-primary-tint); }
-.lv-follow b { font-size: 13px; color: var(--iv-primary); }
+.lv-follow { margin-top: 18px; padding: 18px 20px; border: 2px solid var(--iv-text); border-radius: 8px; background: var(--iv-surface); }
+.lv-follow b { font-size: 14px; color: var(--iv-text-2); }
 .lv-follow p { margin: 6px 0 0; font-size: 17px; font-weight: 700; line-height: 1.55; }
 .lv-follow small { display: block; margin-top: 8px; font-size: 13px; color: var(--iv-text-2); }
 
 /* 답변 쓰기 */
-.lv-answer { margin-top: 18px; padding: 20px; border: 1px solid var(--iv-line); border-radius: 16px; background: var(--iv-surface); }
+.lv-answer { margin-top: 16px; padding: 24px; border: 1px solid var(--iv-box-line); border-radius: 12px; background: var(--iv-surface); }
 .lv-answer label { font-size: 15px; font-weight: 700; }
-.lv-answer textarea { display: block; width: 100%; min-height: 180px; margin-top: 10px; padding: 12px 14px; border: 1px solid var(--iv-input-line); border-radius: 10px; background: var(--iv-surface); font: inherit; font-size: 15px; line-height: 1.7; color: var(--iv-text); resize: vertical; }
+.lv-answer textarea { display: block; width: 100%; min-height: 180px; margin-top: 10px; padding: 12px 14px; border: 1px solid var(--iv-input-line); border-radius: 8px; background: var(--iv-surface); font: inherit; font-size: 16px; line-height: 1.7; color: var(--iv-text); resize: vertical; }
 .lv-answer textarea::placeholder { color: #6B7280; }
-.lv-answer textarea:focus { outline: none; border-color: var(--iv-primary); box-shadow: 0 0 0 4px rgba(37, 99, 201, .14); }
+.lv-answer textarea:focus { outline: none; border-color: var(--iv-text); box-shadow: var(--iv-focus); }
 .lv-answer textarea:disabled { background: var(--iv-canvas); color: var(--iv-text-2); }
-.lv-notice { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; background: var(--iv-warn-tint); font-size: 14px; line-height: 1.6; color: var(--iv-warn); }
+.lv-notice { margin: 10px 0 0; padding: 10px 14px; border-radius: 8px; background: var(--iv-warn-tint); font-size: 14px; line-height: 1.6; color: var(--iv-warn); }
 .lv-attempts { margin: 8px 0 0; font-size: 13px; color: var(--iv-text-2); }
 .lv-attempts b { color: var(--iv-text); font-variant-numeric: tabular-nums; }
 .lv-error { margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--iv-danger); }
 .lv-error:empty { display: none; }
 .lv-answer textarea[aria-invalid="true"] { border-color: var(--iv-danger); }
 .lv-voice { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.lv-voice__btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--iv-line-strong); border-radius: 999px; background: var(--iv-surface); font: inherit; font-size: 14px; font-weight: 700; color: var(--iv-primary); cursor: pointer; }
-.lv-voice__btn:hover { background: var(--iv-primary-tint); }
+.lv-voice__btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--iv-text); border-radius: 8px; background: var(--iv-surface); font: inherit; font-size: 14px; font-weight: 700; color: var(--iv-text); cursor: pointer; }
+.lv-voice__btn:hover { background: var(--iv-sub); }
 .lv-voice__btn i { width: 8px; height: 8px; border-radius: 50%; background: var(--iv-danger); }
 .lv-voice__btn.is-listening { border-color: var(--iv-danger); color: var(--iv-danger); }
 .lv-voice__btn.is-listening i { animation: lv-blink 1s ease-in-out infinite; }
@@ -79,17 +78,17 @@ button.lv-link:hover { text-decoration: underline; }
 @keyframes lv-blink { 50% { opacity: .25; } }
 
 /* 평가 중 */
-.lv-status { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--iv-primary); }
+.lv-status { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--iv-text); }
 .lv-status:empty { display: none; }
-.lv.is-evaluating .lv-answer textarea { background-image: linear-gradient(90deg, transparent, rgba(37, 99, 201, .06), transparent); background-size: 200% 100%; animation: lv-sweep 1.2s linear infinite; }
+.lv.is-evaluating .lv-answer textarea { background-image: linear-gradient(90deg, transparent, rgba(242, 183, 5, .12), transparent); background-size: 200% 100%; animation: lv-sweep 1.2s linear infinite; }
 @keyframes lv-sweep { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 /* 아래: 조용한 글자 줄 + 남색 제출 */
 .lv-foot { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .lv-sub { display: flex; gap: 4px; flex-wrap: wrap; }
-.lv-text { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--iv-text-2); cursor: pointer; }
+.lv-text { min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--iv-text-2); cursor: pointer; }
 .lv-text:hover { background: var(--iv-sub); color: var(--iv-text); }
-.lv-submit { min-height: 48px; padding: 0 24px; border: 0; border-radius: 10px; background: var(--iv-navy); font: inherit; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; transition: background .2s; }
+.lv-submit { min-height: 52px; padding: 0 28px; border: 0; border-radius: 8px; background: var(--iv-navy); font: inherit; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; transition: background .2s; }
 .lv-submit:hover { background: var(--iv-navy-raised); }
 .lv-submit:disabled { opacity: .6; cursor: progress; }
 

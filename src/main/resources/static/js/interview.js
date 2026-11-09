@@ -292,9 +292,8 @@
       var postings = selectedDocsOf(['JOB_POSTING']).length;
       var infos = selectedDocsOf(['COMPANY_INFO']).length;
       return '<section class="fl-panel" aria-labelledby="fl-title">' + back +
-        '<p class="ms-stage">1 / 2 단계</p>' +
-        '<h1 class="fl-title" id="fl-title">어느 공고로 준비하나요?</h1>' +
-        '<p class="fl-sub">채용공고를 하나 이상 골라주세요. 회사 정보는 있으면 함께 써요.</p>' +
+        '<h1 class="fl-title" id="fl-title">어느 공고로 준비할까요?</h1>' +
+        '<p class="fl-sub">채용공고를 하나 이상 골라 주세요.</p>' +
         ticketLineHtml() +
         '<div class="ms-cols"><div class="ms-col">' + COMPANY_TYPES.map(docListHtml).join('') + '</div></div>' +
         footHtml('채용공고 <b>' + postings + '개</b> · 회사 정보 <b>' + infos + '개</b>', '다음: 내 자료 고르기') +
@@ -321,9 +320,8 @@
     var mine = selectedDocsOf(CANDIDATE_TYPES).length;
 
     return '<section class="fl-panel" aria-labelledby="fl-title">' + back +
-      '<p class="ms-stage">2 / 2 단계' + (posting ? ' · ' + esc(posting.displayName) : '') + '</p>' +
-      '<h1 class="fl-title" id="fl-title">이 공고에 낼 내 자료를 골라주세요</h1>' +
-      '<p class="fl-sub">확정된 자료만 고를 수 있어요. 없으면 바로 등록할 수 있어요.</p>' +
+      '<h1 class="fl-title" id="fl-title">이 공고에 낼 내 자료를 골라 주세요</h1>' +
+      '<p class="fl-sub">' + (posting ? esc(posting.displayName) + ' · ' : '') + '확정된 자료만 고를 수 있어요.</p>' +
       '<div class="ms-cols">' +
         '<div class="ms-col"><div class="ms-job"><h2 class="ms-h">희망 직무</h2><div class="ms-selects">' +
           '<select id="material-main-select" class="fl-select" aria-label="직무 대분류">' + mainOpts + '</select>' +
