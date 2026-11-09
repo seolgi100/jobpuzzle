@@ -263,9 +263,8 @@
   function ticketLineHtml() {
     var t = state.tickets;
     if (!t) return '';
-    var range = t.costs.companyFitMin + '~' + t.costs.companyFitMax + '장';
-    var short = t.balance < t.costs.companyFitMin;
-    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + range + '</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
+    var short = t.balance < t.costs.companyFit;
+    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.companyFit + '장</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
       (short ? ' · 모자라요. <a class="fl-link" href="' + window.JobPuzzleRoutes.path('/tickets') + '">충전하기</a>' : '') + '</p>';
   }
 
@@ -399,28 +398,16 @@
     renderReviewTicket();
   }
 
-  // 맞춤 분석 비용: 최소 장수 + (고른 지원자 자료 종류 수 - 1), 최대 장수까지 (TicketService.companyFitCost와 같은 계산)
-  function companyFitCost(costs) {
-    var kinds = {};
-    Object.keys(state.selectedDocIds).forEach(function (id) {
-      var doc = state.allDocs.filter(function (d) { return String(d.documentId) === String(id); })[0];
-      if (doc && CANDIDATE_TYPES.indexOf(doc.documentType) >= 0) kinds[doc.documentType] = true;
-    });
-    var count = Object.keys(kinds).length;
-    return Math.min(costs.companyFitMin + Math.max(0, count - 1), costs.companyFitMax);
-  }
-
   function renderReviewTicket() {
     var box = document.getElementById('material-review-ticket');
     var action = document.getElementById('material-review-action');
     if (!box || !action) return;
     DF.api('/tickets/me').then(function (tickets) {
       if (!document.getElementById('material-review-ticket')) return;
-      var cost = companyFitCost(tickets.costs);
+      var cost = tickets.costs.companyFit;
       var short = cost - tickets.balance;
       box.innerHTML = '<p class="tk-title">' + (short > 0 ? '티켓이 ' + short + '장 부족해요' : '분석에 티켓 ' + cost + '장을 사용해요') + '</p>' +
-        '<p class="tk-what">고른 지원 자료 종류에 따라 ' + tickets.costs.companyFitMin + '~' + tickets.costs.companyFitMax + '장이 들어요.' +
-        (short > 0 ? '' : ' 분석이 실패하면 티켓은 돌려드려요.') + '</p>' +
+        (short > 0 ? '' : '<p class="tk-what">분석이 실패하면 티켓은 돌려드려요.</p>') +
         '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
         '<div><dt>' + (short > 0 ? '필요' : '분석 후') + '</dt><dd>' + (short > 0 ? cost : tickets.balance - cost) + '장</dd></div></dl>';
       if (short > 0) {

@@ -18,15 +18,18 @@
     <section class="ih" id="interview-home" aria-labelledby="ih-title">
       <header class="ih-head">
         <div>
-          <h1 class="ih-title" id="ih-title">어느 공고 면접을 준비하나요?</h1>
-          <p class="ih-sub">공고마다 분석, 질문, 면접, 리포트를 차례로 맞춰가요.</p>
+          <h1 class="ih-title" id="ih-title">어떤 면접을 연습할까요?</h1>
+          <p class="ih-balance" data-ih-balance hidden></p>
         </div>
-        <p class="ih-balance" data-ih-balance hidden></p>
+        <button type="button" class="ih-jump" data-ih-jump hidden></button>
       </header>
 
-      <h2 class="ih-h2" id="ih-board-title">공고별 준비</h2>
-      <div class="ih-board" data-ih-board aria-labelledby="ih-board-title"></div>
-      <div data-ih-practice></div>
+      <div data-ih-modes></div>
+
+      <section class="ih-sessions" id="ih-sessions" aria-labelledby="ih-sessions-title">
+        <h2 class="ih-h2" id="ih-sessions-title">내 면접</h2>
+        <div class="ih-board" data-ih-board></div>
+      </section>
 
       <details class="ih-guide">
         <summary>답변은 이렇게 평가해요 <small>질문마다 필요한 기준만 골라요</small></summary>

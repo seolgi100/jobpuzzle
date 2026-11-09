@@ -13,6 +13,7 @@
   var showAllPostings = false;
   var openRecords = {};
   var scores = {}; // sessionId -> 종합 점수(약점 보완은 null)
+  var activeTab = null; // 'ongoing' | 'all'
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -119,13 +120,13 @@
     }
 
     var status;
-    if (active) status = '면접 진행 중 · 질문 ' + (active.currentQuestionOrder || 1) + ' / ' + active.questionCount;
-    else if (review) status = '답변을 마쳤어요 · 결과 확인 전';
-    else if (running) status = '분석 중 · ' + day(latest.createdAt) + ' 시작';
-    else if (failed && !completedCase) status = '분석이 중간에 멈췄어요';
-    else if (readyCase) status = '질문이 준비됐어요 · ' + day(readyCase.createdAt) + ' 분석';
-    else if (done) status = '최근 면접 · ' + day(done.completedAt || done.lastActivityAt) + ' 완료';
-    else status = day(latest.createdAt) + ' 분석';
+    if (active) status = '면접 중 ' + (active.currentQuestionOrder || 1) + '/' + active.questionCount;
+    else if (review) status = '결과 확인 전';
+    else if (running) status = '분석 중';
+    else if (failed && !completedCase) status = '분석 멈춤';
+    else if (readyCase) status = '질문 준비됨';
+    else if (done) status = '면접 완료';
+    else status = '분석 완료';
 
     var lastActivity = Math.max.apply(null, [time(latest.createdAt)].concat(sessions.map(function (s) {
       return time(s.lastActivityAt || s.completedAt || s.createdAt);
@@ -148,18 +149,12 @@
   }
 
   // ───────────────── 렌더 ─────────────────
+  // 4단계(분석·질문·면접·리포트)를 작은 점으로: 채움=완료, 강조=지금 단계, 빈 점=아직
   function stepsHtml(steps) {
-    var stateText = { done: '완료', next: '다음 단계', wait: '아직', running: '진행 중', failed: '멈춤' };
-    return '<ol class="ih-steps">' + steps.map(function (s, i) {
-      return '<li class="ih-step is-' + s + '"><span class="ih-step__no" aria-hidden="true">' +
-        (s === 'done' ? checkIcon() : s === 'failed' ? '!' : (i + 1)) + '</span>' +
-        '<span class="ih-step__name">' + STEPS[i] + '</span>' +
-        '<span class="ih-sr">' + stateText[s] + '</span></li>';
-    }).join('') + '</ol>';
-  }
-
-  function checkIcon() {
-    return '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+    var stateText = { done: '완료', next: '지금', wait: '아직', running: '진행 중', failed: '멈춤' };
+    var label = steps.map(function (st, i) { return STEPS[i] + ' ' + stateText[st]; }).join(', ');
+    return '<span class="ih-dots" role="img" aria-label="' + label + '" title="' + label + '">' +
+      steps.map(function (st) { return '<i class="ih-dot is-' + st + '"></i>'; }).join('') + '</span>';
   }
 
   function recordRows(posting) {
@@ -191,33 +186,39 @@
     return rows.map(function (r) { return r.html; }).join('');
   }
 
-  function recordsBlock(id, label, posting) {
-    var open = !!openRecords[id];
-    return '<button type="button" class="ih-toggle" aria-expanded="' + open + '" aria-controls="ih-rec-' + id + '" data-records="' + id + '">' +
-      label + '</button>' +
-      '<ul class="ih-rec" id="ih-rec-' + id + '"' + (open ? '' : ' hidden') + '>' + recordRows(posting) + '</ul>';
+  function recordsToggle(id, label, cls) {
+    return '<button type="button" class="' + cls + '" aria-expanded="' + !!openRecords[id] + '" aria-controls="ih-rec-' + id + '" data-records="' + id + '">' +
+      label + '</button>';
   }
 
-  function postingCard(p) {
-    return '<article class="ih-card' + (p.busy ? ' is-busy' : '') + '">' +
-      (p.busy ? '<span class="ih-card__flag">지금 할 일</span>' : '') +
-      '<header class="ih-card__head"><h3 class="ih-card__title">' + esc(p.title) + '</h3>' +
-      (p.meta ? '<p class="ih-card__meta">' + esc(p.meta) + '</p>' : '') + '</header>' +
-      stepsHtml(p.steps) +
-      '<p class="ih-card__status">' + esc(p.status) +
-      (p.doneSessionId ? '<span class="ih-card__score" data-score-for="' + p.doneSessionId + '">' + scoreText(p.doneSessionId) + '</span>' : '') +
-      '</p>' +
-      '<div class="ih-card__foot">' +
+  function recordsList(id, posting) {
+    return '<ul class="ih-rec" id="ih-rec-' + id + '"' + (openRecords[id] ? '' : ' hidden') + '>' + recordRows(posting) + '</ul>';
+  }
+
+  function postingRow(p) {
+    var menu = recordsToggle(p.key, '기록 보기', 'ih-menu__item') +
+      (p.practiced && data.weakness.length ? '<button type="button" class="ih-menu__item" data-open-weakness>약점 연습</button>' : '');
+    return '<li class="ih-row' + (p.busy ? ' is-busy' : '') + '">' +
+      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(p.title) + '</h3>' +
+      (p.meta ? '<p class="ih-row__meta">' + esc(p.meta) + '</p>' : '') + '</div>' +
+      '<div class="ih-row__state">' + stepsHtml(p.steps) +
+      '<span class="ih-row__status">' + esc(p.status) +
+      (p.doneSessionId && !p.busy ? '<span data-score-for="' + p.doneSessionId + '">' + scoreText(p.doneSessionId) + '</span>' : '') +
+      '</span></div>' +
+      '<div class="ih-row__act">' +
       '<a class="ih-btn ' + (p.busy ? 'ih-btn--navy' : 'ih-btn--line') + '" href="' + R.path(p.action.href) + '">' + esc(p.action.label) + '</a>' +
-      (p.practiced && data.weakness.length
-        ? '<button type="button" class="ih-btn ih-btn--line" data-open-weakness>약점 연습</button>' : '') +
-      recordsBlock(p.key, '이 공고 기록 보기', p) +
-      '</div></article>';
+      '<details class="ih-menu"><summary class="ih-menu__btn" aria-label="' + esc(p.title) + ' 메뉴">' + dotsIcon() + '</summary>' +
+      '<div class="ih-menu__pop">' + menu + '</div></details>' +
+      '</div>' + recordsList(p.key, p) + '</li>';
+  }
+
+  function dotsIcon() {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
   }
 
   function scoreText(sessionId) {
     var score = scores[sessionId];
-    return typeof score === 'number' ? ' · 최근 점수 <b>' + score + '점</b>' : '';
+    return typeof score === 'number' ? ' · <b>' + score + '점</b>' : '';
   }
 
   // 카드마다 최근 완료 면접 점수를 따로 불러와 채운다.
@@ -235,82 +236,88 @@
     });
   }
 
-  function newPostingTile(empty) {
-    var cost = data && data.tickets ? data.tickets.costs : null;
-    var costText = cost ? '맞춤 분석 · 티켓 ' + cost.companyFitMin + '~' + cost.companyFitMax + '장' : '맞춤 분석';
-    return '<button type="button" class="ih-new' + (empty ? ' ih-new--empty' : '') + '" data-new-posting>' +
-      '<span class="ih-new__piece" aria-hidden="true">' + pieceSvg() + '</span>' +
-      '<span class="ih-new__title">' + (empty ? '첫 공고를 등록하고 시작해요' : '새 공고로 준비하기') + '</span>' +
-      '<span class="ih-new__desc">' + (empty
-        ? '채용공고와 내 자료를 고르면 그 공고에서 나올 질문을 만들어요.'
-        : '공고와 내 자료를 고르면 분석부터 시작해요.') + '</span>' +
-      '<span class="ih-new__cost">' + esc(costText) + '</span></button>';
+  // ───────────────── 모드 3개 ─────────────────
+  function modeCard(opts) {
+    return '<li class="ih-mode' + (opts.disabled ? ' is-disabled' : '') + '">' +
+      '<div class="ih-mode__top"><h3 class="ih-mode__title">' + esc(opts.title) + '</h3>' +
+      (opts.cost ? '<span class="ih-mode__cost">' + esc(opts.cost) + '</span>' : '') + '</div>' +
+      '<p class="ih-mode__desc">' + esc(opts.desc) + '</p>' +
+      opts.button + '</li>';
   }
 
-  function pieceSvg() {
-    return '<svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 3">' +
-      '<path d="M8 8h12a4 4 0 1 1 8 0h12v12a4 4 0 1 0 0 8v12H28a4 4 0 1 0-8 0H8V28a4 4 0 1 1 0-8z"/></svg>';
-  }
-
-  function practiceRow(opts) {
-    return '<div class="ih-prac' + (opts.disabled ? ' is-disabled' : '') + '">' +
-      '<div class="ih-prac__text"><h3>' + esc(opts.title) + '</h3><p>' + opts.desc + '</p></div>' +
-      '<span class="ih-cost">' + esc(opts.cost) + '</span>' +
-      opts.button + '</div>';
-  }
-
-  function practiceSection() {
+  function modesHtml() {
     var t = data.tickets;
     var user = data.user || {};
     var category = (data.categories || []).filter(function (c) {
       return String(c.jobCategoryId) === String(user.defaultJobCategoryId);
     })[0];
-    var basicCost = t ? (t.freeBasicAvailable ? '첫 1회 무료' : '티켓 ' + t.costs.basic + '장') : '';
-    var basic = practiceRow({
+    var tags = data.weakness || [];
+    var fit = modeCard({
+      title: '공고 맞춤 면접',
+      cost: t ? '티켓 ' + t.costs.companyFit + '장' : '',
+      desc: '채용공고와 내 자료로 그 공고에서 나올 질문을 만들어요.',
+      button: '<button type="button" class="ih-btn ih-btn--navy" data-new-posting>공고 고르기</button>'
+    });
+    var basic = modeCard({
       title: '기본 질문',
+      cost: t ? (t.freeBasicAvailable ? '첫 1회 무료' : '티켓 ' + t.costs.basic + '장') : '',
       desc: category
-        ? '희망 직무의 공통 질문으로 빠르게 연습해요. <span class="ih-muted">' + esc(category.subCategory + ' · ' + (CAREER[category.careerLevel] || '')) + '</span>'
-        : '희망 직무를 정하면 그 직무의 공통 질문으로 연습할 수 있어요.',
-      cost: basicCost,
+        ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') + ' 공통 질문으로 빠르게 연습해요.'
+        : '희망 직무를 정하면 그 직무의 공통 질문으로 연습해요.',
       disabled: !category,
       button: category
-        ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>기본 질문 만들기</button>'
-        : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">희망 직무 설정하기</a>'
+        ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>바로 시작</button>'
+        : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">희망 직무 정하기</a>'
     });
-    var tags = data.weakness || [];
-    var weak = practiceRow({
+    var weak = modeCard({
       title: '약점 보완',
-      desc: tags.length
-        ? '반복되는 약점을 골라 집중해서 연습해요. <span class="ih-muted">보완할 약점 ' + tags.length + '개</span>'
-        : '면접을 한 번 마치면 답변에서 찾은 약점으로 연습할 수 있어요.',
       cost: t ? '티켓 ' + t.costs.weakness + '장' : '',
+      desc: tags.length
+        ? '답변에서 찾은 약점 ' + tags.length + '개 중 골라 집중 연습해요.'
+        : '면접을 한 번 마치면 답변에서 찾은 약점으로 연습할 수 있어요.',
       disabled: !tags.length,
       button: '<button type="button" class="ih-btn ih-btn--line" data-open-weakness' + (tags.length ? '' : ' disabled') + '>약점 고르기</button>'
     });
-
-    var prepared = (data.prepared || []).map(function (set) {
-      return '<li><span class="ih-rec__what">' + esc(set.mode === 'WEAKNESS_REVIEW'
-          ? '약점 보완 · #' + (set.targetWeaknessDisplayName || set.targetWeaknessTag || '')
-          : '기본 질문 · ' + (set.displayTitle || '')) + '</span>' +
-        '<span class="ih-rec__state">질문 ' + esc(set.questionCount) + '개</span>' +
-        '<span class="ih-rec__when">' + esc(day(set.createdAt)) + '</span>' +
-        '<button type="button" class="ih-link" data-open-set="' + esc(set.questionSetId) + '">면접 시작</button></li>';
-    }).join('');
-
-    var loose = { key: 'loose', cases: [], sessions: data.looseSessions };
-    var hasRecords = data.looseSessions.length;
-    return '<section class="ih-practice" aria-labelledby="ih-practice-title">' +
-      '<h2 class="ih-h2" id="ih-practice-title">공고 없이 연습</h2>' +
-      '<div class="ih-practice__rows">' + basic + weak + '</div>' +
-      (prepared ? '<div class="ih-prepared"><h3 class="ih-h3">만들어 두고 아직 시작하지 않은 질문</h3><ul class="ih-rec">' + prepared + '</ul></div>' : '') +
-      (hasRecords ? '<div class="ih-practice__records">' + recordsBlock('loose', '공고 없이 한 연습 기록 보기', loose) + '</div>' : '') +
-      '</section>';
+    return '<ul class="ih-modes">' + fit + basic + weak + '</ul>';
   }
 
-  function render() {
-    if (!home) return;
-    var board = home.querySelector('[data-ih-board]');
-    var practice = home.querySelector('[data-ih-practice]');
+  // ───────────────── 진행 중 / 전체 기록 ─────────────────
+  function looseRow(s) {
+    var active = s.bucket === 'active';
+    var href = active ? '/interview?resumeSessionId=' + s.sessionId : '/interview-results?sessionId=' + s.sessionId;
+    return '<li class="ih-row is-busy">' +
+      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(modeLabel(s.mode)) + '</h3>' +
+      '<p class="ih-row__meta">' + esc(day(s.lastActivityAt || s.createdAt)) + ' 시작</p></div>' +
+      '<div class="ih-row__state"><span class="ih-row__status">' +
+      esc(active ? '면접 중 ' + (s.currentQuestionOrder || 1) + '/' + s.questionCount : '결과 확인 전') + '</span></div>' +
+      '<div class="ih-row__act"><a class="ih-btn ih-btn--navy" href="' + R.path(href) + '">' +
+      (active ? '이어서 하기' : '중간 결과 확인') + '</a><span class="ih-menu-gap"></span></div></li>';
+  }
+
+  function preparedRow(set) {
+    return '<li class="ih-row">' +
+      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(set.mode === 'WEAKNESS_REVIEW'
+        ? '약점 보완 · #' + (set.targetWeaknessDisplayName || set.targetWeaknessTag || '')
+        : '기본 질문') + '</h3>' +
+      '<p class="ih-row__meta">' + esc(day(set.createdAt)) + ' 만듦 · 질문 ' + esc(set.questionCount) + '개</p></div>' +
+      '<div class="ih-row__state"><span class="ih-row__status">시작 전</span></div>' +
+      '<div class="ih-row__act"><button type="button" class="ih-btn ih-btn--line" data-open-set="' + esc(set.questionSetId) + '">면접 시작</button><span class="ih-menu-gap"></span></div></li>';
+  }
+
+  function ongoingItems() {
+    var postings = data.postings.filter(function (p) { return p.busy; }).map(postingRow);
+    var loose = data.looseSessions.filter(function (s) { return s.bucket !== 'done'; }).map(looseRow);
+    var prepared = (data.prepared || []).map(preparedRow);
+    return postings.concat(loose, prepared);
+  }
+
+  function ongoingPanel(items) {
+    return items.length
+      ? '<ul class="ih-list">' + items.join('') + '</ul>'
+      : '<p class="ih-empty">진행 중인 면접이 없어요. 위에서 모드를 골라 시작해 보세요.</p>';
+  }
+
+  function allPanel() {
     var postings = data.postings;
     var visible = postings;
     var more = '';
@@ -318,29 +325,68 @@
       visible = postings.slice(0, COLLAPSED_LIMIT);
       more = '<button type="button" class="ih-more" data-show-all>공고 ' + (postings.length - COLLAPSED_LIMIT) + '개 더 보기</button>';
     }
-    board.innerHTML = postings.length
-      ? '<div class="ih-grid">' + visible.map(postingCard).join('') + newPostingTile(false) + '</div>' + more
-      : '<div class="ih-grid ih-grid--empty">' + newPostingTile(true) + '</div>';
-    practice.innerHTML = practiceSection();
+    var loose = { key: 'loose', cases: [], sessions: data.looseSessions };
+    return (postings.length
+        ? '<h3 class="ih-h3">공고별</h3><ul class="ih-list">' + visible.map(postingRow).join('') + '</ul>' + more
+        : '<p class="ih-empty">아직 공고로 준비한 면접이 없어요.</p>') +
+      (data.looseSessions.length
+        ? '<h3 class="ih-h3 ih-h3--gap">공고 없이 한 연습</h3>' +
+          '<ul class="ih-rec ih-rec--open">' + recordRows(loose) + '</ul>'
+        : '');
+  }
+
+  function tabsHtml(ongoing) {
+    var tab = function (id, label) {
+      var on = activeTab === id;
+      return '<button type="button" class="ih-tab" role="tab" id="ih-tab-' + id + '" aria-controls="ih-panel" aria-selected="' + on + '"' +
+        (on ? '' : ' tabindex="-1"') + ' data-tab="' + id + '">' + label + '</button>';
+    };
+    return '<div class="ih-tabs" role="tablist" aria-label="면접 기록">' +
+      tab('ongoing', '진행 중 <span class="ih-count">' + ongoing.length + '</span>') +
+      tab('all', '전체 기록') + '</div>' +
+      '<div class="ih-panel" id="ih-panel" role="tabpanel" aria-labelledby="ih-tab-' + activeTab + '">' +
+      (activeTab === 'ongoing' ? ongoingPanel(ongoing) : allPanel()) + '</div>';
+  }
+
+  function render() {
+    if (!home) return;
+    var ongoing = ongoingItems();
+    if (!activeTab) activeTab = ongoing.length ? 'ongoing' : 'all';
+    home.querySelector('[data-ih-modes]').innerHTML = modesHtml();
+    home.querySelector('[data-ih-board]').innerHTML = tabsHtml(ongoing);
     var balance = home.querySelector('[data-ih-balance]');
     if (balance && data.tickets) {
       balance.innerHTML = '보유 티켓 <b>' + esc(data.tickets.balance) + '장</b> · <a href="' + R.path('/tickets') + '">충전</a>';
       balance.hidden = false;
     }
+    var jump = home.querySelector('[data-ih-jump]');
+    if (jump) {
+      jump.hidden = !ongoing.length;
+      jump.innerHTML = '진행 중인 면접 <b>' + ongoing.length + '</b>';
+    }
+  }
+
+  function showTab(id, focus) {
+    activeTab = id;
+    render();
+    if (focus) {
+      var btn = document.getElementById('ih-tab-' + id);
+      if (btn) btn.focus();
+    }
   }
 
   function renderLoading() {
     var board = home.querySelector('[data-ih-board]');
-    board.innerHTML = '<div class="ih-grid" aria-busy="true" aria-label="공고 불러오는 중">' +
-      '<div class="ih-skel"></div><div class="ih-skel"></div></div>';
-    home.querySelector('[data-ih-practice]').innerHTML = '';
+    home.querySelector('[data-ih-modes]').innerHTML = '<div class="ih-modes" aria-busy="true" aria-label="불러오는 중">' +
+      '<div class="ih-skel"></div><div class="ih-skel"></div><div class="ih-skel"></div></div>';
+    board.innerHTML = '';
   }
 
   function renderError(message) {
     home.querySelector('[data-ih-board]').innerHTML =
       '<div class="ih-error" role="alert"><p>' + esc(message || '면접 준비 목록을 불러오지 못했어요.') + '</p>' +
       '<button type="button" class="ih-btn ih-btn--line" data-retry>다시 불러오기</button></div>';
-    home.querySelector('[data-ih-practice]').innerHTML = '';
+    home.querySelector('[data-ih-modes]').innerHTML = '';
   }
 
   // ───────────────── 불러오기 ─────────────────
@@ -348,13 +394,14 @@
     if (!home) return Promise.resolve();
     renderLoading();
     var optional = function (p, fallback) { return p.catch(function () { return fallback; }); };
+    // 약점 상세는 점수 집계 때문에 느려서(수 초) 화면을 먼저 그리고 도착하면 채운다.
+    var weakness = optional(api('/interview-weakness-tags/details'), []);
     return Promise.all([
       api('/analysis-cases'),
       api('/interview-sessions/active-list'),
       api('/interview-sessions/review-list'),
       api('/interview-sessions/history'),
       optional(api('/question-sets/prepared'), []),
-      optional(api('/interview-weakness-tags/details'), []),
       optional(api('/tickets/me'), null),
       optional(api('/user/me'), null),
       optional(api('/job-category'), [])
@@ -367,15 +414,20 @@
         cases: r[0] || [],
         sessions: sessions,
         prepared: r[4] || [],
-        weakness: r[5] || [],
-        tickets: r[6],
-        user: r[7],
-        categories: r[8] || []
+        weakness: [],
+        tickets: r[5],
+        user: r[6],
+        categories: r[7] || []
       };
       data.postings = groupPostings(data);
       data.looseSessions = sessions.filter(function (s) { return !s.analysisCaseId; });
       render();
       loadScores();
+      weakness.then(function (tags) {
+        if (!tags || !tags.length) return;
+        data.weakness = tags;
+        render();
+      });
     }).catch(function (error) {
       renderError(error.message);
     });
@@ -385,14 +437,29 @@
   function hide() { if (home) home.hidden = true; }
 
   function bind() {
+    home.addEventListener('keydown', function (event) {
+      var t = event.target;
+      if (!t.hasAttribute || !t.hasAttribute('data-tab')) return;
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      showTab(t.getAttribute('data-tab') === 'ongoing' ? 'all' : 'ongoing', true);
+    });
     home.addEventListener('click', function (event) {
       var t = event.target.closest('button, a');
       if (!t || !home.contains(t)) return;
+      var menu = t.closest('.ih-menu');
+      if (menu) menu.open = false;
       if (t.hasAttribute('data-records')) {
         var id = t.getAttribute('data-records');
         openRecords[id] = !openRecords[id];
         t.setAttribute('aria-expanded', String(openRecords[id]));
         document.getElementById('ih-rec-' + id).hidden = !openRecords[id];
+      } else if (t.hasAttribute('data-tab')) {
+        showTab(t.getAttribute('data-tab'));
+      } else if (t.hasAttribute('data-ih-jump')) {
+        showTab('ongoing');
+        var section = document.getElementById('ih-sessions');
+        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else if (t.hasAttribute('data-show-all')) {
         showAllPostings = true;
         render();
@@ -499,7 +566,7 @@
       if (typeof explicit === 'number') return explicit;
       if (usage === 'BASIC') return tickets.costs.basic;
       if (usage === 'WEAKNESS_REVIEW') return tickets.costs.weakness;
-      return tickets.costs.companyFitMin;
+      return tickets.costs.companyFit;
     }
 
     function body(opts, tickets) {

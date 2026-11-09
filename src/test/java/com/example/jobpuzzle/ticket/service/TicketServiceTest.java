@@ -1,6 +1,5 @@
 package com.example.jobpuzzle.ticket.service;
 
-import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.ticket.config.TicketProperties;
@@ -59,11 +58,8 @@ class TicketServiceTest {
     }
 
     @Test
-    void companyFitCostGrowsWithCandidateMaterialKindsBetweenThreeAndFive() {
-        assertThat(service.companyFitCost(List.of(UserDocumentType.JOB_POSTING, UserDocumentType.RESUME))).isEqualTo(3);
-        assertThat(service.companyFitCost(List.of(UserDocumentType.RESUME, UserDocumentType.COVER_LETTER))).isEqualTo(4);
-        assertThat(service.companyFitCost(List.of(UserDocumentType.RESUME, UserDocumentType.COVER_LETTER,
-                UserDocumentType.PORTFOLIO, UserDocumentType.EXPERIENCE_NOTE))).isEqualTo(5);
+    void companyFitCostIsFixedRegardlessOfMaterials() {
+        assertThat(service.cost(TicketUsage.COMPANY_FIT)).isEqualTo(3);
     }
 
     @Test
