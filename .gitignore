@@ -6,3 +6,7 @@
 /design-test/screenshots/
 /img/reference/
 /.playwright-mcp/
+
+### 브랜치별 디자인 스킬·로컬 설정 (커밋 제외) ###
+/.claude/
+/skills-lock.json
