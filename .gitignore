@@ -1,0 +1,8 @@
+### 디자인 테스트 문서·참고 이미지 (커밋 제외) ###
+/brief.md
+/design-test-plan.md
+/design-test/**/*.md
+/design-test/references/
+/design-test/screenshots/
+/img/reference/
+/.playwright-mcp/
