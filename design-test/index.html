@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>잡퍼즐 — AI 면접 준비</title>
+<meta name="description" content="잡퍼즐은 채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script>document.documentElement.classList.add('js')</script>
+<style>
+:root {
+  --room: #0C0D10;
+  --ink: #16181C;
+  --wall: #F1F1EE;
+  --paper: #FFFFFF;
+  --text: #16181C;
+  --text-2: #555A63;
+  --text-on-dark: #ECEDEF;
+  --text-2-on-dark: #A2A6AE;
+  --line: #CFD0CB;
+  --line-dark: #25272C;
+  --accent: #34507F;
+
+  --serif: "Noto Serif KR", serif;
+  --sans: "Pretendard Variable", Pretendard, sans-serif;
+
+  --wrap: min(1200px, calc(100% - 48px));
+  --edge: calc((100% - var(--wrap)) / 2);
+  --section-y: 160px;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+@media (max-width: 760px) {
+  :root { --wrap: calc(100% - 32px); --section-y: 96px; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--wall);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 18px;
+  line-height: 1.75;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 0;
+}
+@media (max-width: 760px) { body { font-size: 16px; } }
+::selection { background: var(--accent); color: #fff; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dark :focus-visible { outline-color: #fff; }
+html { scrollbar-color: #9A9DA3 var(--wall); }
+h1, h2, h3, p, dl, dd, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em; }
+.wrap { width: var(--wrap); margin-inline: auto; position: relative; z-index: 1; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* 세로선: 같은 x 좌표로 모든 섹션을 관통 */
+.ruled { position: relative; }
+.ruled::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  border-inline: 1px solid var(--rule, var(--line));
+  margin-inline: var(--edge);
+}
+.hero.ruled::after, .closing.ruled::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 1px; pointer-events: none; z-index: 0;
+  left: calc(var(--edge) + var(--wrap) * 0.585);
+  background: var(--rule, var(--line));
+}
+@media (max-width: 760px) { .ruled::before, .ruled::after { display: none; } }
+
+/* 제목 */
+.display {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 44px; line-height: 1.35; letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+@media (max-width: 760px) { .display { font-size: 28px; } }
+.lead { color: var(--text-2); max-width: 34em; text-wrap: pretty; }
+
+/* 버튼 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 52px; padding: 0 24px;
+  font: 600 16px/1 var(--sans); text-decoration: none;
+  border: 1px solid transparent; border-radius: 2px;
+  transition: background-color .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+  cursor: pointer;
+}
+.btn-primary { background: var(--ink); color: #fff; }
+.btn-primary:hover { background: var(--accent); }
+.btn-ghost { color: var(--text); border-color: var(--line); background: transparent; }
+.btn-ghost:hover { border-color: var(--ink); }
+.dark .btn-primary { background: #fff; color: var(--ink); }
+.dark .btn-primary:hover { background: #D9DBE0; }
+.dark .btn-ghost { color: var(--text-on-dark); border-color: #3A3D44; }
+.dark .btn-ghost:hover { border-color: var(--text-on-dark); }
+.btn .arrow { width: 16px; height: 16px; }
+
+/* ───── 1. 상단 메뉴 ───── */
+.nav {
+  position: fixed; inset: 0 0 auto; z-index: 50; height: 72px;
+  background: var(--room); color: var(--text-on-dark);
+  transition: background-color .5s var(--ease), color .5s var(--ease), border-color .5s var(--ease);
+  border-bottom: 1px solid transparent;
+}
+.nav.is-light { background: rgba(241, 241, 238, .97); color: var(--text); border-bottom-color: var(--line); }
+.nav .wrap { display: flex; align-items: center; height: 100%; gap: 40px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.logo svg { width: 24px; height: 32px; }
+.logo span { font-family: var(--serif); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
+.menu { display: flex; gap: 32px; margin-inline: auto; font-size: 16px; }
+.menu a { text-decoration: none; opacity: .82; transition: opacity .3s; }
+.menu a:hover { opacity: 1; text-decoration: underline; }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.nav-actions .login { font-size: 16px; font-weight: 500; text-decoration: none; padding: 0 16px; line-height: 44px; }
+.nav-actions .login:hover { text-decoration: underline; }
+.nav .btn { min-height: 44px; padding: 0 20px; font-size: 16px; }
+.nav .btn-primary { background: #fff; color: var(--ink); }
+.nav.is-light .btn-primary { background: var(--ink); color: #fff; }
+.nav.is-light .btn-primary:hover { background: var(--accent); }
+.nav-more { display: none; position: relative; }
+.nav-more summary { list-style: none; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; }
+.nav-more summary::-webkit-details-marker { display: none; }
+.nav-more summary svg { width: 22px; height: 22px; }
+.nav-more[open] .sheet {
+  position: fixed; top: 60px; left: 0; right: 0;
+  background: var(--wall); color: var(--text); border-bottom: 1px solid var(--line);
+  padding: 8px 16px 24px;
+}
+.sheet a { display: block; padding: 14px 0; border-bottom: 1px solid var(--line); text-decoration: none; font-size: 17px; }
+@media (max-width: 960px) {
+  .nav { height: 60px; }
+  .menu, .nav-actions .login { display: none; }
+  .nav .wrap { gap: 8px; }
+  .nav-actions { margin-left: auto; }
+  .nav-more { display: block; }
+}
+
+/* ───── 2. 첫 화면 ───── */
+.hero {
+  --rule: #1B1D21;
+  background: var(--room); color: var(--text-on-dark);
+  min-height: max(100svh, 760px);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.hero .wrap {
+  flex: 1; display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: center;
+  padding-top: 72px;
+}
+.hero-copy { padding-block: 64px; }
+.hero h1 {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 60px; line-height: 1.3; letter-spacing: -0.025em;
+}
+.hero h1 .line { display: block; }
+.hero p { margin-top: 32px; color: var(--text-2-on-dark); max-width: 31em; text-wrap: pretty; }
+.hero .actions { margin-top: 48px; display: flex; gap: 12px; flex-wrap: wrap; }
+/* 어둠 속에 떠 있는 조각 하나: 윗면·왼쪽 모서리에만 빛 (림 라이트) */
+.exhibit { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.exhibit svg { width: min(100%, 380px); height: auto; overflow: visible; display: block; }
+.exhibit .body { fill: #191C21; stroke: #262A31; stroke-width: 1; }
+.exhibit .rim { fill: none; stroke: var(--text-on-dark); stroke-width: 1.25; }
+.plinth { width: min(76%, 300px); height: 1px; background: #3A3F47; margin-top: 36px; }
+.floor { height: 1px; background: #2A2C31; position: relative; z-index: 1; }
+
+/* 조명이 서서히 켜짐 */
+@keyframes light-on { from { opacity: 0; } }
+@keyframes body-on { from { opacity: .55; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
+.exhibit .rim { animation: light-on 1.6s ease-out .3s both; }
+.exhibit .body { animation: body-on 1.6s ease-out .3s both; }
+.hero-copy > * { animation: rise-in 1.2s var(--ease) both; }
+.hero-copy > :nth-child(1) { animation-delay: .5s; }
+.hero-copy > :nth-child(2) { animation-delay: .7s; }
+.hero-copy > :nth-child(3) { animation-delay: .85s; }
+
+@media (max-width: 760px) {
+  .hero { min-height: auto; }
+  .hero .wrap { grid-template-columns: 1fr; padding-top: 60px; gap: 0; }
+  .hero-copy { padding-block: 40px 8px; }
+  .hero h1 { font-size: 34px; line-height: 1.35; }
+  .hero p { margin-top: 20px; }
+  .hero .actions { margin-top: 32px; }
+  .hero .actions { flex-direction: column; }
+  .exhibit { margin-top: 48px; padding-bottom: 56px; }
+  .exhibit svg { width: 180px; }
+  .plinth { margin-top: 24px; width: 200px; }
+}
+
+/* ───── 3. 맞물리는 조각 ───── */
+.section { padding-block: var(--section-y); }
+.match { border-top: 1px solid var(--ink); }
+.match-head { display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: end; }
+.match-head .lead { margin-top: 28px; }
+.board-caption {
+  margin-top: 96px; display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  padding-bottom: 16px; border-bottom: 1px solid var(--line);
+  font-size: 16px; color: var(--text-2);
+}
+.board-caption strong { color: var(--text); font-weight: 600; }
+.board-cols {
+  display: grid; grid-template-columns: 1fr 1fr 168px; gap: 0 0;
+  padding: 20px 0 12px; font-size: 16px; color: var(--text-2); font-weight: 500;
+}
+.board-cols span:nth-child(2) { padding-left: 40px; }
+.board-cols span:nth-child(3) { padding-left: 32px; }
+.board { display: grid; gap: 12px; }
+.row { display: grid; grid-template-columns: 1fr 1fr 168px; min-height: 92px; }
+.req {
+  background: var(--ink); color: #fff;
+  display: flex; align-items: center; padding: 20px 32px;
+  font-weight: 600; font-size: 18px;
+}
+.exp {
+  position: relative; background: var(--paper);
+  border: 1px solid var(--line); border-left: 0;
+  display: flex; flex-direction: column; justify-content: center; padding: 20px 32px 20px 40px;
+}
+.exp::before { /* 돌기: 요구 역량 조각의 홈에 끼워짐 */
+  content: ""; position: absolute; top: 50%; left: -16px; width: 32px; height: 32px; margin-top: -16px;
+  border-radius: 50%; background: inherit; border: 1px solid var(--line);
+  clip-path: inset(-2px 50% -2px -2px);
+}
+.exp .what { font-weight: 500; }
+.status { display: flex; align-items: center; gap: 12px; padding-left: 32px; font-size: 16px; font-weight: 600; }
+.status i { display: block; width: 28px; height: 3px; background: var(--accent); }
+.row.partial .exp {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 7px, var(--line) 7px 8px) right / 50% 100% no-repeat,
+    var(--paper);
+}
+.row.partial .exp::before { background: var(--paper); }
+.row.partial .status i { background: linear-gradient(90deg, var(--accent) 50%, var(--line) 50%); }
+.row.empty .exp { background: var(--wall); border: 1px dashed #7A7F88; border-left: 0; }
+.row.empty .exp::before { background: transparent; border: 1px dashed #A2A6AE; }
+.row.empty .what { color: var(--text-2); }
+.row.empty .note { margin-top: 6px; font-size: 16px; line-height: 1.6; color: var(--text); }
+.row.empty .status i { background: transparent; border: 1px dashed var(--text-2); height: 5px; }
+.sample-note { margin-top: 24px; font-size: 16px; color: var(--text-2); }
+
+/* 조립 연출: 경험 조각이 차례로 끼워짐 */
+.js .board:not(.is-assembled) .exp { opacity: 0; transform: translateX(48px); }
+.js .board:not(.is-assembled) .status { opacity: 0; }
+.board.is-assembled .exp, .board.is-assembled .status {
+  opacity: 1; transform: none;
+  transition: opacity .9s var(--ease), transform 1.1s var(--ease);
+  transition-delay: calc(var(--i) * .16s);
+}
+.board.is-assembled .status { transition-delay: calc(var(--i) * .16s + .5s); }
+
+@media (max-width: 960px) {
+  .match-head { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .board-caption { margin-top: 56px; }
+  .board-cols { display: none; }
+  .board { gap: 20px; }
+  .row { grid-template-columns: 1fr; min-height: 0; }
+  .req { padding: 16px 20px; }
+  .exp { border: 1px solid var(--line); border-top: 0; padding: 22px 20px 16px; }
+  .exp::before { top: -16px; left: auto; right: 40px; margin: 0; clip-path: inset(-2px -2px 50% -2px); }
+  .row.empty .exp { border: 1px dashed #7A7F88; border-top: 0; }
+  .status { padding: 10px 0 4px; }
+  .js .board:not(.is-assembled) .exp { transform: translateY(-24px); }
+}
+
+/* ───── 4. 보고서 예시 ───── */
+.report { display: grid; grid-template-columns: 4fr 8fr; gap: 24px; align-items: start; }
+.report-intro { position: sticky; top: 120px; padding-right: 24px; }
+.report-intro .lead { margin-top: 28px; }
+.sheet-doc {
+  background: var(--paper); border: 1px solid var(--line);
+  padding: 56px 64px 64px; font-size: 17px;
+  box-shadow: 0 30px 60px -40px rgba(22, 24, 28, .35);
+}
+.doc-meta { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--ink); font-size: 16px; }
+.doc-meta .tag { color: var(--text-2); }
+.score { display: grid; grid-template-columns: auto 1fr; gap: 48px; padding: 48px 0; border-bottom: 1px solid var(--line); align-items: end; }
+.total .label { font-size: 16px; color: var(--text-2); }
+.total .big { font-family: var(--serif); font-weight: 600; font-size: 120px; line-height: 1; letter-spacing: -0.03em; }
+.total .big small { font-size: 32px; color: var(--text-2); letter-spacing: 0; margin-left: 6px; }
+.total .delta { margin-top: 12px; font-size: 16px; font-weight: 600; color: var(--accent); }
+.criteria { display: grid; gap: 14px; }
+.crit { display: grid; grid-template-columns: 7.5em 1fr 2.5em; gap: 16px; align-items: center; font-size: 16px; }
+.crit .bar { height: 1px; background: var(--line); position: relative; }
+.crit .bar b { position: absolute; left: 0; top: -2px; height: 5px; background: var(--accent); width: var(--v); }
+.crit .v { text-align: right; font-weight: 600; }
+.question { padding-top: 40px; }
+.question .qn { font-size: 16px; color: var(--text-2); }
+.question .qt { margin-top: 10px; font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.6; }
+.notes { margin-top: 32px; display: grid; grid-template-columns: 8.5em 1fr; }
+.notes dt, .notes dd { padding: 18px 0; border-top: 1px solid var(--line); }
+.notes dt { font-weight: 600; font-size: 16px; padding-top: 19px; }
+.notes dd { line-height: 1.7; }
+.doc-foot { margin-top: 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 16px; color: var(--text-2); }
+.ai-mark { display: inline-flex; align-items: center; gap: 10px; }
+.ai-mark svg { width: 22px; height: 20px; color: var(--accent); }
+@media (max-width: 960px) {
+  .report { grid-template-columns: 1fr; gap: 48px; }
+  .report-intro { position: static; }
+}
+@media (max-width: 760px) {
+  .sheet-doc { padding: 28px 20px 32px; margin-inline: -4px; font-size: 16px; }
+  .score { grid-template-columns: 1fr; gap: 32px; padding: 32px 0; }
+  .total .big { font-size: 88px; }
+  .notes { grid-template-columns: 1fr; }
+  .notes dd { border-top: 0; padding-top: 0; }
+  .question .qt { font-size: 19px; }
+}
+
+/* ───── 5. 기능 설명 ───── */
+.modes-head { max-width: 760px; }
+.modes { margin-top: 80px; border-bottom: 1px solid var(--ink); }
+.mode { display: grid; grid-template-columns: 4fr 5fr 3fr; gap: 24px; padding: 40px 0; border-top: 1px solid var(--ink); align-items: baseline; }
+.mode + .mode { border-top-color: var(--line); }
+.mode h3 { font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.35; }
+.mode .need { font-size: 16px; color: var(--text-2); }
+.mode .need b { display: block; color: var(--text); font-weight: 600; font-size: 18px; }
+.extras { margin-top: 96px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.extras div { border-top: 1px solid var(--ink); padding-top: 20px; }
+.extras h3 { font-size: 18px; font-weight: 700; }
+.extras p { margin-top: 10px; font-size: 16px; line-height: 1.7; color: var(--text-2); }
+@media (max-width: 960px) {
+  .mode { grid-template-columns: 1fr; gap: 12px; padding: 32px 0; }
+  .extras { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .modes { margin-top: 48px; }
+  .mode h3 { font-size: 24px; }
+  .extras { grid-template-columns: 1fr; margin-top: 64px; gap: 32px; }
+}
+
+/* ───── 6. 신뢰 요소 (짙은 띠) ───── */
+.trust { --rule: #24262B; background: var(--ink); color: var(--text-on-dark); padding-block: 120px; }
+.trust .wrap { display: grid; grid-template-columns: 1fr 1fr; }
+.trust article { padding-right: 64px; }
+.trust article + article { padding: 0 0 0 64px; border-left: 1px solid #33363C; }
+.trust h3 { font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.4; }
+.trust p { margin-top: 20px; color: var(--text-2-on-dark); }
+@media (max-width: 760px) {
+  .trust { padding-block: 80px; }
+  .trust .wrap { grid-template-columns: 1fr; }
+  .trust article { padding: 0; }
+  .trust article + article { padding: 40px 0 0; margin-top: 40px; border-left: 0; border-top: 1px solid #33363C; }
+  .trust h3 { font-size: 24px; }
+}
+
+/* ───── 7. 티켓 안내 ───── */
+.tickets { display: grid; grid-template-columns: 6fr 6fr; gap: 24px; align-items: start; }
+.price { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--ink); }
+.price .unit { font-size: 16px; font-weight: 600; }
+.price .amount { font-family: var(--serif); font-weight: 600; font-size: 72px; line-height: 1.2; letter-spacing: -0.02em; }
+.price .temp { font-size: 16px; color: var(--text-2); }
+.price .pay { margin-top: 20px; font-size: 16px; color: var(--text-2); }
+.ticket-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 17px; }
+.tickets-right { padding-left: 64px; padding-top: 6px; }
+.ticket-table caption { text-align: left; font-size: 16px; color: var(--text-2); padding-bottom: 16px; }
+.ticket-table th, .ticket-table td { text-align: left; padding: 20px 0; border-top: 1px solid var(--line); font-weight: 400; }
+.ticket-table thead th { border-top: 1px solid var(--ink); font-size: 16px; font-weight: 600; padding: 14px 0; }
+.ticket-table tbody tr:last-child td, .ticket-table tbody tr:last-child th { border-bottom: 1px solid var(--line); }
+.ticket-table .n { padding-right: 24px; text-align: right; font-weight: 600; white-space: nowrap; }
+@media (max-width: 960px) {
+  .tickets { grid-template-columns: 1fr; gap: 64px; }
+  .tickets-right { padding-left: 0; }
+}
+@media (max-width: 760px) {
+  .price .amount { font-size: 56px; }
+  .footer .wrap { gap: 12px 24px; }
+  .footer .logo { flex-basis: 100%; margin-bottom: 8px; }
+}
+
+/* ───── 8. 하단 회원가입 유도 ───── */
+.closing { border-top: 1px solid var(--line); }
+.closing .wrap { display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: center; }
+.closing h2 { font-family: var(--serif); font-weight: 600; font-size: 56px; line-height: 1.3; letter-spacing: -0.025em; }
+.closing .btn { margin-top: 48px; }
+.closing svg { width: 100%; max-width: 380px; justify-self: center; }
+@media (max-width: 760px) {
+  .closing .wrap { grid-template-columns: 1fr; gap: 56px; }
+  .closing h2 { font-size: 32px; }
+  .closing .btn { margin-top: 32px; width: 100%; }
+  .closing svg { max-width: 260px; justify-self: start; }
+}
+
+/* ───── 9. 푸터 ───── */
+.footer { border-top: 1px solid var(--ink); padding-block: 32px 40px; font-size: 16px; color: var(--text-2); }
+.footer .wrap { display: flex; gap: 32px; flex-wrap: wrap; align-items: center; }
+.footer .logo { color: var(--text); margin-right: auto; }
+.footer .logo svg { width: 18px; height: 24px; }
+.footer .logo span { font-size: 17px; }
+.footer a { text-decoration: none; }
+.footer a:hover { text-decoration: underline; color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js .board .exp, .js .board .status { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 공용 도형: 로고 J 심볼, 퍼즐 조각 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- 로고의 퍼즐 조각: 좌우 돌기, 아래 홈 -->
+    <path id="piece" d="M30 20 H130 V55 A17 17 0 1 1 130 85 V120 H95 A15 15 0 0 0 65 120 H30 V85 A17 17 0 1 1 30 55 Z"/>
+    <!-- 줄로 이어지는 조각: 오른쪽 돌기, 왼쪽 홈 -->
+    <path id="link" d="M30 20 H130 V55 A17 17 0 1 1 130 85 V120 H30 V85 A17 17 0 1 0 30 55 Z"/>
+    <mask id="j-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="300">
+      <rect width="220" height="300" fill="#fff"/>
+      <use href="#piece" fill="#000" transform="translate(46 150) scale(.7)"/>
+      <rect x="96" y="140" width="10" height="34" fill="#000"/>
+    </mask>
+    <symbol id="j-symbol" viewBox="0 0 220 300">
+      <path mask="url(#j-cut)" fill="currentColor" d="M105 50 L214 0 V192 A107 107 0 0 1 0 192 V140 H106 Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="잡퍼즐 처음으로">
+      <svg aria-hidden="true"><use href="#j-symbol"/></svg>
+      <span>잡퍼즐</span>
+    </a>
+    <nav class="menu" aria-label="주요 메뉴">
+      <a href="#how">이용 방법</a>
+      <a href="#modes">면접 모드</a>
+      <a href="#report">보고서 예시</a>
+      <a href="#tickets">티켓 안내</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="login" href="#login">로그인</a>
+      <a class="btn btn-primary" href="#signup">회원가입</a>
+      <details class="nav-more">
+        <summary aria-label="메뉴 열기">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h16M3 15h16"/></svg>
+        </summary>
+        <div class="sheet">
+          <a href="#how">이용 방법</a>
+          <a href="#modes">면접 모드</a>
+          <a href="#report">보고서 예시</a>
+          <a href="#tickets">티켓 안내</a>
+          <a href="#login">로그인</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- 2. 첫 화면: 어두운 전시실, 빛은 조각 하나에만 -->
+  <section class="hero dark ruled" id="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1><span class="line">공고가 찾는 조각을,</span> <span class="line">당신의 경험에서 찾아냅니다.</span></h1>
+        <p>잡퍼즐은 채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다. 비어 있는 조각은 면접 전에 채웁니다.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#signup">회원가입하고 시작하기</a>
+          <a class="btn btn-ghost" href="#report">보고서 예시 보기</a>
+        </div>
+      </div>
+      <div class="exhibit" aria-hidden="true">
+        <svg viewBox="0 0 200 200">
+          <defs>
+            <!-- 림 라이트: 윗면과 왼쪽 모서리에만 빛이 닿음 -->
+            <linearGradient id="hero-rim-fade" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff"/>
+              <stop offset=".42" stop-color="#fff"/>
+              <stop offset=".56" stop-color="#000"/>
+            </linearGradient>
+            <mask id="hero-rim-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">
+              <rect width="200" height="200" fill="url(#hero-rim-fade)"/>
+            </mask>
+            <path id="hero-piece" d="M40,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H160 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H40 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 Z"/>
+          </defs>
+          <g transform="rotate(-8 100 100)">
+            <use href="#hero-piece" class="body"/>
+            <use href="#hero-piece" class="rim" mask="url(#hero-rim-mask)"/>
+          </g>
+        </svg>
+        <div class="plinth"></div>
+      </div>
+    </div>
+    <div class="floor"></div>
+  </section>
+
+  <!-- 3. 효과 상세: 맞물리는 조각 -->
+  <section class="section match ruled" id="how" aria-labelledby="match-title">
+    <div class="wrap">
+      <div class="match-head">
+        <div>
+          <h2 class="display" id="match-title">내 경험이 공고의 어느 자리에 맞는지 보여 드립니다.</h2>
+          <p class="lead">공고의 요구 역량 하나하나에 지원자의 경험을 연결합니다. 맞는 경험이 없는 자리는 비어 있는 조각으로 표시해, 면접 전에 무엇을 준비해야 하는지 알려 드립니다.</p>
+        </div>
+      </div>
+
+      <div class="board-caption">
+        <span><strong>가온테크(가상)</strong> 백엔드 개발자 신입</span>
+        <span>예시</span>
+      </div>
+      <div class="board-cols" aria-hidden="true">
+        <span>공고 요구 역량</span><span>연결된 경험</span><span>상태</span>
+      </div>
+      <ul class="board" id="board" aria-label="공고 요구 역량과 연결된 경험 예시">
+        <li class="row" style="--i:0"><div class="req">Java·Spring Boot 개발</div><div class="exp"><span class="what">팀 프로젝트 API 개발</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row" style="--i:1"><div class="req">SQL·데이터베이스</div><div class="exp"><span class="what">조회 쿼리 성능 개선</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row" style="--i:2"><div class="req">REST API 설계</div><div class="exp"><span class="what">회원·결제 API 설계</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row" style="--i:3"><div class="req">협업·코드 리뷰</div><div class="exp"><span class="what">4인 팀 프로젝트 PR 리뷰</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row partial" style="--i:4"><div class="req">클라우드 배포</div><div class="exp"><span class="what">AWS EC2 배포 1회</span></div><div class="status"><i></i>일부 맞물림</div></li>
+        <li class="row empty" style="--i:5"><div class="req">테스트 코드 작성</div><div class="exp"><span class="what">없음</span><p class="note">테스트 코드 작성 경험이 자료에 드러나지 않습니다. 관련 질문에 대비해 경험을 정리해 두세요.</p></div><div class="status"><i></i>빈 조각</div></li>
+      </ul>
+      <p class="sample-note">표시된 내용은 이해를 돕기 위한 예시입니다.</p>
+    </div>
+  </section>
+
+  <!-- 4. 보고서 예시 -->
+  <section class="section ruled" id="report" aria-labelledby="report-title" style="padding-top:0">
+    <div class="wrap report">
+      <div class="report-intro">
+        <h2 class="display" id="report-title">점수보다 중요한 것은 다음 답변입니다.</h2>
+        <p class="lead">질문마다 출제 의도와 평가 근거를 함께 보여 드립니다. 같은 면접을 다시 보면 이전 답변과 비교해 나아진 점을 알려 드립니다.</p>
+      </div>
+
+      <article class="sheet-doc" aria-label="면접 보고서 예시">
+        <div class="doc-meta">
+          <span>가온테크(가상) 백엔드 개발자 신입 · 자료 기반 면접 · 2회차</span>
+          <span class="tag">예시</span>
+        </div>
+
+        <div class="score">
+          <div class="total">
+            <div class="label">총점</div>
+            <div class="big num">77<small>/ 100</small></div>
+            <div class="delta">1회차보다 9점 상승</div>
+          </div>
+          <div class="criteria" aria-label="평가 항목별 점수">
+            <div class="crit"><span>본인 역할</span><span class="bar"><b style="--v:82%"></b></span><span class="v num">82</span></div>
+            <div class="crit"><span>경험 구체성</span><span class="bar"><b style="--v:71%"></b></span><span class="v num">71</span></div>
+            <div class="crit"><span>성과</span><span class="bar"><b style="--v:68%"></b></span><span class="v num">68</span></div>
+            <div class="crit"><span>직무 연결성</span><span class="bar"><b style="--v:85%"></b></span><span class="v num">85</span></div>
+          </div>
+        </div>
+
+        <div class="question">
+          <div class="qn num">질문 3 / 6</div>
+          <p class="qt">팀 프로젝트에서 API 응답 속도를 개선했다고 적으셨습니다. 원인을 어떻게 찾았는지 설명해 주세요.</p>
+          <dl class="notes">
+            <dt>출제 의도</dt><dd>문제의 원인을 분석한 과정과 본인이 맡은 역할을 확인합니다.</dd>
+            <dt>잘한 점</dt><dd>쿼리 실행 계획을 확인한 과정을 순서대로 설명해 원인을 찾은 흐름이 분명합니다.</dd>
+            <dt>보완할 점</dt><dd>개선 전후 응답 시간을 수치로 제시하지 않아 성과가 약하게 전달됩니다.</dd>
+            <dt>추천 답변 방향</dt><dd>원인 분석 과정은 유지하고, "평균 응답 시간을 얼마에서 얼마로 줄였다"처럼 결과를 수치로 마무리해 보세요.</dd>
+            <dt>1회차 대비</dt><dd>1회차보다 본인이 맡은 역할을 구체적으로 설명했습니다.</dd>
+          </dl>
+        </div>
+
+        <div class="doc-foot">
+          <span class="ai-mark">
+            <svg viewBox="0 0 110 100" fill="currentColor" aria-hidden="true">
+              <path d="M30 18 H58 L84 96 H64 L58 76 H32 L26 96 H6 Z M36 60 H54 L45 32 Z"/>
+              <use href="#piece" transform="translate(78 0) scale(.26)"/>
+              <rect x="86" y="42" width="18" height="54"/>
+            </svg>
+            AI가 평가 항목 기준에 따라 평가합니다.
+          </span>
+          <span>표시된 내용은 이해를 돕기 위한 예시입니다.</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 5. 기능 설명 -->
+  <section class="section ruled" id="modes" aria-labelledby="modes-title" style="padding-top:0">
+    <div class="wrap">
+      <h2 class="display modes-head" id="modes-title">준비할 영역에 맞춰 세&nbsp;가지 면접을 고릅니다.</h2>
+      <div class="modes">
+        <div class="mode">
+          <h3>기초 지식 면접</h3>
+          <p>공고에 적힌 기술과 요구사항에 대한 기초 지식을 확인합니다.</p>
+          <p class="need"><b class="num">티켓 1장</b>분석 결과 필요</p>
+        </div>
+        <div class="mode">
+          <h3>자료 기반 면접</h3>
+          <p>이력서·자기소개서·포트폴리오의 경험을 공고와 연결해 묻습니다. 지원 동기 질문이 포함됩니다.</p>
+          <p class="need"><b class="num">티켓 3장</b>분석 결과 필요</p>
+        </div>
+        <div class="mode">
+          <h3>인성 면접</h3>
+          <p>설정한 직무에서 중요하게 보는 태도와 협업 역량을 질문합니다.</p>
+          <p class="need"><b class="num">티켓 1장</b>분석 없이 가능</p>
+        </div>
+      </div>
+
+      <div class="extras">
+        <div><h3>꼬리질문</h3><p>답변에 따라 이어지는 질문으로 실제 면접처럼 진행합니다.</p></div>
+        <div><h3>출제 의도 보기</h3><p>필요할 때만 질문의 의도를 열어 볼 수 있습니다.</p></div>
+        <div><h3>이어서 진행</h3><p>면접 도중 나가도 마지막 지점부터 이어서 진행합니다.</p></div>
+        <div><h3>종합 평가</h3><p>보고서가 5개 이상 쌓이면 선호 직무와 답변의 강점, 아쉬운 점을 정리해 드립니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 신뢰 요소 -->
+  <section class="trust dark ruled" aria-label="자료와 티켓 처리 원칙">
+    <div class="wrap">
+      <article>
+        <h3>등록한 자료는 저장하지 않습니다.</h3>
+        <p>공고와 이력서·자기소개서·포트폴리오 원본은 분석 후 보관하지 않습니다. 분석 결과와 보고서만 남습니다.</p>
+      </article>
+      <article>
+        <h3>실패한 요청은 티켓을 돌려드립니다.</h3>
+        <p>AI 응답에 실패하면 사용한 티켓을 반환하고 실패 사유를 안내합니다.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- 7. 티켓 안내 -->
+  <section class="section ruled" id="tickets" aria-labelledby="tickets-title">
+    <div class="wrap tickets">
+      <div>
+        <h2 class="display" id="tickets-title">필요한 만큼만 티켓으로 이용합니다.</h2>
+        <div class="price">
+          <div class="unit">티켓 1장</div>
+          <div class="amount num">1,000원</div>
+          <div class="temp">임시 가격, 추후 변경</div>
+          <p class="pay">결제는 시연용 테스트 결제로 진행됩니다.</p>
+        </div>
+      </div>
+      <div class="tickets-right">
+        <table class="ticket-table">
+          <caption>이용 항목별 티켓</caption>
+          <thead><tr><th scope="col">이용 항목</th><th scope="col" class="n">필요 티켓</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">공고·지원자 분석</th><td class="n num">1장</td></tr>
+            <tr><th scope="row">기초 지식 면접 · 인성 면접</th><td class="n num">1장</td></tr>
+            <tr><th scope="row">자료 기반 면접 (첫 생성)</th><td class="n num">3장</td></tr>
+            <tr><th scope="row">종료된 면접 다시 진행</th><td class="n num">1장</td></tr>
+            <tr><th scope="row">종료된 면접 질문 다시 생성</th><td class="n num">2장</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. 하단 회원가입 유도 -->
+  <section class="section closing ruled" id="signup" aria-labelledby="closing-title">
+    <div class="wrap">
+      <div>
+        <h2 id="closing-title">지원할 공고가 있다면,<br>지금 맞춰 보세요.</h2>
+        <a class="btn btn-primary" href="#signup">회원가입하고 시작하기</a>
+      </div>
+      <!-- 맞물린 조각 묶음: 6-3의 다섯 자리는 채워지고, 마지막 하나는 빈 조각으로 남음 -->
+      <svg viewBox="0 0 360 240" aria-hidden="true">
+        <g fill="#16181C" stroke="#F1F1EE" stroke-width="3">
+          <use href="#link" transform="translate(-30 0)"/>
+          <use href="#link" transform="translate(70 0)"/>
+          <use href="#link" transform="translate(170 0)"/>
+          <use href="#link" transform="translate(-30 100)"/>
+          <use href="#link" transform="translate(70 100)"/>
+        </g>
+        <use href="#link" transform="translate(170 100)" fill="none" stroke="#7A7F88" stroke-dasharray="4 4"/>
+      </svg>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="잡퍼즐 처음으로"><svg aria-hidden="true"><use href="#j-symbol"/></svg><span>잡퍼즐</span></a>
+    <span>© 잡퍼즐</span>
+    <a href="#terms">이용약관</a>
+    <a href="#privacy">개인정보처리방침</a>
+  </div>
+</footer>
+
+<script>
+  // 상단 메뉴: 첫 화면(어두움)을 벗어나면 밝은 바탕으로
+  const nav = document.getElementById('nav');
+  const hero = document.getElementById('hero');
+  new IntersectionObserver(([e]) => nav.classList.toggle('is-light', !e.isIntersecting),
+    { rootMargin: '-72px 0px 0px 0px', threshold: 0 }).observe(hero);
+
+  // 맞물리는 조각: 화면에 들어오면 한 번 조립
+  const board = document.getElementById('board');
+  const io = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) { board.classList.add('is-assembled'); io.disconnect(); }
+  }, { threshold: 0.25 });
+  io.observe(board);
+
+  // 모바일 메뉴: 항목을 누르면 닫힘
+  document.querySelectorAll('.sheet a').forEach(a =>
+    a.addEventListener('click', () => a.closest('details').removeAttribute('open')));
+</script>
+</body>
+</html>
