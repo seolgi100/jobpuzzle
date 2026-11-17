@@ -146,6 +146,13 @@ app:
     basic-cost: 1
     weakness-cost: 1
     company-fit-cost: 3
+    # v2 (평가 명세 1장)
+    analysis-cost: 1
+    knowledge-cost: 1
+    material-cost: 3
+    personality-cost: 1
+    session-retry-cost: 1
+    question-regenerate-cost: 2
     products:
       - code: T5
         name: 면접 티켓 5장

@@ -63,6 +63,29 @@ class TicketServiceTest {
     }
 
     @Test
+    void v2CostsFollowTheSpecTable() {
+        assertThat(service.cost(TicketUsage.ANALYSIS)).isEqualTo(1);
+        assertThat(service.cost(TicketUsage.KNOWLEDGE)).isEqualTo(1);
+        assertThat(service.cost(TicketUsage.MATERIAL)).isEqualTo(3);
+        assertThat(service.cost(TicketUsage.PERSONALITY)).isEqualTo(1);
+        assertThat(service.cost(TicketUsage.SESSION_RETRY)).isEqualTo(1);
+        assertThat(service.cost(TicketUsage.QUESTION_REGENERATE)).isEqualTo(2);
+    }
+
+    @Test
+    void v2ModeIsChargedAndRefundedOnFinalFailure() {
+        wallet.useFreeBasic();
+        wallet.add(3);
+        assertThatThrownBy(() -> service.spend(1L, TicketUsage.MATERIAL, service.cost(TicketUsage.MATERIAL), () -> {
+            throw new IllegalStateException("AI 최종 실패");
+        })).isInstanceOf(IllegalStateException.class);
+        assertThat(wallet.getBalance()).isEqualTo(3);
+
+        assertThat(service.spend(1L, TicketUsage.MATERIAL, service.cost(TicketUsage.MATERIAL), () -> "ok")).isEqualTo("ok");
+        assertThat(wallet.getBalance()).isZero();
+    }
+
+    @Test
     void firstBasicIsFreeThenCostsATicket() {
         wallet.add(1);
         service.use(1L, TicketUsage.BASIC, 1);

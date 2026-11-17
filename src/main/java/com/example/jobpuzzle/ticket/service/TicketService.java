@@ -44,6 +44,12 @@ public class TicketService {
             case BASIC -> properties.getBasicCost();
             case WEAKNESS_REVIEW -> properties.getWeaknessCost();
             case COMPANY_FIT -> properties.getCompanyFitCost();
+            case ANALYSIS -> properties.getAnalysisCost();
+            case KNOWLEDGE -> properties.getKnowledgeCost();
+            case MATERIAL -> properties.getMaterialCost();
+            case PERSONALITY -> properties.getPersonalityCost();
+            case SESSION_RETRY -> properties.getSessionRetryCost();
+            case QUESTION_REGENERATE -> properties.getQuestionRegenerateCost();
         };
     }
 
