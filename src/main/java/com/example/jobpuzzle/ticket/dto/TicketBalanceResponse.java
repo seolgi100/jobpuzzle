@@ -9,25 +9,23 @@ import java.util.List;
 
 public record TicketBalanceResponse(
         int balance,
-        boolean freeBasicAvailable,
         Costs costs,
         List<History> history
 ) {
     public record Costs(int basic, int weakness, int companyFit) {
     }
 
-    public record History(String type, String usage, int amount, int balanceAfter, boolean freeUse, LocalDateTime createdAt) {
+    public record History(String type, String usage, int amount, int balanceAfter, LocalDateTime createdAt) {
     }
 
     public static TicketBalanceResponse of(TicketWallet wallet, TicketProperties properties, List<TicketTransaction> transactions) {
         return new TicketBalanceResponse(
                 wallet.getBalance(),
-                !wallet.isFreeBasicUsed(),
                 new Costs(properties.getBasicCost(), properties.getWeaknessCost(),
                         properties.getCompanyFitCost()),
                 transactions.stream()
                         .map(t -> new History(t.getType().name(), t.getUsage() == null ? null : t.getUsage().name(),
-                                t.getAmount(), t.getBalanceAfter(), t.isFreeUse(), t.getCreatedAt()))
+                                t.getAmount(), t.getBalanceAfter(), t.getCreatedAt()))
                         .toList()
         );
     }

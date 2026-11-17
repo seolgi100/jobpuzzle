@@ -32,7 +32,7 @@ public class QuestionSetController {
             @AuthenticationPrincipal(expression = "user") User user,
             @Valid @RequestBody BasicQuestionRequest request
     ) {
-        // 첫 기본 면접은 무료, 이후 티켓 차감. 질문 생성에 실패하면 돌려준다.
+        // 티켓을 차감하고, 질문 생성에 실패하면 돌려준다.
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 ticketService.spend(user.getUserId(), TicketUsage.BASIC, ticketService.cost(TicketUsage.BASIC),
                         () -> questionGenerationService.generateBasicQuestionSet(user.getUserId(), request))

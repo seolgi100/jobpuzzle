@@ -22,7 +22,7 @@ public class TicketController {
     private final TicketService ticketService;
     private final PaymentService paymentService;
 
-    // 잔액·무료 기본 면접 여부·모드별 차감 수·최근 이력
+    // 잔액·모드별 차감 수·최근 이력
     @GetMapping("/tickets/me")
     public ResponseEntity<ApiResponse<TicketBalanceResponse>> getMyTickets(
             @AuthenticationPrincipal(expression = "user") User user

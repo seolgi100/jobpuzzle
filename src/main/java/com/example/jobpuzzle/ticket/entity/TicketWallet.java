@@ -22,7 +22,7 @@ public class TicketWallet extends BaseEntity {
     @Column(nullable = false)
     private int balance;
 
-    // 기본 면접 첫 1회 무료 사용 여부
+    // v1 "기본 면접 첫 1회 무료" 흔적. 무료는 없어졌지만 DB 칸(NOT NULL)이 남아 있어 필드만 둔다.
     @Column(name = "free_basic_used", nullable = false)
     private boolean freeBasicUsed;
 
@@ -36,13 +36,5 @@ public class TicketWallet extends BaseEntity {
 
     public void subtract(int count) {
         balance -= count;
-    }
-
-    public void useFreeBasic() {
-        freeBasicUsed = true;
-    }
-
-    public void restoreFreeBasic() {
-        freeBasicUsed = false;
     }
 }

@@ -248,8 +248,8 @@
   }
 
   // ───────────────── 시작하기: 공고 맞춤 + 빠른 연습 둘 ─────────────────
-  function fare(n, free) {
-    return '<span class="ih-fare">' + (free ? '첫 1회 무료' : '티켓 <b>' + esc(n) + '</b>장') + '</span>';
+  function fare(n) {
+    return '<span class="ih-fare">티켓 <b>' + esc(n) + '</b>장</span>';
   }
 
   function quickRow(opts) {
@@ -276,7 +276,7 @@
       title: '기본 질문',
       note: category ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') : '희망 직무를 먼저 정해 주세요',
       disabled: !category,
-      fare: t ? fare(t.costs.basic, t.freeBasicAvailable) : '',
+      fare: t ? fare(t.costs.basic) : '',
       button: category
         ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>시작</button>'
         : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">직무 정하기</a>'
@@ -583,23 +583,19 @@
     function body(opts, tickets) {
       var cost = costFor(opts.usage, tickets, opts.cost);
       // shortage: 서버가 잔액 부족(402)을 돌려준 경우. 화면 잔액과 어긋나도 부족 상태로 보여준다.
-      var free = !opts.shortage && opts.usage === 'BASIC' && tickets.freeBasicAvailable;
       var short = opts.shortage ? Math.max(cost - tickets.balance, 1) : cost - tickets.balance;
-      var title = free ? '첫 기본 면접은 무료예요'
-        : opts.shortage ? '티켓이 부족해요'
+      var title = opts.shortage ? '티켓이 부족해요'
         : short > 0 ? '티켓이 ' + short + '장 부족해요'
           : '티켓 ' + cost + '장을 사용해요';
       var lines = '<p class="tk-what">' + esc(opts.what) + '</p>';
-      if (!free) {
-        lines += '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
-          '<div><dt>' + (short > 0 ? '필요' : '사용 후') + '</dt><dd>' +
-          (short > 0 ? cost + '장' : (tickets.balance - cost) + '장') + '</dd></div></dl>';
-      }
+      lines += '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
+        '<div><dt>' + (short > 0 ? '필요' : '사용 후') + '</dt><dd>' +
+        (short > 0 ? cost + '장' : (tickets.balance - cost) + '장') + '</dd></div></dl>';
       if (opts.note && short <= 0) lines += '<p class="tk-note">' + esc(opts.note) + '</p>';
-      var primary = short > 0 && !free
+      var primary = short > 0
         ? '<a class="ih-btn ih-btn--ink" href="' + R.path('/tickets') + '">티켓 충전하러 가기</a>'
         : '<button type="button" class="ih-btn ih-btn--ink" data-tk-confirm>' +
-          esc(free ? opts.confirmLabel || '시작하기' : cost + '장 쓰고 ' + (opts.confirmLabel || '시작하기')) + '</button>';
+          esc(cost + '장 쓰고 ' + (opts.confirmLabel || '시작하기')) + '</button>';
       return '<h2 class="tk-title" id="tk-title">' + esc(title) + '</h2>' + lines +
         '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>취소</button>' + primary + '</div>';
     }

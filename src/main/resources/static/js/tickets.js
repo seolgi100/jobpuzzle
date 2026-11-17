@@ -37,15 +37,13 @@
 
   function renderBalance(data) {
     document.getElementById('ticket-balance').textContent = data.balance;
-    document.getElementById('ticket-free-badge').hidden = !data.freeBasicAvailable;
     var c = data.costs;
     document.getElementById('ticket-costs').innerHTML =
-      '<div class="ticket-cost"><b>기본 면접 ' + c.basic + '장</b>첫 1회는 무료</div>' +
+      '<div class="ticket-cost"><b>기본 면접 ' + c.basic + '장</b>희망 직무로 기본 질문 생성</div>' +
       '<div class="ticket-cost"><b>약점 보완 ' + c.weakness + '장</b>쌓인 약점으로 질문 생성</div>' +
       '<div class="ticket-cost"><b>공고 맞춤 ' + c.companyFit + '장</b>공고와 내 자료로 맞춤 질문 생성</div>';
     var rows = (data.history || []).map(function (h) {
-      var label = (TYPE_LABEL[h.type] || h.type) + (h.usage ? ' · ' + (USAGE_LABEL[h.usage] || h.usage) : '') +
-        (h.freeUse ? ' (무료)' : '');
+      var label = (TYPE_LABEL[h.type] || h.type) + (h.usage ? ' · ' + (USAGE_LABEL[h.usage] || h.usage) : '');
       var change = h.amount > 0 ? '+' + h.amount : String(h.amount);
       return '<tr><td>' + esc((h.createdAt || '').replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(label) +
         '</td><td class="' + (h.amount > 0 ? 'plus' : h.amount < 0 ? 'minus' : '') + '">' + esc(change) +

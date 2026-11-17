@@ -62,8 +62,8 @@ public class TicketTransaction extends BaseTimeEntity {
         return new TicketTransaction(userId, TicketTransactionType.CHARGE, null, amount, balanceAfter, false, orderId);
     }
 
-    public static TicketTransaction use(Long userId, TicketUsage usage, int cost, int balanceAfter, boolean freeUse) {
-        return new TicketTransaction(userId, TicketTransactionType.USE, usage, -cost, balanceAfter, freeUse, null);
+    public static TicketTransaction use(Long userId, TicketUsage usage, int cost, int balanceAfter) {
+        return new TicketTransaction(userId, TicketTransactionType.USE, usage, -cost, balanceAfter, false, null);
     }
 
     public static TicketTransaction refund(TicketTransaction used, int balanceAfter) {

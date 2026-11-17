@@ -141,7 +141,7 @@ app:
         json05-retrieval-chars: ${AI_JSON05_RETRIEVAL_CHARS:36000}
         json05-rendered-prompt-chars: ${AI_JSON05_RENDERED_PROMPT_CHARS:64000}
 
-  # 면접 티켓: 기본 면접 첫 1회 무료 후 1장, 약점 보완 1장, 공고 맞춤 3장
+  # 면접 티켓: 기본 면접 1장, 약점 보완 1장, 공고 맞춤 3장
   ticket:
     basic-cost: 1
     weakness-cost: 1

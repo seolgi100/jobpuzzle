@@ -77,17 +77,12 @@ public class TicketService {
     public Long use(Long userId, TicketUsage usage, int cost) {
         return newTransaction.execute(status -> {
             TicketWallet wallet = lockWallet(userId);
-            boolean free = usage == TicketUsage.BASIC && !wallet.isFreeBasicUsed();
-            if (free) {
-                wallet.useFreeBasic();
-            } else {
-                if (wallet.getBalance() < cost) {
-                    throw insufficient(cost, wallet.getBalance());
-                }
-                wallet.subtract(cost);
+            if (wallet.getBalance() < cost) {
+                throw insufficient(cost, wallet.getBalance());
             }
-            return transactionRepository.save(TicketTransaction.use(
-                    userId, usage, free ? 0 : cost, wallet.getBalance(), free)).getTicketTransactionId();
+            wallet.subtract(cost);
+            return transactionRepository.save(TicketTransaction.use(userId, usage, cost, wallet.getBalance()))
+                    .getTicketTransactionId();
         });
     }
 
@@ -100,11 +95,7 @@ public class TicketService {
                 return;
             }
             TicketWallet wallet = lockWallet(used.getUserId());
-            if (used.isFreeUse()) {
-                wallet.restoreFreeBasic();
-            } else {
-                wallet.add(-used.getAmount());
-            }
+            wallet.add(-used.getAmount());
             transactionRepository.save(TicketTransaction.refund(used, wallet.getBalance()));
         });
     }

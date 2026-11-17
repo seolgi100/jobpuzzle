@@ -74,7 +74,6 @@ class TicketServiceTest {
 
     @Test
     void v2ModeIsChargedAndRefundedOnFinalFailure() {
-        wallet.useFreeBasic();
         wallet.add(3);
         assertThatThrownBy(() -> service.spend(1L, TicketUsage.MATERIAL, service.cost(TicketUsage.MATERIAL), () -> {
             throw new IllegalStateException("AI 최종 실패");
@@ -86,19 +85,24 @@ class TicketServiceTest {
     }
 
     @Test
-    void firstBasicIsFreeThenCostsATicket() {
+    void basicCostsATicketFromTheFirstUse() {
         wallet.add(1);
         service.use(1L, TicketUsage.BASIC, 1);
-        assertThat(wallet.getBalance()).isEqualTo(1);
-        assertThat(wallet.isFreeBasicUsed()).isTrue();
-
-        service.use(1L, TicketUsage.BASIC, 1);
         assertThat(wallet.getBalance()).isZero();
+        assertThat(saved.get(0).getAmount()).isEqualTo(-1);
+        assertThat(saved.get(0).isFreeUse()).isFalse();
+    }
+
+    @Test
+    void firstUseWithoutBalanceIsRejected() {
+        assertThatThrownBy(() -> service.use(1L, TicketUsage.KNOWLEDGE, 1))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.TICKET_INSUFFICIENT);
     }
 
     @Test
     void insufficientBalanceIsRejected() {
-        wallet.useFreeBasic();
         assertThatThrownBy(() -> service.use(1L, TicketUsage.COMPANY_FIT, 3))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
@@ -116,13 +120,5 @@ class TicketServiceTest {
         Long usedId = saved.get(0).getTicketTransactionId();
         service.refund(usedId);
         assertThat(wallet.getBalance()).isEqualTo(5);
-    }
-
-    @Test
-    void failedFreeBasicRestoresTheFreeUse() {
-        assertThatThrownBy(() -> service.spend(1L, TicketUsage.BASIC, 1, () -> {
-            throw new IllegalStateException("AI 오류");
-        })).isInstanceOf(IllegalStateException.class);
-        assertThat(wallet.isFreeBasicUsed()).isFalse();
     }
 }
