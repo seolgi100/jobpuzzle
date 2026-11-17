@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>잡퍼즐 | AI 면접 준비</title>
+<meta name="description" content="채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+<!-- 첫 화면: 어두운 전시실 -->
+<div class="night">
+  <div class="pillars" aria-hidden="true"></div>
+
+  <header class="container nav">
+    <a class="logo" href="#top" aria-label="잡퍼즐 처음으로">
+      <span class="logo-j"></span><span class="logo-wm"></span>
+    </a>
+    <nav class="nav-links" aria-label="주요 메뉴">
+      <a href="#how">이용 방법</a>
+      <a href="#modes">면접 모드</a>
+      <a href="#report">보고서 예시</a>
+      <a href="#tickets">티켓 안내</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="link" href="#login">로그인</a>
+      <a class="btn btn-light btn-s" href="#signup">회원가입</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="container hero" aria-labelledby="hero-title">
+      <div class="hero-text">
+        <h1 id="hero-title">공고가 찾는 조각을,<br>당신의 경험에서 찾아냅니다.</h1>
+        <p class="hero-lead">잡퍼즐은 채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다. 비어 있는 조각은 면접 전에 채웁니다.</p>
+        <div class="actions">
+          <a class="btn btn-light" href="#signup">회원가입하고 시작하기</a>
+          <a class="btn-text btn-text-night" href="#report">보고서 예시 보기</a>
+        </div>
+      </div>
+
+      <!-- 전시된 조각: 윗면과 왼쪽 모서리에만 빛 -->
+      <figure class="exhibit" aria-hidden="true">
+        <svg viewBox="-10 -10 220 196" class="piece-lit">
+          <defs>
+            <path id="piece" d="M40 40 H86 V34 A20 20 0 1 1 114 34 V40 H160 V86 H166 A20 20 0 1 1 166 114 H160 V160 H114 V154 A20 20 0 1 0 86 154 V160 H40 V114 H34 A20 20 0 1 1 34 86 H40 Z"/>
+            <clipPath id="lit-edge"><path d="M-10 -10 H210 V58 H58 V210 H-10 Z"/></clipPath>
+          </defs>
+          <use href="#piece" class="piece-side" transform="translate(0 16)"/>
+          <use href="#piece" class="piece-face"/>
+          <use href="#piece" class="piece-rim" clip-path="url(#lit-edge)"/>
+        </svg>
+        <div class="plinth"></div>
+      </figure>
+    </section>
+  </main>
+</div>
+
+<!-- 3. 효과 상세: 맞물리는 조각 -->
+<section class="day section fit" id="how" aria-labelledby="fit-title">
+  <div class="pillars pillars-day" aria-hidden="true"></div>
+  <div class="container split">
+    <div class="split-head">
+      <h2 id="fit-title">내 경험이 공고의 어느 자리에 맞는지 보여 드립니다.</h2>
+      <p class="lead">공고의 요구 역량 하나하나에 지원자의 경험을 연결합니다. 맞는 경험이 없는 자리는 비어 있는 조각으로 표시해, 면접 전에 무엇을 준비해야 하는지 알려 드립니다.</p>
+    </div>
+
+    <div class="board" data-assemble>
+      <div class="board-head">
+        <p class="board-title">가온테크(가상) 백엔드 개발자 신입</p>
+        <div class="board-cols" aria-hidden="true"><span>공고 요구 역량</span><span>연결된 경험</span></div>
+      </div>
+      <ol class="rows">
+        <li class="row is-fit">
+          <div class="job"><span class="cap">공고 요구 역량</span>Java·Spring Boot 개발</div>
+          <div class="exp"><span class="knob"></span><span class="cap">연결된 경험</span><span class="exp-text">팀 프로젝트 API 개발</span><span class="state">맞물림</span></div>
+        </li>
+        <li class="row is-fit">
+          <div class="job"><span class="cap">공고 요구 역량</span>SQL·데이터베이스</div>
+          <div class="exp"><span class="knob"></span><span class="cap">연결된 경험</span><span class="exp-text">조회 쿼리 성능 개선</span><span class="state">맞물림</span></div>
+        </li>
+        <li class="row is-fit">
+          <div class="job"><span class="cap">공고 요구 역량</span>REST API 설계</div>
+          <div class="exp"><span class="knob"></span><span class="cap">연결된 경험</span><span class="exp-text">회원·결제 API 설계</span><span class="state">맞물림</span></div>
+        </li>
+        <li class="row is-fit">
+          <div class="job"><span class="cap">공고 요구 역량</span>협업·코드 리뷰</div>
+          <div class="exp"><span class="knob"></span><span class="cap">연결된 경험</span><span class="exp-text">4인 팀 프로젝트 PR 리뷰</span><span class="state">맞물림</span></div>
+        </li>
+        <li class="row is-part">
+          <div class="job"><span class="cap">공고 요구 역량</span>클라우드 배포</div>
+          <div class="exp"><span class="knob"></span><span class="cap">연결된 경험</span><span class="exp-text">AWS EC2 배포 1회</span><span class="state">일부 맞물림</span></div>
+        </li>
+        <li class="row is-empty">
+          <div class="job"><span class="cap">공고 요구 역량</span>테스트 코드 작성</div>
+          <div class="exp"><span class="cap">연결된 경험</span><span class="exp-text">없음</span><span class="state">빈 조각</span></div>
+        </li>
+      </ol>
+      <p class="gap-note">테스트 코드 작성 경험이 자료에 드러나지 않습니다. 관련 질문에 대비해 경험을 정리해 두세요.</p>
+      <p class="sample">표시된 내용은 이해를 돕기 위한 예시입니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 보고서 예시 -->
+<section class="day section" id="report" aria-labelledby="report-title">
+  <div class="pillars pillars-day" aria-hidden="true"></div>
+  <div class="container">
+    <div class="section-head">
+      <h2 id="report-title">점수보다 중요한 것은 다음 답변입니다.</h2>
+      <p class="lead">질문마다 출제 의도와 평가 근거를 함께 보여 드립니다. 같은 면접을 다시 보면 이전 답변과 비교해 나아진 점을 알려 드립니다.</p>
+    </div>
+
+    <article class="sheet" aria-label="보고서 예시">
+      <header class="sheet-meta">
+        <dl class="meta">
+          <div><dt>면접</dt><dd>가온테크(가상) 백엔드 개발자 신입</dd></div>
+          <div><dt>유형</dt><dd>자료 기반 면접</dd></div>
+          <div><dt>회차</dt><dd>2회차</dd></div>
+        </dl>
+        <p class="ai-note"><span class="ai-mark" role="img" aria-label="AI"></span>AI가 평가 항목 기준에 따라 평가합니다.</p>
+      </header>
+
+      <div class="sheet-body">
+        <div class="score">
+          <p class="score-label">총점</p>
+          <p class="score-num num">77<span> / 100</span></p>
+          <p class="score-delta">1회차보다 9점 상승</p>
+
+          <ul class="bars" aria-label="평가 항목별 점수">
+            <li><span class="bar-name">본인 역할</span><span class="bar-val num">82</span><span class="bar" style="--v:82"></span></li>
+            <li><span class="bar-name">경험 구체성</span><span class="bar-val num">71</span><span class="bar" style="--v:71"></span></li>
+            <li><span class="bar-name">성과</span><span class="bar-val num">68</span><span class="bar" style="--v:68"></span></li>
+            <li><span class="bar-name">직무 연결성</span><span class="bar-val num">85</span><span class="bar" style="--v:85"></span></li>
+          </ul>
+        </div>
+
+        <div class="question">
+          <p class="q-index num">질문 3 / 6</p>
+          <h3 class="q-text">팀 프로젝트에서 API 응답 속도를 개선했다고 적으셨습니다. 원인을 어떻게 찾았는지 설명해 주세요.</h3>
+          <dl class="notes">
+            <div><dt>출제 의도</dt><dd>문제의 원인을 분석한 과정과 본인이 맡은 역할을 확인합니다.</dd></div>
+            <div><dt>잘한 점</dt><dd>쿼리 실행 계획을 확인한 과정을 순서대로 설명해 원인을 찾은 흐름이 분명합니다.</dd></div>
+            <div><dt>보완할 점</dt><dd>개선 전후 응답 시간을 수치로 제시하지 않아 성과가 약하게 전달됩니다.</dd></div>
+            <div><dt>추천 답변 방향</dt><dd>원인 분석 과정은 유지하고, "평균 응답 시간을 얼마에서 얼마로 줄였다"처럼 결과를 수치로 마무리해 보세요.</dd></div>
+            <div class="note-prev"><dt>1회차 대비</dt><dd>1회차보다 본인이 맡은 역할을 구체적으로 설명했습니다.</dd></div>
+          </dl>
+        </div>
+      </div>
+      <p class="sample sheet-sample">표시된 내용은 이해를 돕기 위한 예시입니다.</p>
+    </article>
+  </div>
+</section>
+
+<!-- 5. 기능 설명 -->
+<section class="day section" id="modes" aria-labelledby="modes-title">
+  <div class="pillars pillars-day" aria-hidden="true"></div>
+  <div class="container">
+    <div class="section-head">
+      <h2 id="modes-title">준비할 영역에 맞춰 세&nbsp;가지 면접을 고릅니다.</h2>
+    </div>
+
+    <ol class="ledger">
+      <li>
+        <h3>기초 지식 면접</h3>
+        <p>공고에 적힌 기술과 요구사항에 대한 기초 지식을 확인합니다.</p>
+        <p class="req">분석 결과 필요</p>
+        <p class="tix"><span class="num">1</span>장</p>
+      </li>
+      <li>
+        <h3>자료 기반 면접</h3>
+        <p>이력서·자기소개서·포트폴리오의 경험을 공고와 연결해 묻습니다. 지원 동기 질문이 포함됩니다.</p>
+        <p class="req">분석 결과 필요</p>
+        <p class="tix"><span class="num">3</span>장</p>
+      </li>
+      <li>
+        <h3>인성 면접</h3>
+        <p>설정한 직무에서 중요하게 보는 태도와 협업 역량을 질문합니다.</p>
+        <p class="req">분석 없이 가능</p>
+        <p class="tix"><span class="num">1</span>장</p>
+      </li>
+    </ol>
+
+    <dl class="features">
+      <div><dt>꼬리질문</dt><dd>답변에 따라 이어지는 질문으로 실제 면접처럼 진행합니다.</dd></div>
+      <div><dt>출제 의도 보기</dt><dd>필요할 때만 질문의 의도를 열어 볼 수 있습니다.</dd></div>
+      <div><dt>이어서 진행</dt><dd>면접 도중 나가도 마지막 지점부터 이어서 진행합니다.</dd></div>
+      <div><dt>종합 평가</dt><dd>보고서가 5개 이상 쌓이면 선호 직무와 답변의 강점, 아쉬운 점을 정리해 드립니다.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- 6. 신뢰 요소: 짙은 띠 -->
+<section class="band" aria-label="자료와 티켓에 대한 약속">
+  <div class="container band-grid">
+    <div>
+      <h2>등록한 자료는 저장하지 않습니다.</h2>
+      <p>공고와 이력서·자기소개서·포트폴리오 원본은 분석 후 보관하지 않습니다. 분석 결과와 보고서만 남습니다.</p>
+    </div>
+    <div>
+      <h2>실패한 요청은 티켓을 돌려드립니다.</h2>
+      <p>AI 응답에 실패하면 사용한 티켓을 반환하고 실패 사유를 안내합니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. 티켓 안내 -->
+<section class="day section" id="tickets" aria-labelledby="tickets-title">
+  <div class="pillars pillars-day" aria-hidden="true"></div>
+  <div class="container split">
+    <div class="split-head">
+      <h2 id="tickets-title">필요한 만큼만 티켓으로 이용합니다.</h2>
+      <p class="price"><span class="price-unit">티켓 1장</span><span class="price-num num">1,000원</span></p>
+      <p class="fine">(임시 가격, 추후 변경)<br>결제는 시연용 테스트 결제로 진행됩니다.</p>
+    </div>
+    <table class="tix-table">
+      <caption class="visually-hidden">이용 항목별 필요 티켓</caption>
+      <thead><tr><th scope="col">이용 항목</th><th scope="col">필요 티켓</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">공고·지원자 분석</th><td class="num">1장</td></tr>
+        <tr><th scope="row">기초 지식 면접 · 인성 면접</th><td class="num">1장</td></tr>
+        <tr><th scope="row">자료 기반 면접 (첫 생성)</th><td class="num">3장</td></tr>
+        <tr><th scope="row">종료된 면접 다시 진행</th><td class="num">1장</td></tr>
+        <tr><th scope="row">종료된 면접 질문 다시 생성</th><td class="num">2장</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 8. 하단 회원가입 유도 -->
+<section class="day closing" id="signup" aria-labelledby="closing-title">
+  <div class="pillars pillars-day" aria-hidden="true"></div>
+  <div class="container closing-grid">
+    <div>
+      <h2 id="closing-title">지원할 공고가 있다면,<br>지금 맞춰 보세요.</h2>
+      <a class="btn btn-dark" href="#signup">회원가입하고 시작하기</a>
+    </div>
+    <span class="closing-mark" role="img" aria-label="잡퍼즐 J 심볼"></span>
+  </div>
+</section>
+
+<!-- 9. 푸터 -->
+<footer class="day footer">
+  <div class="container"><div class="footer-row">
+    <p>© 잡퍼즐</p>
+    <nav aria-label="약관"><a href="#terms">이용약관</a><a href="#privacy">개인정보처리방침</a></nav>
+  </div></div>
+</footer>
+
+<script>
+// 6-3 조립 연출: 화면에 들어오면 경험 조각이 하나씩 맞물림. 스크립트가 없으면 처음부터 맞물린 상태.
+(() => {
+  const board = document.querySelector('[data-assemble]');
+  if (!board || !('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  board.classList.add('is-waiting');
+  new IntersectionObserver((entries, io) => {
+    if (!entries[0].isIntersecting) return;
+    board.classList.remove('is-waiting');
+    io.disconnect();
+  }, { threshold: 0.35 }).observe(board);
+})();
+</script>
+</body>
+</html>
