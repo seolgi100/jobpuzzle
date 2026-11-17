@@ -153,8 +153,7 @@
         }).join('') + '</div>' : '') +
         (learn.length ? '<h2 class="rs-h" style="margin-top:' + (docKeys.length ? 22 : 0) + 'px">학습 방향</h2><ul class="learn" style="margin-top:8px">' + learn.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
         '</section>' : '') +
-      '<div class="rs-foot">' + (r.analysisCaseId ? '<a href="' + route('/analysis-results/' + encodeURIComponent(r.analysisCaseId)) + '" class="dbtn dbtn--line" style="height:40px">공고 요구사항 연결 분석 결과 보기</a>' : '') +
-      '<a href="' + route('/interview?mode=weakness') + '" class="dbtn dbtn--navy">약점 보완 연습하기</a></div>';
+      '<div class="rs-foot">' + (r.analysisCaseId ? '<a href="' + route('/analysis-results/' + encodeURIComponent(r.analysisCaseId)) + '" class="dbtn dbtn--line" style="height:40px">공고 요구사항 연결 분석 결과 보기</a>' : '') + '</div>';
     var panel = document.getElementById('p-final');
     panel.setAttribute('aria-busy', 'false');
     panel.innerHTML = html;

@@ -13,7 +13,8 @@ import java.util.Map;
 
 /**
  * 생성 AI 전용 설정이다. RAG embedding 설정과 분리해 생성 모델 변경이 vector 계약에 영향을 주지 않게 한다.
- * stageOverrides는 application-ai-e2e.yaml에서만 사용하며 운영 기본값은 defaultProvider 하나를 공유한다.
+ * mode(평가 명세 9-1): stub = 미리 쓴 응답(MockAiClient), live = 실제 Claude. record·replay는 아직 없다.
+ * stageOverrides는 application-ai-e2e.yaml에서만 사용하며, 지정한 stage만 mode와 다른 provider를 쓴다.
  */
 @Getter
 @Setter
@@ -21,7 +22,9 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "app.ai.generation")
 public class AiGenerationProperties {
 
-    private AiProvider defaultProvider = AiProvider.MOCK;
+    private AiMode mode = AiMode.STUB;
+    // 응답 검증에 실패했을 때 다시 부르는 횟수 (명세 5장). 첫 호출 + 이 횟수까지 시도한다.
+    private int maxRetries = 2;
     private Map<AiExecutionStage, AiProvider> stageOverrides = new EnumMap<>(AiExecutionStage.class);
     // stage별 thinking 정책은 기본값을 바꾸지 않고, 명시된 stage에만 Messages API body를 추가한다.
     private Map<AiExecutionStage, ThinkingMode> thinkingByStage = new EnumMap<>(AiExecutionStage.class);
@@ -30,7 +33,18 @@ public class AiGenerationProperties {
 
     public AiProvider providerFor(AiExecutionStage stage) {
         if (stage == null) throw new IllegalArgumentException("AI execution stage is required");
-        return stageOverrides.getOrDefault(stage, defaultProvider);
+        AiProvider override = stageOverrides.get(stage);
+        if (override != null) return override;
+        return switch (mode) {
+            case STUB -> AiProvider.MOCK;
+            case LIVE -> AiProvider.ANTHROPIC;
+            // ponytail: record·replay는 명세 9-5의 5·6단계에서 붙인다
+            case RECORD, REPLAY -> throw new IllegalStateException("AI 호출 모드 " + mode + "는 아직 지원하지 않습니다");
+        };
+    }
+
+    public enum AiMode {
+        STUB, RECORD, REPLAY, LIVE
     }
 
     public ThinkingMode thinkingFor(AiExecutionStage stage) {
@@ -70,8 +84,6 @@ public class AiGenerationProperties {
         private int json05 = 8_192;
         private int json06 = 4_096;
         private int json07 = 6_144;
-        private int json09 = 6_144;
-        private int json10 = 2_048;
         private int json11 = 4_096;
 
         public int forStage(AiExecutionStage stage) {
@@ -82,8 +94,6 @@ public class AiGenerationProperties {
                 case ANSWER_EVALUATION -> json06;
                 case FINAL_REPORT -> json07;
                 case BASIC_QUESTION_GENERATION -> json11;
-                case WEAKNESS_QUESTION_GENERATION -> json09;
-                case WEAKNESS_REEVALUATION -> json10;
                 default -> throw new IllegalArgumentException("generation output token policy is unavailable for " + stage);
             };
         }

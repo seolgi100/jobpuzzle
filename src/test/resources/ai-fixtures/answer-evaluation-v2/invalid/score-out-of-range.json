@@ -1,0 +1,42 @@
+{
+  "evaluationVersion": 2,
+  "mode": "MATERIAL",
+  "isEvasive": false,
+  "scores": [
+    {
+      "criterion": "INTENT_UNDERSTANDING",
+      "score": 6,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "LOGICAL_STRUCTURE",
+      "score": 4,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "CLARITY",
+      "score": 3,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "EXPERIENCE_SPECIFICITY",
+      "score": 4,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "OUTCOME",
+      "score": 3,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "JOB_POSTING_ALIGNMENT",
+      "score": 4,
+      "reason": "stub 응답의 점수 근거입니다."
+    }
+  ],
+  "strengths": "질문의 핵심을 짚고 결론부터 말했습니다.",
+  "improvements": "결과를 수치나 비교로 보여 주면 더 설득력이 있습니다.",
+  "recommendedAnswer": "상황, 본인이 한 행동, 결과, 배운 점 순서로 답해 보십시오.",
+  "comparison": null,
+  "followUp": null
+}

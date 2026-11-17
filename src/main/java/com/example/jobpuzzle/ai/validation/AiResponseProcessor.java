@@ -5,7 +5,6 @@ import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
 import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
 import com.example.jobpuzzle.ai.dto.InterviewQuestionGenerationResult;
 import com.example.jobpuzzle.ai.dto.AnswerEvaluationResult;
-import com.example.jobpuzzle.ai.dto.WeaknessAnswerEvaluationResult;
 import com.example.jobpuzzle.ai.dto.SourceReference;
 import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
 import com.example.jobpuzzle.analysis.dto.AnalysisInputSnapshotContextSource;
@@ -369,43 +368,9 @@ public class AiResponseProcessor {
         return parse(normalizeAnswerEvaluation(rawJson), AnswerEvaluationResult.class, "JSON-06");
     }
 
-    public WeaknessAnswerEvaluationResult parseWeaknessAnswerEvaluation(String rawJson) {
-        return parse(normalizeWeaknessAnswerEvaluation(rawJson), WeaknessAnswerEvaluationResult.class, "JSON-10");
-    }
-
-    private String normalizeWeaknessAnswerEvaluation(String rawJson) {
-        try {
-            ObjectNode root = (ObjectNode) strictObjectMapper.readTree(
-                    extractSingleObject(rawJson, "JSON-10")
-            );
-            JsonNode followUp = root.get("followUp");
-            if (followUp != null && followUp.isArray()) {
-                followUp = followUp.isEmpty() ? null : followUp.get(0);
-            }
-            if (followUp == null || followUp.isNull()
-                    || followUp.isTextual() && followUp.asText().isBlank()) {
-                root.putNull("followUp");
-            } else if (followUp.isTextual()) {
-                root.set("followUp", weaknessFollowUp(
-                        root.path("currentFollowUpDepth").asInt(0) + 1,
-                        followUp.asText()
-                ));
-            } else if (followUp instanceof ObjectNode value) {
-                if (!value.hasNonNull("depth")) {
-                    value.put("depth", root.path("currentFollowUpDepth").asInt(0) + 1);
-                }
-                if (!value.hasNonNull("type")) {
-                    value.put("type", "IMPROVEMENT_PLAN");
-                }
-                if (!value.hasNonNull("reason")) {
-                    value.put("reason", "약점 보완 경험을 구체적으로 확인하기 위한 질문");
-                }
-                root.set("followUp", value);
-            }
-            return strictObjectMapper.writeValueAsString(root);
-        } catch (JsonProcessingException | ClassCastException exception) {
-            return rawJson;
-        }
+    // 평가 명세 v2 5장. 형식만 확인하고, 항목 구성·점수 범위는 AnswerEvaluationV2Validator가 본다.
+    public com.example.jobpuzzle.ai.dto.AnswerEvaluationV2Result parseAnswerEvaluationV2(String rawJson) {
+        return parse(rawJson, com.example.jobpuzzle.ai.dto.AnswerEvaluationV2Result.class, "JSON-06-V2");
     }
 
     private ObjectNode weaknessFollowUp(int depth, String question) {

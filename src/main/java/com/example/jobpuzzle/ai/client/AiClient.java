@@ -41,12 +41,7 @@ public interface AiClient {
     // interview 추가: JSON-11 기본 질문 생성 Provider 계약
     String generateBasicQuestions(String renderedPrompt);
 
-    // interview 추가: JSON-09 약점 보완 질문 생성 Provider 계약
-    String generateWeaknessQuestions(String renderedPrompt);
-
     String evaluateAnswer(String renderedPrompt);
-
-    String evaluateWeaknessAnswer(String renderedPrompt);
 
     QuestionGenerationResult generateQuestions(String prompt);
 

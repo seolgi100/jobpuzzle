@@ -109,7 +109,9 @@ app:
     # 생성 AI와 RAG embedding은 역할·비용·장애 계약이 달라 별도 설정으로 유지한다.
     generation:
       # 운영 기본은 모든 생성 stage가 같은 provider를 사용한다. stage override는 ai-e2e profile에서만 둔다.
-      default-provider: ${AI_GENERATION_DEFAULT_PROVIDER:mock}
+      # 평가 명세 9-1: stub(기본, 실제 호출 없음) | live(실제 Claude). record·replay는 이후 단계
+      mode: ${AI_MODE:stub}
+      max-retries: 2
       # thinking 끄기 위한 설정
       thinking-by-stage:
         JOB_POSTING_ANALYSIS: disabled
@@ -127,8 +129,6 @@ app:
           json05: ${ANTHROPIC_JSON05_MAX_OUTPUT_TOKENS:8192}
           json06: ${ANTHROPIC_JSON06_MAX_OUTPUT_TOKENS:4096}
           json07: ${ANTHROPIC_JSON07_MAX_OUTPUT_TOKENS:6144}
-          json09: ${ANTHROPIC_JSON09_MAX_OUTPUT_TOKENS:6144}
-          json10: ${ANTHROPIC_JSON10_MAX_OUTPUT_TOKENS:2048}
           json11: ${ANTHROPIC_JSON11_MAX_OUTPUT_TOKENS:4096}
       input-limits:
         # fixture 8·9 실측보다 충분히 큰 기본값이다. 초과 입력은 자동 축약하지 않고 Provider 호출 전에 실패한다.
@@ -141,10 +141,9 @@ app:
         json05-retrieval-chars: ${AI_JSON05_RETRIEVAL_CHARS:36000}
         json05-rendered-prompt-chars: ${AI_JSON05_RENDERED_PROMPT_CHARS:64000}
 
-  # 면접 티켓: 기본 면접 1장, 약점 보완 1장, 공고 맞춤 3장
+  # 면접 티켓: 기본 면접 1장, 공고 맞춤 3장
   ticket:
     basic-cost: 1
-    weakness-cost: 1
     company-fit-cost: 3
     # v2 (평가 명세 1장)
     analysis-cost: 1

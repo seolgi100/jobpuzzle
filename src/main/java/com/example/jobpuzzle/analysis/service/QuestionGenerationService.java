@@ -12,15 +12,7 @@ import com.example.jobpuzzle.ai.validation.InterviewQuestionGenerationResponseVa
 import com.example.jobpuzzle.analysis.dto.BasicQuestionRequest;
 import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
 import com.example.jobpuzzle.analysis.dto.PreparedQuestionSetResponse;
-import com.example.jobpuzzle.analysis.dto.WeaknessQuestionRequest;
 import com.example.jobpuzzle.evaluation.entity.AnswerEvaluation;
-import com.example.jobpuzzle.evaluation.entity.WeaknessRemediationAttempt;
-import com.example.jobpuzzle.evaluation.entity.WeaknessRemediationStatus;
-import com.example.jobpuzzle.evaluation.entity.WeaknessTagLog;
-import com.example.jobpuzzle.evaluation.entity.WeaknessTagResolveStatus;
-import com.example.jobpuzzle.evaluation.repository.WeaknessTagLogRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessRemediationAttemptRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessTagStatusRepository;
 import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
 import com.example.jobpuzzle.evaluation.service.WeaknessTagNormalizer;
 import com.example.jobpuzzle.evaluation.service.SessionScoreAggregationService;
@@ -60,10 +52,6 @@ public class QuestionGenerationService {
     private final InterviewQuestionRepository interviewQuestionRepository;
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewSessionQuestionRepository interviewSessionQuestionRepository;
-    private final WeaknessTagStatusRepository weaknessTagStatusRepository;
-    private final WeaknessTagLogRepository weaknessTagLogRepository;
-    private final WeaknessRemediationAttemptRepository weaknessRemediationAttemptRepository;
-    private final AnswerEvaluationRepository answerEvaluationRepository;
     private final PromptTemplateRepository promptTemplateRepository;
     private final AiCallLogRepository aiCallLogRepository;
     private final AiClientService aiClientService;
@@ -73,7 +61,6 @@ public class QuestionGenerationService {
     private final InterviewQuestionGenerationResponseValidator responseValidator;
     private final InterviewQuestionGenerationResultWriter resultWriter;
     private final WeaknessTagNormalizer weaknessTagNormalizer;
-    private final SessionScoreAggregationService sessionScoreAggregationService;
 
     public QuestionSetResponse generateBasicQuestionSet(Long userId, BasicQuestionRequest request) {
         User user = userRepository.findById(userId)
@@ -121,344 +108,6 @@ public class QuestionGenerationService {
         return QuestionSetResponse.from(set, questions);
     }
 
-    public QuestionSetResponse generateWeaknessQuestionSet(
-            Long userId,
-            WeaknessQuestionRequest request
-    ) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        String canonicalTag = weaknessTagNormalizer.canonicalTag(request.getTargetWeaknessTag());
-        List<WeaknessTagLog> allLogs = weaknessTagLogRepository
-                .findByUser_UserIdOrderByTagLogIdDesc(userId);
-        boolean unresolved = weaknessTagStatusRepository
-                .findByUser_UserIdAndStatus(userId, WeaknessTagResolveStatus.UNRESOLVED)
-                .stream()
-                .anyMatch(status -> allLogs.stream()
-                        .filter(logEntry -> java.util.Objects.equals(logEntry.getTag(), status.getTag()))
-                        .anyMatch(logEntry -> logMatchesDimension(logEntry, canonicalTag)));
-        if (!unresolved) {
-            throw new CustomException(ErrorCode.WEAKNESS_NOT_AVAILABLE);
-        }
-
-        List<WeaknessTagLog> origins = allLogs.stream()
-                .filter(logEntry -> logMatchesDimension(logEntry, canonicalTag))
-                .filter(logEntry -> logEntry.getEvaluation() != null)
-                .toList();
-        Map<Long, List<WeaknessTagLog>> originsBySession = origins.stream()
-                .filter(origin -> originSessionId(origin) != null)
-                .collect(java.util.stream.Collectors.groupingBy(
-                        this::originSessionId,
-                        LinkedHashMap::new,
-                        java.util.stream.Collectors.toList()
-                ));
-        Map<Long, List<WeaknessRemediationAttempt>> attemptsByOriginLog =
-                weaknessRemediationAttemptRepository
-                        .findByOriginTagLog_User_UserIdOrderByAttemptIdDesc(userId)
-                        .stream()
-                        .collect(java.util.stream.Collectors.groupingBy(
-                                attempt -> attempt.getOriginTagLog().getTagLogId(),
-                                LinkedHashMap::new,
-                                java.util.stream.Collectors.toList()
-                        ));
-        List<AnswerEvaluation> generationSources = originsBySession.values().stream()
-                .map(sessionLogs -> generationSourceForSession(sessionLogs, attemptsByOriginLog))
-                .filter(java.util.Objects::nonNull)
-                .limit(10)
-                .toList();
-        if (generationSources.isEmpty()) {
-            throw new CustomException(ErrorCode.WEAKNESS_NOT_AVAILABLE);
-        }
-
-        // 약점 로그가 이미 원본 세션을 보존하므로, 구형 평가 데이터의 연관관계가
-        // 일부 비어 있어도 약점 질문 세트를 다시 만들 수 있다.
-        InterviewSession originSession =
-                generationSources.get(0).getSessionQuestion().getSession();
-        if (originSession == null) {
-            throw new CustomException(ErrorCode.WEAKNESS_NOT_AVAILABLE);
-        }
-        String targetDimension = weaknessTagNormalizer.dimension(canonicalTag);
-        Map<Long, InterviewQuestion> reusableByEvaluationId = new LinkedHashMap<>();
-        generationSources.forEach(source -> interviewSessionQuestionRepository
-                .findFirstBySession_User_UserIdAndStatusAndQuestion_OriginEvaluation_EvaluationIdOrderBySessionQuestionIdDesc(
-                        userId,
-                        InterviewSessionQuestionStatus.SKIPPED,
-                        source.getEvaluationId())
-                .map(InterviewSessionQuestion::getQuestion)
-                .ifPresent(question -> reusableByEvaluationId.put(
-                        source.getEvaluationId(), question)));
-        List<AnswerEvaluation> sourcesToGenerate = generationSources.stream()
-                .filter(source -> !reusableByEvaluationId.containsKey(source.getEvaluationId()))
-                .toList();
-        List<Long> basisEvaluationIds = generationSources.stream()
-                .map(AnswerEvaluation::getEvaluationId)
-                .distinct()
-                .toList();
-
-        PromptTemplate template = activeTemplate("JSON-09");
-        String prompt = promptTemplateRenderer.renderInterviewQuestionGeneration(
-                template,
-                "weaknessInputJson",
-                inputMapper.weaknessEvaluations(canonicalTag, targetDimension, sourcesToGenerate)
-        );
-        AiCallLog callLog = startLog(
-                template,
-                AiExecutionStage.WEAKNESS_QUESTION_GENERATION,
-                AiInputReferenceType.WEAKNESS_TAG,
-                userId + ":" + canonicalTag,
-                prompt
-        );
-        InterviewQuestionGenerationResult generated;
-        RuntimeException lastFailure = null;
-        try {
-            generated = sourcesToGenerate.isEmpty()
-                    ? new InterviewQuestionGenerationResult(List.of())
-                    : null;
-            for (int attempt = 1; generated == null && attempt <= 3; attempt++) {
-                String rawResponse = null;
-                try {
-                    rawResponse = aiClientService.generateWeaknessQuestions(prompt);
-                    generated =
-                            aiResponseProcessor.parseInterviewQuestions(rawResponse, "JSON-09");
-                    generated = normalizeWeaknessQuestionMetadata(
-                            generated,
-                            sourcesToGenerate,
-                            canonicalTag,
-                            targetDimension
-                    );
-                    responseValidator.validateWeakness(
-                            generated,
-                            canonicalTag,
-                            targetDimension,
-                            sourcesToGenerate.stream()
-                                    .map(AnswerEvaluation::getEvaluationId)
-                                    .toList()
-                    );
-                    break;
-                } catch (RuntimeException exception) {
-                    RuntimeException loggedFailure = rawResponse == null
-                            ? exception
-                            : new IllegalStateException(
-                                    "providerResponsePreview=" + responsePreview(rawResponse),
-                                    exception
-                            );
-                    lastFailure = loggedFailure;
-                    log.warn(
-                            "ai_weakness_question_generation_retry attempt={} maxAttempts=3 "
-                                    + "userId={} weaknessTag={} errorType={} failureDetail={}",
-                            attempt,
-                            userId,
-                            canonicalTag,
-                            generationErrorType(loggedFailure),
-                            failureDetail(loggedFailure)
-                    );
-                }
-            }
-            if (generated == null) {
-                throw lastFailure == null
-                        ? new IllegalStateException("AI weakness question generation failed")
-                        : lastFailure;
-            }
-        } catch (RuntimeException exception) {
-            String traceId = "WEAK-Q-" + java.util.UUID.randomUUID()
-                    .toString().replace("-", "").substring(0, 12).toUpperCase();
-            AiCallLogErrorType errorType = generationErrorType(exception);
-            callLog.fail(errorType, traceId + " | " + errorType);
-            log.error(
-                    "ai_weakness_question_generation_failed traceId={} aiCallLogId={} "
-                            + "userId={} weaknessTag={} promptVersion={} errorType={} failureDetail={}",
-                    traceId,
-                    callLog.getAiCallLogId(),
-                    userId,
-                    canonicalTag,
-                    callLog.getPromptVersion(),
-                    errorType,
-                    failureDetail(exception),
-                    exception
-            );
-            throw new CustomException(ErrorCode.AI_RESPONSE_INVALID);
-        }
-
-        QuestionSet set = questionSetRepository.save(QuestionSet.create(
-                user,
-                InterviewSessionMode.WEAKNESS_REVIEW,
-                originSession.getJobCategory(),
-                originSession.getCareerLevel(),
-                originSession.getGuideContextResult(),
-                QuestionSetGenerationSource.AI,
-                callLog.getPromptVersion(),
-                canonicalTag,
-                targetDimension,
-                basisEvaluationIds,
-                callLog
-        ));
-
-        Map<Long, InterviewQuestionGenerationResult.Question> generatedByOrigin =
-                generated.getQuestions().stream().collect(java.util.stream.Collectors.toMap(
-                        InterviewQuestionGenerationResult.Question::getOriginEvaluationId,
-                        value -> value
-                ));
-        List<InterviewQuestionGenerationResult.Question> combinedQuestions =
-                generationSources.stream()
-                        .map(source -> {
-                            InterviewQuestion reusable =
-                                    reusableByEvaluationId.get(source.getEvaluationId());
-                            if (reusable == null) {
-                                return generatedByOrigin.get(source.getEvaluationId());
-                            }
-                            return new InterviewQuestionGenerationResult.Question(
-                                    "reused-" + source.getEvaluationId(),
-                                    reusable.getQuestionType(),
-                                    reusable.getQuestion(),
-                                    reusable.getIntent(),
-                                    reusable.getEvaluationFocus(),
-                                    source.getEvaluationId(),
-                                    canonicalTag,
-                                    targetDimension,
-                                    InterviewQuestionReviewStatus.PASS,
-                                    null
-                            );
-                        })
-                        .toList();
-        InterviewQuestionGenerationResult combined =
-                new InterviewQuestionGenerationResult(combinedQuestions);
-        List<AnswerEvaluation> originEvaluations = generationSources;
-        List<InterviewQuestion> questions =
-                resultWriter.saveWeakness(set, combined, originEvaluations);
-        callLog.succeed();
-        Map<Long, Integer> aggregateOriginScores = new LinkedHashMap<>();
-        generationSources.forEach(source -> {
-            Integer aggregateScore =
-                    aggregateDimensionScore(userId, source, targetDimension);
-            if (aggregateScore != null) {
-                aggregateOriginScores.put(source.getEvaluationId(), aggregateScore);
-            }
-        });
-        return QuestionSetResponse.from(
-                set,
-                questions,
-                aggregateOriginScores,
-                weaknessTagNormalizer.displayName(canonicalTag)
-        );
-    }
-
-    private boolean logMatchesDimension(WeaknessTagLog logEntry, String canonicalTag) {
-        String dimension = weaknessTagNormalizer.dimension(canonicalTag);
-        AnswerEvaluation evaluation = logEntry.getEvaluation();
-        if (evaluation != null && evaluation.getEvaluationDetail() != null) {
-            AnswerEvaluation.DimensionEvaluation detail = evaluation.getEvaluationDetail().get(dimension);
-            if (detail != null && detail.getScore() != null
-                    && detail.getScore() < evaluation.getPassThreshold()) {
-                return true;
-            }
-        }
-        return weaknessTagNormalizer.sameDimension(logEntry.getTag(), canonicalTag);
-    }
-
-    private Integer aggregateDimensionScore(
-            Long userId,
-            AnswerEvaluation source,
-            String targetDimension
-    ) {
-        Integer fallback = source.getScore();
-        try {
-            InterviewSession session = source.getSessionQuestion().getSession();
-            if (session == null) {
-                return fallback;
-            }
-            return sessionScoreAggregationService
-                    .aggregate(userId, session.getSessionId())
-                    .getCategoryScores()
-                    .getOrDefault(targetDimension, fallback);
-        } catch (RuntimeException exception) {
-            log.warn(
-                    "weakness_question_origin_score_fallback userId={} evaluationId={} "
-                            + "dimension={} fallback={} errorType={}",
-                    userId,
-                    source.getEvaluationId(),
-                    targetDimension,
-                    fallback,
-                    exception.getClass().getSimpleName()
-            );
-            return fallback;
-        }
-    }
-
-    private Long originSessionId(WeaknessTagLog origin) {
-        if (origin.getSession() != null) {
-            return origin.getSession().getSessionId();
-        }
-        if (origin.getEvaluation() != null
-                && origin.getEvaluation().getSessionQuestion() != null
-                && origin.getEvaluation().getSessionQuestion().getSession() != null) {
-            return origin.getEvaluation().getSessionQuestion().getSession().getSessionId();
-        }
-        return null;
-    }
-
-    private AnswerEvaluation generationSourceForSession(
-            List<WeaknessTagLog> sessionLogs,
-            Map<Long, List<WeaknessRemediationAttempt>> attemptsByOriginLog
-    ) {
-        WeaknessRemediationAttempt latestAttempt = sessionLogs.stream()
-                .flatMap(origin -> attemptsByOriginLog
-                        .getOrDefault(origin.getTagLogId(), List.of()).stream())
-                .max(Comparator.comparing(WeaknessRemediationAttempt::getAttemptId))
-                .orElse(null);
-        if (latestAttempt != null) {
-            return latestAttempt.getStatus() == WeaknessRemediationStatus.RESOLVED
-                    ? null
-                    : latestAttempt.getEvaluation();
-        }
-        return sessionLogs.stream()
-                .map(WeaknessTagLog::getEvaluation)
-                .filter(java.util.Objects::nonNull)
-                .filter(evaluation -> evaluation.getSessionQuestion() != null)
-                .max(Comparator.comparing(AnswerEvaluation::getEvaluationId))
-                .orElse(null);
-    }
-
-    private InterviewQuestionGenerationResult normalizeWeaknessQuestionMetadata(
-            InterviewQuestionGenerationResult generated,
-            List<AnswerEvaluation> expectedSources,
-            String canonicalTag,
-            String targetDimension
-    ) {
-        if (generated == null || generated.getQuestions() == null
-                || generated.getQuestions().size() < expectedSources.size()) {
-            return generated;
-        }
-        List<InterviewQuestionGenerationResult.Question> normalized =
-                java.util.stream.IntStream.range(0, expectedSources.size())
-                        .mapToObj(index -> {
-                            InterviewQuestionGenerationResult.Question value =
-                                    generated.getQuestions().get(index);
-                            List<InterviewQuestionEvaluationFocus> focus =
-                                    value.getEvaluationFocus() == null
-                                            || value.getEvaluationFocus().isEmpty()
-                                            ? List.of(InterviewQuestionEvaluationFocus
-                                                    .valueOf(targetDimension))
-                                            : value.getEvaluationFocus();
-                            return new InterviewQuestionGenerationResult.Question(
-                                    value.getQuestionId() == null || value.getQuestionId().isBlank()
-                                            ? "weakness-" + expectedSources.get(index).getEvaluationId()
-                                            : value.getQuestionId(),
-                                    InterviewQuestionType.WEAKNESS_FOLLOWUP,
-                                    value.getQuestion(),
-                                    value.getIntent() == null || value.getIntent().isBlank()
-                                            ? "선택한 약점 관점의 개선 여부를 확인합니다."
-                                            : value.getIntent(),
-                                    focus,
-                                    expectedSources.get(index).getEvaluationId(),
-                                    canonicalTag,
-                                    targetDimension,
-                                    InterviewQuestionReviewStatus.PASS,
-                                    null
-                            );
-                        })
-                        .toList();
-        return new InterviewQuestionGenerationResult(normalized);
-    }
-
     @Transactional(readOnly = true)
     public QuestionSetResponse getQuestionSet(Long userId, Long questionSetId) {
         QuestionSet set = questionSetRepository
@@ -476,93 +125,20 @@ public class QuestionGenerationService {
         );
     }
 
+    // 아직 시작하지 않은 기본 질문 세트. 약점 보완 세트는 v2에서 없어졌다.
     @Transactional(readOnly = true)
     public List<PreparedQuestionSetResponse> getUnusedGeneratedQuestionSets(Long userId) {
-        List<WeaknessTagLog> loadedWeaknessLogs =
-                weaknessTagLogRepository.findByUser_UserIdOrderByTagLogIdDesc(userId);
-        List<WeaknessTagLog> weaknessLogs =
-                loadedWeaknessLogs == null ? List.of() : loadedWeaknessLogs;
-        return List.of(InterviewSessionMode.BASIC, InterviewSessionMode.WEAKNESS_REVIEW).stream()
-                .flatMap(mode -> questionSetRepository
-                        .findByUser_UserIdAndInterviewModeAndStatus(
-                                userId, mode, QuestionSetStatus.ACTIVE
-                        )
-                        .stream())
-                .filter(set -> !interviewSessionRepository
-                        .existsByQuestionSet_QuestionSetId(set.getQuestionSetId()))
-                .map(set -> {
-                    List<AnswerEvaluation> basisEvaluations =
-                            preparedBasisEvaluations(set, weaknessLogs);
-                    Map<Long, Integer> basisScores = new LinkedHashMap<>();
-                    basisEvaluations.forEach(evaluation -> {
-                        Integer score = aggregateDimensionScore(
-                                userId,
-                                evaluation,
-                                set.getTargetDimension()
-                        );
-                        if (score != null) {
-                            basisScores.put(evaluation.getEvaluationId(), score);
-                        }
-                    });
-                    return PreparedQuestionSetResponse.from(
-                            set,
-                            interviewQuestionRepository
-                                    .findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(
-                                            set.getQuestionSetId()
-                                    )
-                                    .size(),
-                            weaknessTagNormalizer,
-                            basisEvaluations,
-                            basisScores
-                    );
-                })
-                .sorted(java.util.Comparator.comparing(
-                        PreparedQuestionSetResponse::getQuestionSetId
-                ).reversed())
-                .toList();
-    }
-
-    private List<AnswerEvaluation> preparedBasisEvaluations(
-            QuestionSet set,
-            List<WeaknessTagLog> weaknessLogs
-    ) {
-        if (set.getInterviewMode() != InterviewSessionMode.WEAKNESS_REVIEW) {
-            return List.of();
-        }
-        List<Long> basisIds = set.getBasisEvaluationIds() == null
-                ? List.of()
-                : set.getBasisEvaluationIds();
-        if (!basisIds.isEmpty()) {
-            Map<Long, AnswerEvaluation> evaluationsById = answerEvaluationRepository
-                    .findAllById(basisIds)
-                    .stream()
-                    .filter(evaluation -> evaluation.getSessionQuestion() != null
-                            && evaluation.getSessionQuestion().getSession() != null
-                            && evaluation.getSessionQuestion().getSession().getUser() != null
-                            && java.util.Objects.equals(
-                                    evaluation.getSessionQuestion().getSession().getUser().getUserId(),
-                                    set.getUser().getUserId()
-                            ))
-                    .collect(java.util.stream.Collectors.toMap(
-                            AnswerEvaluation::getEvaluationId,
-                            java.util.function.Function.identity()
-                    ));
-            return basisIds.stream()
-                    .map(evaluationsById::get)
-                    .filter(java.util.Objects::nonNull)
-                    .distinct()
-                    .limit(10)
-                    .toList();
-        }
-        // basis_evaluation_ids가 없던 구형 질문 세트만 생성 시각 기준으로 복원한다.
-        return weaknessLogs.stream()
-                .filter(log -> log.getEvaluation() != null)
-                .filter(log -> logMatchesDimension(log, set.getTargetWeaknessTag()))
-                .filter(log -> set.getCreatedAt() == null || log.getCreatedAt() == null
-                        || !log.getCreatedAt().isAfter(set.getCreatedAt()))
-                .map(WeaknessTagLog::getEvaluation)
-                .distinct()
-                .limit(10)
+        return questionSetRepository
+                .findByUser_UserIdAndInterviewModeAndStatus(userId, InterviewSessionMode.BASIC, QuestionSetStatus.ACTIVE)
+                .stream()
+                .filter(set -> !interviewSessionRepository.existsByQuestionSet_QuestionSetId(set.getQuestionSetId()))
+                .map(set -> PreparedQuestionSetResponse.from(
+                        set,
+                        interviewQuestionRepository.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(set.getQuestionSetId()).size(),
+                        weaknessTagNormalizer,
+                        List.of(),
+                        Map.of()))
+                .sorted(java.util.Comparator.comparing(PreparedQuestionSetResponse::getQuestionSetId).reversed())
                 .toList();
     }
 

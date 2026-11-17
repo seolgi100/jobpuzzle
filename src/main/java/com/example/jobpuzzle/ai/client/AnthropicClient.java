@@ -108,18 +108,8 @@ public class AnthropicClient implements AiClient {
     }
 
     @Override
-    public String generateWeaknessQuestions(String renderedPrompt) {
-        return message(AiExecutionStage.WEAKNESS_QUESTION_GENERATION, renderedPrompt);
-    }
-
-    @Override
     public String evaluateAnswer(String renderedPrompt) {
         return message(AiExecutionStage.ANSWER_EVALUATION, renderedPrompt);
-    }
-
-    @Override
-    public String evaluateWeaknessAnswer(String renderedPrompt) {
-        return message(AiExecutionStage.WEAKNESS_REEVALUATION, renderedPrompt);
     }
 
     @Override
@@ -185,7 +175,6 @@ public class AnthropicClient implements AiClient {
                         : stage == AiExecutionStage.CUSTOMIZED_SYNTHESIS
                         ? new OutputConfig(new Format("json_schema", customizedSynthesisSchema.schemaForPrompt(prompt)))
                         : stage == AiExecutionStage.BASIC_QUESTION_GENERATION
-                                || stage == AiExecutionStage.WEAKNESS_QUESTION_GENERATION
                         ? new OutputConfig(new Format("json_schema", interviewQuestionGenerationSchema.schema()))
                         : null
         );

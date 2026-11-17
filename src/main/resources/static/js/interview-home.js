@@ -207,8 +207,7 @@
   }
 
   function postingRow(p) {
-    var menu = recordsToggle(p.key, '기록 보기', 'ih-menu__item') +
-      (p.practiced && data.weakness.length ? '<button type="button" class="ih-menu__item" data-open-weakness>약점 연습</button>' : '');
+    var menu = recordsToggle(p.key, '기록 보기', 'ih-menu__item');
     return '<li class="ih-row' + (p.busy ? ' is-busy' : '') + '">' +
       '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(p.title) + '</h3>' +
       (p.meta ? '<p class="ih-row__meta">' + esc(p.meta) + '</p>' : '') + '</div>' +
@@ -264,7 +263,6 @@
     var category = (data.categories || []).filter(function (c) {
       return String(c.jobCategoryId) === String(user.defaultJobCategoryId);
     })[0];
-    var tags = data.weakness || [];
     var fit = '<section class="ih-fit ih-box" aria-labelledby="ih-fit-title">' +
       '<h2 class="ih-fit__title" id="ih-fit-title">공고 맞춤 면접</h2>' +
       '<p class="ih-fit__desc">채용공고와 내 자료를 맞춰, 그 공고에서 나올 질문으로 연습해요.</p>' +
@@ -281,15 +279,8 @@
         ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>시작</button>'
         : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">직무 정하기</a>'
     });
-    var weak = quickRow({
-      title: '약점 보완',
-      note: tags.length ? '보완할 약점 ' + tags.length + '개' : '면접을 한 번 마치면 열려요',
-      disabled: !tags.length,
-      fare: t ? fare(t.costs.weakness) : '',
-      button: '<button type="button" class="ih-btn ih-btn--line" data-open-weakness' + (tags.length ? '' : ' disabled') + '>고르기</button>'
-    });
     return '<div class="ih-start">' + fit +
-      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + basic + weak + '</ul></div></div>';
+      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + basic + '</ul></div></div>';
   }
 
   // ───────────────── 진행 중 / 전체 기록 ─────────────────
@@ -405,8 +396,6 @@
     if (!home) return Promise.resolve();
     renderLoading();
     var optional = function (p, fallback) { return p.catch(function () { return fallback; }); };
-    // 약점 상세는 점수 집계 때문에 느려서(수 초) 화면을 먼저 그리고 도착하면 채운다.
-    var weakness = optional(api('/interview-weakness-tags/details'), []);
     return Promise.all([
       api('/analysis-cases'),
       api('/interview-sessions/active-list'),
@@ -425,7 +414,6 @@
         cases: r[0] || [],
         sessions: sessions,
         prepared: r[4] || [],
-        weakness: [],
         tickets: r[5],
         user: r[6],
         categories: r[7] || []
@@ -434,11 +422,6 @@
       data.looseSessions = sessions.filter(function (s) { return !s.analysisCaseId; });
       render();
       loadScores();
-      weakness.then(function (tags) {
-        if (!tags || !tags.length) return;
-        data.weakness = tags;
-        render();
-      });
     }).catch(function (error) {
       renderError(error.message);
     });
@@ -478,8 +461,6 @@
         load();
       } else if (t.hasAttribute('data-new-posting')) {
         if (window.InterviewPage) window.InterviewPage.openCustom();
-      } else if (t.hasAttribute('data-open-weakness')) {
-        if (window.InterviewPage) window.InterviewPage.openWeakness();
       } else if (t.hasAttribute('data-start-basic')) {
         TicketConfirm.open({
           usage: 'BASIC',
@@ -576,7 +557,6 @@
     function costFor(usage, tickets, explicit) {
       if (typeof explicit === 'number') return explicit;
       if (usage === 'BASIC') return tickets.costs.basic;
-      if (usage === 'WEAKNESS_REVIEW') return tickets.costs.weakness;
       return tickets.costs.companyFit;
     }
 

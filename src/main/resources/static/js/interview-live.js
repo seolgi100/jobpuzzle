@@ -314,17 +314,6 @@
     }).catch(function (error) { handleGenerationError(error, 'BASIC'); });
   }
 
-  function startWeakness(tag) {
-    message('고른 약점을 확인하는 질문을 만들고 있어요.', false, 'WEAKNESS_REVIEW');
-    api(window.JobPuzzleRoutes.path('/question-sets/weakness'), {
-      method: 'POST',
-      json: { targetWeaknessTag: tag }
-    }).then(function (set) {
-      questionSet = set;
-      createSession();
-    }).catch(function (error) { handleGenerationError(error, 'WEAKNESS_REVIEW'); });
-  }
-
   // 질문을 고르지 않고 만든 질문을 모두 넣어 시작한다. 원치 않는 질문은 면접 중에 건너뛴다.
   function createSession() {
     var selected = (questionSet.questions || []).filter(function (question) {
@@ -848,10 +837,6 @@
       api(window.JobPuzzleRoutes.path('/interview-sessions/' + resumeSessionId))
         .then(resumeSession)
         .catch(function (error) { message(error.message, true); });
-    } else if (requestedMode === 'weakness') {
-      window.setTimeout(function () {
-        if (window.InterviewPage) window.InterviewPage.openWeakness();
-      }, 0);
     }
   });
   document.addEventListener('click', function (event) {
@@ -876,5 +861,5 @@
     event.preventDefault();
     event.returnValue = '';
   });
-  window.InterviewLive = { startBasic: startBasic, startWeakness: startWeakness, openQuestionSet: openQuestionSet };
+  window.InterviewLive = { startBasic: startBasic, openQuestionSet: openQuestionSet };
 })();

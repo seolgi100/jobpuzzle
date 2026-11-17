@@ -36,12 +36,10 @@ public class PromptTemplateSeeder implements ApplicationRunner {
                         "prompts/json-05-company-fit-analysis.txt"),
                 new Seed("INTERVIEW_BASIC_QUESTION", "기본 모드 질문 생성", "JSON-11",
                         "prompts/json-11-basic-question-generation.txt"),
-                new Seed("INTERVIEW_WEAKNESS_QUESTION", "약점 보완 질문 생성", "JSON-09",
-                        "prompts/json-09-weakness-question-generation.txt"),
                 new Seed("INTERVIEW_ANSWER_EVALUATION", "면접 답변 평가", "JSON-06",
                         "prompts/json-06-answer-evaluation.txt"),
-                new Seed("INTERVIEW_WEAKNESS_REEVALUATION", "약점 보완 답변 재평가", "JSON-10",
-                        "prompts/json-10-weakness-answer-evaluation.txt"),
+                new Seed("INTERVIEW_ANSWER_EVALUATION_V2", "면접 답변 평가 v2 (6개 항목, 1~5점)", "JSON-06-V2",
+                        "prompts/json-06-v2-answer-evaluation.txt"),
                 new Seed("INTERVIEW_FINAL_REPORT", "면접 최종 리포트", "JSON-07",
                         "prompts/json-07-final-report.txt")
         );

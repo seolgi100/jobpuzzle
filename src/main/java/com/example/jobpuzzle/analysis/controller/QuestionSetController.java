@@ -2,7 +2,6 @@ package com.example.jobpuzzle.analysis.controller;
 
 import com.example.jobpuzzle.analysis.dto.BasicQuestionRequest;
 import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
-import com.example.jobpuzzle.analysis.dto.WeaknessQuestionRequest;
 import com.example.jobpuzzle.analysis.dto.PreparedQuestionSetResponse;
 import com.example.jobpuzzle.analysis.service.QuestionGenerationService;
 import com.example.jobpuzzle.global.common.ApiResponse;
@@ -36,18 +35,6 @@ public class QuestionSetController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 ticketService.spend(user.getUserId(), TicketUsage.BASIC, ticketService.cost(TicketUsage.BASIC),
                         () -> questionGenerationService.generateBasicQuestionSet(user.getUserId(), request))
-        ));
-    }
-
-    @PostMapping("/weakness")
-    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateWeakness(
-            @AuthenticationPrincipal(expression = "user") User user,
-            @Valid @RequestBody WeaknessQuestionRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
-                ticketService.spend(user.getUserId(), TicketUsage.WEAKNESS_REVIEW,
-                        ticketService.cost(TicketUsage.WEAKNESS_REVIEW),
-                        () -> questionGenerationService.generateWeaknessQuestionSet(user.getUserId(), request))
         ));
     }
 

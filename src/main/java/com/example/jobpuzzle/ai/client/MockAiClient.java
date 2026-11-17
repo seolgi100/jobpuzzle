@@ -10,7 +10,6 @@ import com.example.jobpuzzle.ai.dto.InterviewQuestionGenerationResult;
 import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.dto.QuestionGenerationResult.*;
 import com.example.jobpuzzle.ai.dto.SourceReference;
-import com.example.jobpuzzle.ai.dto.WeaknessQuestionGenerationInput;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.ai.validation.AnalysisSourceMarkerParser;
 import com.example.jobpuzzle.analysis.entity.ActionPlanMatchLevel;
@@ -600,42 +599,22 @@ public class MockAiClient implements AiClient {
         return json(new InterviewQuestionGenerationResult(questions));
     }
 
-    // interview 추가: 선택 태그의 최신 평가 1건마다 JSON-09 질문 1개를 반환한다.
-    @Override
-    public String generateWeaknessQuestions(String renderedPrompt) {
-        WeaknessQuestionGenerationInput input = readSection(
-                renderedPrompt,
-                "WEAKNESS_INPUT",
-                WeaknessQuestionGenerationInput.class
-        );
-        InterviewQuestionEvaluationFocus focus =
-                InterviewQuestionEvaluationFocus.valueOf(input.targetDimension());
-        List<InterviewQuestionGenerationResult.Question> questions = input.originEvaluations().stream()
-                .map(origin -> new InterviewQuestionGenerationResult.Question(
-                        "weakness-" + origin.evaluationId(),
-                        InterviewQuestionType.WEAKNESS_FOLLOWUP,
-                        "이전 답변에서 부족했던 " + input.targetWeaknessTag()
-                                + " 부분을 보완하여 다시 설명해주세요.",
-                        "이전 평가 " + origin.evaluationId() + "에서 확인된 약점 보완",
-                        List.of(focus),
-                        origin.evaluationId(),
-                        input.targetWeaknessTag(),
-                        input.targetDimension(),
-                        InterviewQuestionReviewStatus.PASS,
-                        null
-                ))
-                .toList();
-        return json(new InterviewQuestionGenerationResult(questions));
-    }
-
+    /**
+     * 평가 명세 9-2 stub: [INPUT]의 mode로 미리 쓴 응답(fixture)을 고른다.
+     * 답변이 30자 미만이면 점수가 낮고 꼬리질문이 있는 응답을 돌려줘, stub에서도 꼬리질문 흐름을 볼 수 있게 한다.
+     */
     @Override
     public String evaluateAnswer(String renderedPrompt) {
-        return "{}";
-    }
-
-    @Override
-    public String evaluateWeaknessAnswer(String renderedPrompt) {
-        return "{}";
+        try {
+            JsonNode input = objectMapper.readTree(renderedPrompt.substring(renderedPrompt.lastIndexOf("[INPUT]") + "[INPUT]".length()));
+            String kind = input.path("answer").asText().strip().length() < 30 ? "low" : "normal";
+            String path = "ai-fixtures/answer-evaluation-v2/" + input.path("mode").asText() + "-" + kind + ".json";
+            try (var stream = new org.springframework.core.io.ClassPathResource(path).getInputStream()) {
+                return new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            }
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("stub 평가 응답을 읽을 수 없습니다", exception);
+        }
     }
 
     private InterviewQuestionGenerationResult.Question generatedQuestion(

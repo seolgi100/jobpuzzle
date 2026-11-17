@@ -42,31 +42,6 @@ public class InterviewQuestionGenerationResponseValidator {
         }
     }
 
-    public void validateWeakness(
-            InterviewQuestionGenerationResult result,
-            String targetWeaknessTag,
-            String targetDimension,
-            List<Long> originEvaluationIds
-    ) {
-        List<InterviewQuestionGenerationResult.Question> questions = requiredQuestions(result);
-        if (questions.isEmpty() || questions.size() > 10
-                || questions.size() != originEvaluationIds.size()) {
-            invalid();
-        }
-        Set<Long> returnedIds = new HashSet<>();
-        for (InterviewQuestionGenerationResult.Question question : questions) {
-            validateCommon(question);
-            if (question.getQuestionType() != InterviewQuestionType.WEAKNESS_FOLLOWUP
-                    || question.getOriginEvaluationId() == null
-                    || !originEvaluationIds.contains(question.getOriginEvaluationId())
-                    || !returnedIds.add(question.getOriginEvaluationId())
-                    || !targetWeaknessTag.equals(question.getTargetWeaknessTag())
-                    || !targetDimension.equals(question.getTargetDimension())) {
-                invalid();
-            }
-        }
-    }
-
     private List<InterviewQuestionGenerationResult.Question> requiredQuestions(
             InterviewQuestionGenerationResult result
     ) {

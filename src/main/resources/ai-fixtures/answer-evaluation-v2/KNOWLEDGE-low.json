@@ -1,0 +1,45 @@
+{
+  "evaluationVersion": 2,
+  "mode": "KNOWLEDGE",
+  "isEvasive": false,
+  "scores": [
+    {
+      "criterion": "INTENT_UNDERSTANDING",
+      "score": 3,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "LOGICAL_STRUCTURE",
+      "score": 2,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "CLARITY",
+      "score": 3,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "CONCEPT_ACCURACY",
+      "score": 2,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "PRINCIPLE_UNDERSTANDING",
+      "score": 2,
+      "reason": "stub 응답의 점수 근거입니다."
+    },
+    {
+      "criterion": "PRACTICAL_APPLICATION",
+      "score": 3,
+      "reason": "stub 응답의 점수 근거입니다."
+    }
+  ],
+  "strengths": "질문에 답하려는 방향은 맞았습니다.",
+  "improvements": "본인이 한 행동과 결과가 드러나지 않습니다.",
+  "recommendedAnswer": "상황, 본인이 한 행동, 결과, 배운 점 순서로 답해 보십시오.",
+  "comparison": null,
+  "followUp": {
+    "question": "방금 답변에서 본인이 직접 한 일을 한 가지만 구체적으로 설명해 주십시오.",
+    "reason": "본인 역할과 근거가 부족해 확인합니다."
+  }
+}

@@ -29,16 +29,6 @@ public class InterviewQuestionGenerationResultWriter {
         return save(questionSet, result, Map.of());
     }
 
-    public List<InterviewQuestion> saveWeakness(
-            QuestionSet questionSet,
-            InterviewQuestionGenerationResult result,
-            List<AnswerEvaluation> origins
-    ) {
-        Map<Long, AnswerEvaluation> originById = origins.stream()
-                .collect(Collectors.toMap(AnswerEvaluation::getEvaluationId, Function.identity()));
-        return save(questionSet, result, originById);
-    }
-
     private List<InterviewQuestion> save(
             QuestionSet questionSet,
             InterviewQuestionGenerationResult result,
