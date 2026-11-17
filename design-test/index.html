@@ -10,19 +10,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script>document.documentElement.classList.add('js')</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 <style>
 :root {
-  --room: #0C0D10;
-  --ink: #16181C;
-  --wall: #F1F1EE;
+  --room: #0B0D11;          /* 전시실 어둠 */
+  --ink: #12151B;           /* 먹 */
+  --wall: #F5F7FA;          /* 푸른 기가 도는 흰 벽 */
   --paper: #FFFFFF;
-  --text: #16181C;
-  --text-2: #555A63;
-  --text-on-dark: #ECEDEF;
-  --text-2-on-dark: #A2A6AE;
-  --line: #CFD0CB;
-  --line-dark: #25272C;
-  --accent: #34507F;
+  --text: #12151B;
+  --text-2: #4F5764;
+  --text-on-dark: #EEF0F3;
+  --text-2-on-dark: #A3A9B4;
+  --line: #D6DBE3;
+  --line-dark: #262A31;
+  --point: #3A62A8;         /* 포인트 색 (도형·채움). 도자기의 푸른 안료에서 가져온 가라앉은 파랑 */
+  --on-point: #FFFFFF;      /* 포인트 색 위의 글자 */
+  --accent: #3A62A8;        /* 포인트 색의 글자용 톤 (밝은 바탕에서 4.5:1 이상) */
 
   --serif: "Noto Serif KR", serif;
   --sans: "Pretendard Variable", Pretendard, sans-serif;
@@ -31,13 +39,14 @@
   --edge: calc((100% - var(--wrap)) / 2);
   --section-y: 160px;
   --ease: cubic-bezier(.16, 1, .3, 1);
+  --lift: 0 1px 2px rgba(18, 24, 38, .04), 0 18px 36px -22px rgba(18, 24, 38, .22);
 }
 @media (max-width: 760px) {
   :root { --wrap: calc(100% - 32px); --section-y: 96px; }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; scrollbar-color: #9BA3B0 var(--wall); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0;
@@ -49,13 +58,12 @@ body {
   word-break: keep-all;
   overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "tnum" 0;
+  caret-color: var(--accent);
 }
 @media (max-width: 760px) { body { font-size: 16px; } }
-::selection { background: var(--accent); color: #fff; }
+::selection { background: var(--point); color: var(--on-point); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.dark :focus-visible { outline-color: #fff; }
-html { scrollbar-color: #9A9DA3 var(--wall); }
+.dark :focus-visible, .nav:not(.is-light) :focus-visible { outline-color: #fff; }
 h1, h2, h3, p, dl, dd, ul { margin: 0; }
 ul { padding: 0; list-style: none; }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em; }
@@ -63,19 +71,7 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 .num { font-variant-numeric: tabular-nums lining-nums; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* 세로선: 같은 x 좌표로 모든 섹션을 관통 */
 .ruled { position: relative; }
-.ruled::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  border-inline: 1px solid var(--rule, var(--line));
-  margin-inline: var(--edge);
-}
-.hero.ruled::after, .closing.ruled::after {
-  content: ""; position: absolute; top: 0; bottom: 0; width: 1px; pointer-events: none; z-index: 0;
-  left: calc(var(--edge) + var(--wrap) * 0.585);
-  background: var(--rule, var(--line));
-}
-@media (max-width: 760px) { .ruled::before, .ruled::after { display: none; } }
 
 /* 제목 */
 .display {
@@ -88,22 +84,31 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 
 /* 버튼 */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 52px; padding: 0 24px;
-  font: 600 16px/1 var(--sans); text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 54px; padding: 0 26px;
+  font: 600 16px/1 var(--sans); letter-spacing: -0.005em; text-decoration: none;
   border: 1px solid transparent; border-radius: 2px;
-  transition: background-color .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+  transition: background-color .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease), transform .2s var(--ease);
   cursor: pointer;
 }
+.btn:active { transform: translateY(1px); }
 .btn-primary { background: var(--ink); color: #fff; }
-.btn-primary:hover { background: var(--accent); }
+.btn-primary:hover { background: var(--point); color: var(--on-point); }
 .btn-ghost { color: var(--text); border-color: var(--line); background: transparent; }
 .btn-ghost:hover { border-color: var(--ink); }
 .dark .btn-primary { background: #fff; color: var(--ink); }
-.dark .btn-primary:hover { background: #D9DBE0; }
-.dark .btn-ghost { color: var(--text-on-dark); border-color: #3A3D44; }
+.dark .btn-primary:hover { background: var(--point); color: var(--on-point); }
+.dark .btn-ghost { color: var(--text-on-dark); border-color: #3B404A; }
 .dark .btn-ghost:hover { border-color: var(--text-on-dark); }
-.btn .arrow { width: 16px; height: 16px; }
+.btn .arrow { width: 16px; height: 16px; flex: none; transition: transform .45s var(--ease); }
+.btn:hover .arrow { transform: translateX(4px); }
+
+/* 작은 표시: 예시 */
+.chip {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 2px; background: var(--paper);
+  font-size: 16px; line-height: 1; font-weight: 500; color: var(--text-2);
+}
 
 /* ───── 1. 상단 메뉴 ───── */
 .nav {
@@ -112,21 +117,32 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
   transition: background-color .5s var(--ease), color .5s var(--ease), border-color .5s var(--ease);
   border-bottom: 1px solid transparent;
 }
-.nav.is-light { background: rgba(241, 241, 238, .97); color: var(--text); border-bottom-color: var(--line); }
+.nav.is-top { background: transparent; }  /* 맨 위에서는 조명이 메뉴 뒤로 지나감 */
+.nav.is-light { background: var(--wall); color: var(--text); border-bottom-color: var(--line); }
 .nav .wrap { display: flex; align-items: center; height: 100%; gap: 40px; }
 .logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
 .logo svg { width: 24px; height: 32px; }
 .logo span { font-family: var(--serif); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
-.menu { display: flex; gap: 32px; margin-inline: auto; font-size: 16px; }
-.menu a { text-decoration: none; opacity: .82; transition: opacity .3s; }
-.menu a:hover { opacity: 1; text-decoration: underline; }
+.logo .mark {   /* Jpen 로고 (assets/jpen-logo.png). 글자색을 따라 칠함: 어두운 바탕에서는 흰색, 밝은 바탕에서는 먹색 */
+  width: 19px; height: 31px; flex: none; background: currentColor;
+  -webkit-mask: url(assets/jpen-logo.png) center / contain no-repeat; mask: url(assets/jpen-logo.png) center / contain no-repeat;
+}
+.menu { display: flex; gap: 36px; margin-inline: auto; font-size: 16px; font-weight: 500; }
+.menu a { position: relative; text-decoration: none; padding: 8px 0; opacity: .78; transition: opacity .3s; }
+.menu a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 2px; height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease);
+}
+.menu a:hover, .menu a:focus-visible { opacity: 1; }
+.menu a:hover::after, .menu a:focus-visible::after { transform: scaleX(1); }
 .nav-actions { display: flex; align-items: center; gap: 8px; }
-.nav-actions .login { font-size: 16px; font-weight: 500; text-decoration: none; padding: 0 16px; line-height: 44px; }
-.nav-actions .login:hover { text-decoration: underline; }
+.nav-actions .login { font-size: 16px; font-weight: 500; text-decoration: none; padding: 0 16px; line-height: 44px; opacity: .9; }
+.nav-actions .login:hover { opacity: 1; text-decoration: underline; }
 .nav .btn { min-height: 44px; padding: 0 20px; font-size: 16px; }
 .nav .btn-primary { background: #fff; color: var(--ink); }
+.nav .btn-primary:hover { background: var(--point); color: var(--on-point); }
 .nav.is-light .btn-primary { background: var(--ink); color: #fff; }
-.nav.is-light .btn-primary:hover { background: var(--accent); }
+.nav.is-light .btn-primary:hover { background: var(--point); color: var(--on-point); }
 .nav-more { display: none; position: relative; }
 .nav-more summary { list-style: none; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; }
 .nav-more summary::-webkit-details-marker { display: none; }
@@ -147,17 +163,20 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 
 /* ───── 2. 첫 화면 ───── */
 .hero {
-  --rule: #1B1D21;
   background: var(--room); color: var(--text-on-dark);
   min-height: max(100svh, 760px);
   display: flex; flex-direction: column;
-  overflow: hidden;
+  overflow: hidden; isolation: isolate;
 }
+/* 3D 무대: 첫 화면 전체를 덮는 캔버스. 위에서 조명이 떨어지고 조각이 그 안에 떠 있음 */
+.stage { position: absolute; inset: 0; z-index: -1; }
+.stage canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 1.8s ease-out; }
+.has-3d .stage canvas { opacity: 1; }
 .hero .wrap {
   flex: 1; display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: center;
-  padding-top: 72px;
+  padding-top: 72px; pointer-events: none;
 }
-.hero-copy { padding-block: 64px; }
+.hero-copy { padding-block: 64px; pointer-events: auto; }
 .hero h1 {
   font-family: var(--serif); font-weight: 600;
   font-size: 60px; line-height: 1.3; letter-spacing: -0.025em;
@@ -165,20 +184,21 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 .hero h1 .line { display: block; }
 .hero p { margin-top: 32px; color: var(--text-2-on-dark); max-width: 31em; text-wrap: pretty; }
 .hero .actions { margin-top: 48px; display: flex; gap: 12px; flex-wrap: wrap; }
-/* 어둠 속에 떠 있는 조각 하나: 윗면·왼쪽 모서리에만 빛 (림 라이트) */
-.exhibit { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.exhibit svg { width: min(100%, 380px); height: auto; overflow: visible; display: block; }
-.exhibit .body { fill: #191C21; stroke: #262A31; stroke-width: 1; }
+/* 조각 자리: 3D가 켜지면 이 영역을 잡고 돌릴 수 있음. 아래 SVG는 3D를 못 쓸 때만 보임 */
+.exhibit {
+  align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: auto; touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.exhibit svg { width: min(100%, 340px); height: auto; overflow: visible; display: block; }
+.exhibit .body { fill: #1A1D23; stroke: #2A2E36; stroke-width: 1; }
 .exhibit .rim { fill: none; stroke: var(--text-on-dark); stroke-width: 1.25; }
-.plinth { width: min(76%, 300px); height: 1px; background: #3A3F47; margin-top: 36px; }
-.floor { height: 1px; background: #2A2C31; position: relative; z-index: 1; }
+.has-3d .exhibit { cursor: grab; }
+.has-3d .exhibit.is-dragging { cursor: grabbing; }
+.has-3d .exhibit svg { visibility: hidden; }
+.floor { height: 1px; background: #2A2E36; position: relative; z-index: 1; }
 
-/* 조명이 서서히 켜짐 */
-@keyframes light-on { from { opacity: 0; } }
-@keyframes body-on { from { opacity: .55; } }
+/* 글자가 차례로 올라옴 */
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
-.exhibit .rim { animation: light-on 1.6s ease-out .3s both; }
-.exhibit .body { animation: body-on 1.6s ease-out .3s both; }
 .hero-copy > * { animation: rise-in 1.2s var(--ease) both; }
 .hero-copy > :nth-child(1) { animation-delay: .5s; }
 .hero-copy > :nth-child(2) { animation-delay: .7s; }
@@ -187,44 +207,44 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 @media (max-width: 760px) {
   .hero { min-height: auto; }
   .hero .wrap { grid-template-columns: 1fr; padding-top: 60px; gap: 0; }
-  .hero-copy { padding-block: 40px 8px; }
+  .hero-copy { padding-block: 40px 0; }
   .hero h1 { font-size: 34px; line-height: 1.35; }
   .hero p { margin-top: 20px; }
-  .hero .actions { margin-top: 32px; }
-  .hero .actions { flex-direction: column; }
-  .exhibit { margin-top: 48px; padding-bottom: 56px; }
+  .hero .actions { margin-top: 32px; flex-direction: column; }
+  .exhibit { height: 460px; }
   .exhibit svg { width: 180px; }
-  .plinth { margin-top: 24px; width: 200px; }
 }
 
 /* ───── 3. 맞물리는 조각 ───── */
 .section { padding-block: var(--section-y); }
-.match { border-top: 1px solid var(--ink); }
 .match-head { display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: end; }
 .match-head .lead { margin-top: 28px; }
 .board-caption {
-  margin-top: 96px; display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
-  padding-bottom: 16px; border-bottom: 1px solid var(--line);
-  font-size: 16px; color: var(--text-2);
+  margin-top: 96px; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap;
+  padding-bottom: 20px; border-bottom: 1px solid var(--ink);
+  font-size: 17px; color: var(--text-2);
 }
 .board-caption strong { color: var(--text); font-weight: 600; }
 .board-cols {
-  display: grid; grid-template-columns: 1fr 1fr 168px; gap: 0 0;
-  padding: 20px 0 12px; font-size: 16px; color: var(--text-2); font-weight: 500;
+  display: grid; grid-template-columns: 1fr 1fr 176px;
+  padding: 18px 0 14px; font-size: 16px; color: var(--text-2); font-weight: 500;
 }
+.board-cols span:nth-child(1) { padding-left: 32px; }
 .board-cols span:nth-child(2) { padding-left: 40px; }
 .board-cols span:nth-child(3) { padding-left: 32px; }
-.board { display: grid; gap: 12px; }
-.row { display: grid; grid-template-columns: 1fr 1fr 168px; min-height: 92px; }
+.board { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 1fr 1fr 176px; min-height: 88px; }
 .req {
   background: var(--ink); color: #fff;
-  display: flex; align-items: center; padding: 20px 32px;
-  font-weight: 600; font-size: 18px;
+  display: flex; align-items: center; padding: 20px 40px 20px 32px;
+  font-weight: 600; font-size: 18px; letter-spacing: -0.005em;
+  border-radius: 2px 0 0 2px;
 }
 .exp {
   position: relative; background: var(--paper);
-  border: 1px solid var(--line); border-left: 0;
+  border: 1px solid var(--line); border-left: 0; border-radius: 0 2px 2px 0;
   display: flex; flex-direction: column; justify-content: center; padding: 20px 32px 20px 40px;
+  box-shadow: var(--lift);
 }
 .exp::before { /* 돌기: 요구 역량 조각의 홈에 끼워짐 */
   content: ""; position: absolute; top: 50%; left: -16px; width: 32px; height: 32px; margin-top: -16px;
@@ -233,20 +253,21 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 }
 .exp .what { font-weight: 500; }
 .status { display: flex; align-items: center; gap: 12px; padding-left: 32px; font-size: 16px; font-weight: 600; }
-.status i { display: block; width: 28px; height: 3px; background: var(--accent); }
+.status i { display: block; width: 28px; height: 3px; background: var(--point); }
 .row.partial .exp {
   background:
     repeating-linear-gradient(135deg, transparent 0 7px, var(--line) 7px 8px) right / 50% 100% no-repeat,
     var(--paper);
 }
 .row.partial .exp::before { background: var(--paper); }
-.row.partial .status i { background: linear-gradient(90deg, var(--accent) 50%, var(--line) 50%); }
-.row.empty .exp { background: var(--wall); border: 1px dashed #7A7F88; border-left: 0; }
-.row.empty .exp::before { background: transparent; border: 1px dashed #A2A6AE; }
+.row.partial .status i { background: linear-gradient(90deg, var(--point) 50%, var(--line) 50%); }
+.row.empty .exp { background: var(--wall); border: 1px dashed #7C8493; border-left: 0; box-shadow: none; }
+.row.empty .exp::before { background: var(--wall); border: 1px dashed #9AA2B0; }
 .row.empty .what { color: var(--text-2); }
 .row.empty .note { margin-top: 6px; font-size: 16px; line-height: 1.6; color: var(--text); }
+.row.empty .status { color: var(--text-2); }
 .row.empty .status i { background: transparent; border: 1px dashed var(--text-2); height: 5px; }
-.sample-note { margin-top: 24px; font-size: 16px; color: var(--text-2); }
+.sample-note { margin-top: 28px; font-size: 16px; color: var(--text-2); }
 
 /* 조립 연출: 경험 조각이 차례로 끼워짐 */
 .js .board:not(.is-assembled) .exp { opacity: 0; transform: translateX(48px); }
@@ -262,15 +283,15 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
   .match-head { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
-  .board-caption { margin-top: 56px; }
+  .board-caption { margin-top: 56px; font-size: 16px; }
   .board-cols { display: none; }
-  .board { gap: 20px; }
+  .board { gap: 20px; margin-top: 24px; }
   .row { grid-template-columns: 1fr; min-height: 0; }
-  .req { padding: 16px 20px; }
-  .exp { border: 1px solid var(--line); border-top: 0; padding: 22px 20px 16px; }
+  .req { padding: 16px 20px; border-radius: 2px 2px 0 0; }
+  .exp { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 2px 2px; padding: 22px 20px 16px; }
   .exp::before { top: -16px; left: auto; right: 40px; margin: 0; clip-path: inset(-2px -2px 50% -2px); }
-  .row.empty .exp { border: 1px dashed #7A7F88; border-top: 0; }
-  .status { padding: 10px 0 4px; }
+  .row.empty .exp { border: 1px dashed #7C8493; border-top: 0; }
+  .status { padding: 12px 0 4px; }
   .js .board:not(.is-assembled) .exp { transform: translateY(-24px); }
 }
 
@@ -279,30 +300,31 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 .report-intro { position: sticky; top: 120px; padding-right: 24px; }
 .report-intro .lead { margin-top: 28px; }
 .sheet-doc {
-  background: var(--paper); border: 1px solid var(--line);
-  padding: 56px 64px 64px; font-size: 17px;
-  box-shadow: 0 30px 60px -40px rgba(22, 24, 28, .35);
+  background: var(--paper); border: 1px solid var(--line); border-top: 2px solid var(--ink);
+  padding: 48px 64px 56px; font-size: 17px;
+  box-shadow: 0 1px 2px rgba(18, 24, 38, .04), 0 28px 56px -28px rgba(18, 24, 38, .2), 0 72px 96px -72px rgba(18, 24, 38, .3);
 }
-.doc-meta { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--ink); font-size: 16px; }
-.doc-meta .tag { color: var(--text-2); }
-.score { display: grid; grid-template-columns: auto 1fr; gap: 48px; padding: 48px 0; border-bottom: 1px solid var(--line); align-items: end; }
-.total .label { font-size: 16px; color: var(--text-2); }
-.total .big { font-family: var(--serif); font-weight: 600; font-size: 120px; line-height: 1; letter-spacing: -0.03em; }
-.total .big small { font-size: 32px; color: var(--text-2); letter-spacing: 0; margin-left: 6px; }
-.total .delta { margin-top: 12px; font-size: 16px; font-weight: 600; color: var(--accent); }
-.criteria { display: grid; gap: 14px; }
+.doc-meta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding-bottom: 24px; border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 500; }
+.score { display: grid; grid-template-columns: auto 1fr; gap: 72px; padding: 48px 0; border-bottom: 1px solid var(--line); align-items: end; }
+.total .label { font-size: 16px; font-weight: 500; color: var(--text-2); }
+.total .big { margin-top: 4px; font-family: var(--serif); font-weight: 600; font-size: 128px; line-height: 1; letter-spacing: -0.035em; }
+.total .big small { font-family: var(--sans); font-weight: 500; font-size: 24px; color: var(--text-2); letter-spacing: 0; margin-left: 10px; }
+.total .delta { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: var(--accent); }
+.total .delta svg { width: 12px; height: 12px; }
+.criteria { display: grid; gap: 18px; padding-bottom: 8px; }
 .crit { display: grid; grid-template-columns: 7.5em 1fr 2.5em; gap: 16px; align-items: center; font-size: 16px; }
 .crit .bar { height: 1px; background: var(--line); position: relative; }
-.crit .bar b { position: absolute; left: 0; top: -2px; height: 5px; background: var(--accent); width: var(--v); }
+.crit .bar b { position: absolute; left: 0; top: -1px; height: 3px; background: var(--point); width: var(--v); }
+.crit .bar b::after { content: ""; position: absolute; right: -1px; top: -4px; width: 1px; height: 11px; background: var(--point); }
 .crit .v { text-align: right; font-weight: 600; }
 .question { padding-top: 40px; }
-.question .qn { font-size: 16px; color: var(--text-2); }
-.question .qt { margin-top: 10px; font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.6; }
+.question .qn { font-size: 16px; font-weight: 500; color: var(--text-2); }
+.question .qt { margin-top: 10px; font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.6; letter-spacing: -0.01em; }
 .notes { margin-top: 32px; display: grid; grid-template-columns: 8.5em 1fr; }
 .notes dt, .notes dd { padding: 18px 0; border-top: 1px solid var(--line); }
 .notes dt { font-weight: 600; font-size: 16px; padding-top: 19px; }
 .notes dd { line-height: 1.7; }
-.doc-foot { margin-top: 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 16px; color: var(--text-2); }
+.doc-foot { margin-top: 8px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 16px; color: var(--text-2); }
 .ai-mark { display: inline-flex; align-items: center; gap: 10px; }
 .ai-mark svg { width: 22px; height: 20px; color: var(--accent); }
 @media (max-width: 960px) {
@@ -321,17 +343,25 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 /* ───── 5. 기능 설명 ───── */
 .modes-head { max-width: 760px; }
 .modes { margin-top: 80px; border-bottom: 1px solid var(--ink); }
-.mode { display: grid; grid-template-columns: 4fr 5fr 3fr; gap: 24px; padding: 40px 0; border-top: 1px solid var(--ink); align-items: baseline; }
+.mode { display: grid; grid-template-columns: 4fr 5fr 3fr; gap: 24px; padding: 44px 0; border-top: 1px solid var(--ink); align-items: start; }
 .mode + .mode { border-top-color: var(--line); }
-.mode h3 { font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.35; }
-.mode .need { font-size: 16px; color: var(--text-2); }
-.mode .need b { display: block; color: var(--text); font-weight: 600; font-size: 18px; }
+.mode h3 { font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.35; letter-spacing: -0.015em; }
+.mode > p:not(.need) { padding-top: 6px; }
+.mode .need { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 4px; font-size: 16px; color: var(--text-2); }
+.mode .need b {
+  display: inline-flex; align-items: center; height: 36px; padding: 0 14px;
+  border: 1px solid var(--ink); border-radius: 2px; background: var(--paper);
+  color: var(--text); font-weight: 600; font-size: 16px; line-height: 1;
+}
 .extras { margin-top: 96px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-.extras div { border-top: 1px solid var(--ink); padding-top: 20px; }
-.extras h3 { font-size: 18px; font-weight: 700; }
+.extras div { position: relative; border-top: 1px solid var(--line); padding-top: 24px; }
+.extras div::before { content: ""; position: absolute; top: -1px; left: 0; width: 32px; height: 2px; background: var(--point); }
+.extras h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.005em; }
 .extras p { margin-top: 10px; font-size: 16px; line-height: 1.7; color: var(--text-2); }
 @media (max-width: 960px) {
   .mode { grid-template-columns: 1fr; gap: 12px; padding: 32px 0; }
+  .mode > p:not(.need) { padding-top: 0; }
+  .mode .need { flex-direction: row; align-items: center; gap: 12px; padding-top: 8px; }
   .extras { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 760px) {
@@ -341,12 +371,13 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 }
 
 /* ───── 6. 신뢰 요소 (짙은 띠) ───── */
-.trust { --rule: #24262B; background: var(--ink); color: var(--text-on-dark); padding-block: 120px; }
+.trust { background: var(--ink); color: var(--text-on-dark); padding-block: 128px; }
 .trust .wrap { display: grid; grid-template-columns: 1fr 1fr; }
 .trust article { padding-right: 64px; }
-.trust article + article { padding: 0 0 0 64px; border-left: 1px solid #33363C; }
-.trust h3 { font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.4; }
-.trust p { margin-top: 20px; color: var(--text-2-on-dark); }
+.trust article + article { padding: 0 0 0 64px; border-left: 1px solid #343842; }
+.trust h3::before { content: ""; display: block; width: 32px; height: 2px; background: var(--point); margin-bottom: 28px; }
+.trust h3 { font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.4; letter-spacing: -0.015em; }
+.trust p { margin-top: 20px; color: var(--text-2-on-dark); max-width: 26em; text-wrap: pretty; }
 @media (max-width: 760px) {
   .trust { padding-block: 80px; }
   .trust .wrap { grid-template-columns: 1fr; }
@@ -357,24 +388,28 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 
 /* ───── 7. 티켓 안내 ───── */
 .tickets { display: grid; grid-template-columns: 6fr 6fr; gap: 24px; align-items: start; }
-.price { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--ink); }
+.price { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--ink); }
 .price .unit { font-size: 16px; font-weight: 600; }
-.price .amount { font-family: var(--serif); font-weight: 600; font-size: 72px; line-height: 1.2; letter-spacing: -0.02em; }
-.price .temp { font-size: 16px; color: var(--text-2); }
+.price .unit::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 10px; background: var(--point); }
+.price .amount { font-family: var(--serif); font-weight: 600; font-size: 80px; line-height: 1.15; letter-spacing: -0.03em; }
+.price .amount small { font-size: 40px; letter-spacing: 0; margin-left: 4px; }
+.price .temp { margin-top: 4px; font-size: 16px; color: var(--text-2); }
 .price .pay { margin-top: 20px; font-size: 16px; color: var(--text-2); }
 .ticket-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 17px; }
 .tickets-right { padding-left: 64px; padding-top: 6px; }
-.ticket-table caption { text-align: left; font-size: 16px; color: var(--text-2); padding-bottom: 16px; }
-.ticket-table th, .ticket-table td { text-align: left; padding: 20px 0; border-top: 1px solid var(--line); font-weight: 400; }
+.ticket-table caption { text-align: left; font-size: 16px; font-weight: 500; color: var(--text-2); padding-bottom: 16px; }
+.ticket-table th, .ticket-table td { text-align: left; padding: 22px 0; border-top: 1px solid var(--line); font-weight: 400; }
 .ticket-table thead th { border-top: 1px solid var(--ink); font-size: 16px; font-weight: 600; padding: 14px 0; }
 .ticket-table tbody tr:last-child td, .ticket-table tbody tr:last-child th { border-bottom: 1px solid var(--line); }
 .ticket-table .n { padding-right: 24px; text-align: right; font-weight: 600; white-space: nowrap; }
 @media (max-width: 960px) {
   .tickets { grid-template-columns: 1fr; gap: 64px; }
   .tickets-right { padding-left: 0; }
+  .ticket-table .n { padding-right: 0; }
 }
 @media (max-width: 760px) {
-  .price .amount { font-size: 56px; }
+  .price .amount { font-size: 60px; }
+  .price .amount small { font-size: 32px; }
   .footer .wrap { gap: 12px 24px; }
   .footer .logo { flex-basis: 100%; margin-bottom: 8px; }
 }
@@ -384,12 +419,14 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 .closing .wrap { display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: center; }
 .closing h2 { font-family: var(--serif); font-weight: 600; font-size: 56px; line-height: 1.3; letter-spacing: -0.025em; }
 .closing .btn { margin-top: 48px; }
-.closing svg { width: 100%; max-width: 380px; justify-self: center; }
+.closing svg.set { width: 100%; max-width: 380px; justify-self: center; }
+.closing .set .on { fill: var(--ink); stroke: var(--wall); stroke-width: 3; }
+.closing .set .off { fill: none; stroke: #7C8493; stroke-dasharray: 4 4; }
 @media (max-width: 760px) {
   .closing .wrap { grid-template-columns: 1fr; gap: 56px; }
   .closing h2 { font-size: 32px; }
   .closing .btn { margin-top: 32px; width: 100%; }
-  .closing svg { max-width: 260px; justify-self: start; }
+  .closing svg.set { max-width: 260px; justify-self: start; }
 }
 
 /* ───── 9. 푸터 ───── */
@@ -424,14 +461,17 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
     <symbol id="j-symbol" viewBox="0 0 220 300">
       <path mask="url(#j-cut)" fill="currentColor" d="M105 50 L214 0 V192 A107 107 0 0 1 0 192 V140 H106 Z"/>
     </symbol>
+    <symbol id="arrow" viewBox="0 0 16 16">
+      <path d="M2 8h11.5M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
   </defs>
 </svg>
 
-<header class="nav" id="nav">
+<header class="nav is-top" id="nav">
   <div class="wrap">
     <a class="logo" href="#top" aria-label="잡퍼즐 처음으로">
-      <svg aria-hidden="true"><use href="#j-symbol"/></svg>
-      <span>잡퍼즐</span>
+      <span class="mark" aria-hidden="true"></span>
+      <span>JobPuzzle</span>
     </a>
     <nav class="menu" aria-label="주요 메뉴">
       <a href="#how">이용 방법</a>
@@ -460,21 +500,22 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 
 <main id="top">
 
-  <!-- 2. 첫 화면: 어두운 전시실, 빛은 조각 하나에만 -->
+  <!-- 2. 첫 화면: 어두운 전시실. 위에서 떨어지는 조명 속에 조각 하나가 떠서 천천히 돎 -->
   <section class="hero dark ruled" id="hero">
+    <div class="stage" id="stage" aria-hidden="true"><canvas></canvas></div>
     <div class="wrap">
       <div class="hero-copy">
         <h1><span class="line">공고가 찾는 조각을,</span> <span class="line">당신의 경험에서 찾아냅니다.</span></h1>
         <p>잡퍼즐은 채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다. 비어 있는 조각은 면접 전에 채웁니다.</p>
         <div class="actions">
-          <a class="btn btn-primary" href="#signup">회원가입하고 시작하기</a>
+          <a class="btn btn-primary" href="#signup">회원가입하고 시작하기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
           <a class="btn btn-ghost" href="#report">보고서 예시 보기</a>
         </div>
       </div>
-      <div class="exhibit" aria-hidden="true">
+      <div class="exhibit" id="exhibit" aria-hidden="true">
+        <!-- 3D를 쓸 수 없는 환경에서만 보이는 평면 조각 -->
         <svg viewBox="0 0 200 200">
           <defs>
-            <!-- 림 라이트: 윗면과 왼쪽 모서리에만 빛이 닿음 -->
             <linearGradient id="hero-rim-fade" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stop-color="#fff"/>
               <stop offset=".42" stop-color="#fff"/>
@@ -490,7 +531,6 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
             <use href="#hero-piece" class="rim" mask="url(#hero-rim-mask)"/>
           </g>
         </svg>
-        <div class="plinth"></div>
       </div>
     </div>
     <div class="floor"></div>
@@ -508,7 +548,7 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
 
       <div class="board-caption">
         <span><strong>가온테크(가상)</strong> 백엔드 개발자 신입</span>
-        <span>예시</span>
+        <span class="chip">예시</span>
       </div>
       <div class="board-cols" aria-hidden="true">
         <span>공고 요구 역량</span><span>연결된 경험</span><span>상태</span>
@@ -536,14 +576,14 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
       <article class="sheet-doc" aria-label="면접 보고서 예시">
         <div class="doc-meta">
           <span>가온테크(가상) 백엔드 개발자 신입 · 자료 기반 면접 · 2회차</span>
-          <span class="tag">예시</span>
+          <span class="chip">예시</span>
         </div>
 
         <div class="score">
           <div class="total">
             <div class="label">총점</div>
             <div class="big num">77<small>/ 100</small></div>
-            <div class="delta">1회차보다 9점 상승</div>
+            <div class="delta"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10.5V2M2 6l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>1회차보다 9점 상승</div>
           </div>
           <div class="criteria" aria-label="평가 항목별 점수">
             <div class="crit"><span>본인 역할</span><span class="bar"><b style="--v:82%"></b></span><span class="v num">82</span></div>
@@ -632,7 +672,7 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
         <h2 class="display" id="tickets-title">필요한 만큼만 티켓으로 이용합니다.</h2>
         <div class="price">
           <div class="unit">티켓 1장</div>
-          <div class="amount num">1,000원</div>
+          <div class="amount num">1,000<small>원</small></div>
           <div class="temp">임시 가격, 추후 변경</div>
           <p class="pay">결제는 시연용 테스트 결제로 진행됩니다.</p>
         </div>
@@ -658,18 +698,18 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
     <div class="wrap">
       <div>
         <h2 id="closing-title">지원할 공고가 있다면,<br>지금 맞춰 보세요.</h2>
-        <a class="btn btn-primary" href="#signup">회원가입하고 시작하기</a>
+        <a class="btn btn-primary" href="#signup">회원가입하고 시작하기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
       <!-- 맞물린 조각 묶음: 6-3의 다섯 자리는 채워지고, 마지막 하나는 빈 조각으로 남음 -->
-      <svg viewBox="0 0 360 240" aria-hidden="true">
-        <g fill="#16181C" stroke="#F1F1EE" stroke-width="3">
+      <svg class="set" viewBox="0 0 360 240" aria-hidden="true">
+        <g class="on">
           <use href="#link" transform="translate(-30 0)"/>
           <use href="#link" transform="translate(70 0)"/>
           <use href="#link" transform="translate(170 0)"/>
           <use href="#link" transform="translate(-30 100)"/>
           <use href="#link" transform="translate(70 100)"/>
         </g>
-        <use href="#link" transform="translate(170 100)" fill="none" stroke="#7A7F88" stroke-dasharray="4 4"/>
+        <use class="off" href="#link" transform="translate(170 100)"/>
       </svg>
     </div>
   </section>
@@ -690,6 +730,8 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
   const hero = document.getElementById('hero');
   new IntersectionObserver(([e]) => nav.classList.toggle('is-light', !e.isIntersecting),
     { rootMargin: '-72px 0px 0px 0px', threshold: 0 }).observe(hero);
+  const atTop = () => nav.classList.toggle('is-top', scrollY < 8);
+  addEventListener('scroll', atTop, { passive: true }); atTop();
 
   // 맞물리는 조각: 화면에 들어오면 한 번 조립
   const board = document.getElementById('board');
@@ -698,9 +740,386 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em
   }, { threshold: 0.25 });
   io.observe(board);
 
+  // J 윤곽: Carattere(OFL) 서체의 J를 조각 몸통 정중앙에 맞춰 뽑아 둔 것 (첫 고리가 글자, 나머지는 글자 안의 섬).
+  // tools/build_piece.py 가 이 값을 읽어 모델을 만들고, 모델을 못 불러올 때는 3D 코드가 이것으로 조각을 대신 만듦
+  window.J_GLYPHS = {
+    'carattere': { label: '깔끔한 필기체', d: 'M81.97,121.56 83.47,121.55 84.76,121.41 86.44,121.10 87.82,120.73 88.89,120.38 89.95,119.97 90.98,119.48 91.99,118.94 92.99,118.33 93.97,117.65 94.92,116.90 95.86,116.09 96.79,115.22 97.69,114.28 98.57,113.27 99.44,112.19 100.29,111.05 101.12,109.85 101.93,108.58 102.75,107.19 104.35,107.05 105.86,106.95 107.31,106.90 108.86,106.90 109.10,106.86 109.27,106.76 109.30,106.69 109.30,106.59 109.12,106.49 108.66,106.43 107.78,106.37 105.76,106.36 103.15,106.51 104.05,104.80 105.00,102.86 105.95,100.77 106.89,98.55 107.97,95.85 111.09,87.23 112.08,84.82 112.80,83.35 113.20,82.70 113.56,82.20 114.15,81.51 114.59,81.10 115.06,80.73 115.55,80.40 116.35,79.97 116.97,79.72 118.14,80.38 119.06,80.76 119.46,80.86 119.80,80.91 120.25,80.90 120.64,80.84 120.99,80.74 121.39,80.55 121.66,80.34 121.89,80.06 121.99,79.77 121.99,79.51 121.93,79.27 121.71,78.97 121.33,78.75 120.98,78.64 120.56,78.56 120.07,78.52 119.35,78.54 118.69,78.62 117.74,78.81 116.87,79.04 115.22,78.78 113.32,78.58 111.37,78.47 109.34,78.43 107.51,78.44 106.00,78.50 104.56,78.60 103.18,78.74 101.88,78.92 100.64,79.13 99.46,79.39 98.35,79.68 97.31,80.02 96.34,80.39 95.43,80.80 94.59,81.25 93.82,81.74 93.11,82.27 92.47,82.83 91.89,83.44 91.40,84.05 91.01,84.67 90.73,85.29 90.59,85.71 90.50,86.13 90.46,86.56 90.46,87.00 90.56,87.66 90.79,88.25 91.13,88.79 91.60,89.27 91.99,89.56 92.39,89.81 93.18,90.19 93.82,90.40 94.74,90.57 95.48,90.63 96.39,90.61 97.39,90.50 98.74,90.22 99.77,89.89 101.16,89.32 102.33,88.72 103.37,88.06 104.28,87.36 104.75,86.93 105.17,86.48 105.46,86.14 105.55,85.92 105.49,85.76 105.40,85.74 105.34,85.76 104.65,86.39 103.96,86.94 103.21,87.46 102.12,88.08 100.34,88.91 99.13,89.32 98.23,89.53 97.63,89.62 97.04,89.68 96.20,89.69 95.56,89.63 94.90,89.50 94.26,89.28 93.90,89.08 93.61,88.83 93.38,88.54 93.21,88.21 93.09,87.64 93.09,87.26 93.17,86.72 93.35,86.15 93.63,85.56 94.00,84.95 94.47,84.30 94.81,83.90 95.39,83.30 95.83,82.91 96.54,82.33 97.34,81.77 98.23,81.21 99.22,80.71 99.78,80.48 101.01,80.08 101.68,79.90 103.14,79.60 103.93,79.48 105.63,79.28 108.46,79.11 111.62,79.08 114.11,79.20 115.04,79.30 116.17,79.46 115.13,79.87 114.15,80.37 113.21,80.98 112.31,81.70 111.45,82.53 110.68,83.42 109.89,84.45 109.21,85.46 108.28,87.01 107.19,89.03 104.64,94.31 102.12,99.85 101.05,102.12 99.64,104.93 98.48,107.05 95.13,107.63 93.57,107.95 91.71,108.40 90.30,108.78 88.61,109.30 87.02,109.86 85.77,110.35 84.06,111.14 83.28,111.55 81.89,112.41 81.27,112.85 80.71,113.31 80.21,113.78 79.75,114.25 79.35,114.74 79.00,115.24 78.71,115.75 78.47,116.28 78.28,116.81 78.14,117.36 78.03,117.94 78.00,118.47 78.02,118.85 78.16,119.53 78.28,119.83 78.44,120.10 78.63,120.36 78.85,120.59 79.11,120.79 79.41,120.97 80.11,121.27 80.52,121.38 81.45,121.53ZM82.75,120.64 82.08,120.63 81.37,120.56 80.75,120.40 80.23,120.17 79.81,119.86 79.64,119.67 79.38,119.23 79.22,118.72 79.17,118.14 79.24,117.40 79.34,117.03 79.63,116.31 79.84,115.95 80.36,115.23 80.67,114.88 81.41,114.17 81.83,113.82 82.79,113.13 83.89,112.44 84.54,112.08 85.92,111.38 86.66,111.05 88.22,110.42 89.90,109.83 92.64,109.03 95.64,108.32 98.01,107.86 96.65,110.04 95.38,111.87 94.74,112.72 93.44,114.30 92.77,115.02 91.43,116.35 90.75,116.95 89.36,118.02 88.66,118.49 87.95,118.92 86.59,119.62 85.35,120.12 84.45,120.39 83.58,120.56Z' }
+  };
+
   // 모바일 메뉴: 항목을 누르면 닫힘
   document.querySelectorAll('.sheet a').forEach(a =>
     a.addEventListener('click', () => a.closest('details').removeAttribute('open')));
+</script>
+
+<!-- 첫 화면 3D 무대. 불러오지 못하면 위의 평면 SVG 조각이 그대로 남음 -->
+<script type="module">
+// 첫 화면 3D 무대: 어둠 속에 조각 하나. 앞뒤 면 한가운데에 J가 음각으로 새겨져 있음.
+// J 음각 안에는 포인트 색을 넣음 (빼려면 INLAY 를 false 로).
+// 불러오지 못하면 위의 평면 SVG 조각이 그대로 남음.
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const heroEl = document.getElementById('hero');
+const slot = document.getElementById('exhibit');
+const canvas = document.querySelector('#stage canvas');
+const root = document.documentElement;
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let renderer = null;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); } catch (e) {}
+
+if (renderer) {
+  const ROOM = 0x0B0D11;    // --room 과 같은 값: 캔버스가 첫 화면 바탕에 그대로 이어짐
+  const FLOOR = -1.7;       // 조각 중심에서 바닥까지 (조각 폭 = 2)
+  const AUTO = still ? 0 : 0.26;   // 평소 회전 속도 (rad/s), 한 바퀴 약 24초
+  const SLANT = 0.3, BEAM_W = 3.5, BEAM_X = -0.55;   // 빛줄기: 위로 갈수록 오른쪽으로 기우는 정도, 폭, 바닥에 닿는 자리 (조각보다 조금 왼쪽)
+
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(ROOM);
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+
+  const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+  camera.position.set(0, 1.5, 12);
+  camera.lookAt(0, 0, 0);
+  const FRAME = 2 * camera.position.length() * Math.tan(THREE.MathUtils.degToRad(12));
+
+  const rig = new THREE.Group();     // 무대 전체. 화면 크기에 맞춰 통째로 크기 조절
+  const pivot = new THREE.Group();   // 떠서 도는 조각
+  scene.add(rig); rig.add(pivot);
+
+  // ══ 조각 만들기 (대신 쓰는 것) ══
+  // 조각은 Blender로 만든 모델 파일을 불러와 쓴다 (아래 '조각 모델'). 이 부분은 파일을 못 불러올 때만 쓰는 대체품으로,
+  // 같은 치수로 윤곽을 따라 단면을 훑어 면을 만든다.
+  const PIECE_D = 'M46,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H154 Q160,40 160,46 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V154 Q160,160 154,160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H46 Q40,160 40,154 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 V46 Q40,40 46,40 Z';
+  const K = 2 / 148;                    // 윤곽 단위 → 무대 단위 (조각 폭 = 2)
+  const OX = 114, OY = 86;              // 회전 중심 (조각 전체의 한가운데). J는 몸통 정중앙 (100, 100)에 놓임
+  const H = 13, ROUND = 1.3, WAIST = 1.8;   // 두께의 절반, 모서리 둥글림, 옆면 가운데가 들어간 깊이
+  const LIP = 0.95, DEPTH = 2.8;            // 음각 입구가 벌어진 폭, 음각 깊이
+  const J_SCALE = 0.92, J_DY = -4;          // J 크기·위치 보정 (tools/build_piece.py 와 같은 값)
+
+  const area = r => r.reduce((s, p, i) => s + p[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * p[1], 0) / 2;
+  // 닫는 점·겹친 점을 빼고, y를 위로 뒤집고, 반시계 방향으로 맞춘 고리
+  function ring(points) {
+    const r = [];
+    for (const [x, y] of points) {
+      const p = [x - OX, OY - y], q = r[r.length - 1];
+      if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-3) r.push(p);
+    }
+    if (Math.hypot(r[0][0] - r[r.length - 1][0], r[0][1] - r[r.length - 1][1]) < 1e-3) r.pop();
+    return area(r) < 0 ? r.reverse() : r;
+  }
+  // 각 점에서 고리 바깥을 향하는 방향 (모서리에서는 두 변의 중간, 길이는 간격이 일정하도록 보정)
+  function normals(r) {
+    const n = r.length, edge = r.map((p, i) => {
+      const q = r[(i + 1) % n], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1;
+      return [dy / l, -dx / l];
+    });
+    return r.map((p, i) => {
+      const a = edge[(i + n - 1) % n], b = edge[i];
+      let x = a[0] + b[0], y = a[1] + b[1]; const l = Math.hypot(x, y) || 1; x /= l; y /= l;
+      const m = 1 / Math.max(0.5, x * a[0] + y * a[1]);
+      return [x * m, y * m];
+    });
+  }
+  const pushOut = (r, nr, d) => r.map((p, i) => [p[0] + nr[i][0] * d, p[1] + nr[i][1] * d]);
+  const mirror = (r, cx) => { const m = r.map(p => [2 * cx - p[0], p[1]]); return area(m) < 0 ? m.reverse() : m; };
+  const shaded = (g, shade) => {
+    const c = new Float32Array(g.attributes.position.count * 3).fill(shade);
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+    return g;
+  };
+  // 고리를 따라 단면(prof: [바깥으로 민 거리, 높이, 밝기])을 훑은 띠. facing: 띠가 보는 쪽 (고리 바깥 +1 / 안 −1)
+  function strip(r, nr, prof, facing, capNormal0, capNormal1) {
+    const N = r.length, M = prof.length;
+    const pos = new Float32Array(N * M * 3), col = new Float32Array(N * M * 3), idx = [];
+    prof.forEach(([d, z, shade], k) => r.forEach((p, i) => {
+      const o = (k * N + i) * 3;
+      pos[o] = p[0] + nr[i][0] * d; pos[o + 1] = p[1] + nr[i][1] * d; pos[o + 2] = z;
+      col[o] = col[o + 1] = col[o + 2] = shade;
+    }));
+    for (let k = 0; k < M - 1; k++) for (let i = 0; i < N; i++) {
+      const a = k * N + i, b = k * N + (i + 1) % N, c = a + N, e = b + N;
+      idx.push(a, b, c, b, e, c);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    const nor = g.attributes.normal, mid = (M >> 1) * N;
+    if ((nor.getX(mid) * nr[0][0] + nor.getY(mid) * nr[0][1]) * facing < 0) {   // 면이 뒤집혀 있으면 바로잡음
+      for (let i = 0; i < idx.length; i += 3) { const t = idx[i]; idx[i] = idx[i + 1]; idx[i + 1] = t; }
+      g.setIndex(idx); g.computeVertexNormals();
+    }
+    // 평면과 만나는 첫 줄·끝 줄은 평면과 같은 방향을 보게 해서 꺾인 자국 없이 이어지게 함
+    for (let i = 0; i < N; i++) { nor.setXYZ(i, ...capNormal0); nor.setXYZ((M - 1) * N + i, ...capNormal1); }
+    return g.toNonIndexed();
+  }
+  // 평평한 면. up: 앞(+z)을 보는지
+  function flat(outer, holes, z, up, shade) {
+    const s = new THREE.Shape(outer.map(p => new THREE.Vector2(p[0], p[1])));
+    for (const h of holes) s.holes.push(new THREE.Path(h.map(p => new THREE.Vector2(p[0], p[1]))));
+    const g = new THREE.ShapeGeometry(s);
+    g.deleteAttribute('uv'); g.translate(0, 0, z);
+    if (!up) {
+      const idx = Array.from(g.index.array);
+      for (let i = 0; i < idx.length; i += 3) { const t = idx[i]; idx[i] = idx[i + 1]; idx[i + 1] = t; }
+      g.setIndex(idx);
+      const nor = g.attributes.normal;
+      for (let i = 0; i < nor.count; i++) nor.setXYZ(i, 0, 0, -1);
+    }
+    return shaded(g, shade).toNonIndexed();
+  }
+
+  const svg = new SVGLoader();
+  const pieceRing = ring(SVGLoader.createShapes(
+    svg.parse(`<svg xmlns="http://www.w3.org/2000/svg"><path d="${PIECE_D}"/></svg>`).paths[0])[0].getPoints(16).map(p => [p.x, p.y]));
+  const pieceNormals = normals(pieceRing);
+  const faceRing = pushOut(pieceRing, pieceNormals, -ROUND);   // 앞뒤 평면의 가장자리
+
+  // 옆면 단면: 앞 모서리를 둥글게 → 가운데가 부드럽게 들어감 → 뒤 모서리를 둥글게
+  const sideProfile = [];
+  for (let i = 0; i <= 7; i++) { const a = i / 7 * Math.PI / 2; sideProfile.push([-ROUND * (1 - Math.sin(a)), H - ROUND * (1 - Math.cos(a)), 1]); }
+  for (let i = 1; i < 18; i++) {
+    const z = (H - ROUND) * (1 - i / 9), u = z / (H - ROUND), w = WAIST * (1 - u * u) ** 2;
+    sideProfile.push([-w, z, 1 - 0.16 * w / WAIST]);
+  }
+  for (let i = 7; i >= 0; i--) { const a = i / 7 * Math.PI / 2; sideProfile.push([-ROUND * (1 - Math.sin(a)), -(H - ROUND * (1 - Math.cos(a))), 1]); }
+  const sideGeo = strip(pieceRing, pieceNormals, sideProfile, 1, [0, 0, 1], [0, 0, -1]);
+
+  // 글씨체 하나에 대한 조각 전체 + 음각 바닥에 깔 색판
+  const built = {};
+  function pieceWith(glyph) {
+    if (built[glyph]) return built[glyph];
+    const rings = window.J_GLYPHS[glyph].d.split('Z').filter(Boolean)
+      .map(part => ring(part.replace('M', '').trim().split(' ').map(xy => {
+        const [x, y] = xy.split(',').map(Number);
+        return [100 + (x - 100) * J_SCALE, 100 + (y - 100) * J_SCALE + J_DY];
+      })));
+    const parts = [sideGeo], inlays = [];
+    for (const side of [1, -1]) {
+      // 뒷면은 좌우를 뒤집어 새겨야 뒤에서 봤을 때 바로 읽힘
+      const rs = side > 0 ? rings : rings.map(r => mirror(r, 100 - OX));
+      const up = side > 0, lips = [];
+      rs.forEach((r, n) => {
+        const nr = normals(r), into = n === 0 ? 1 : -1;   // 첫 고리는 글자 바깥이 돌, 속 고리(글자 안의 섬)는 안쪽이 돌
+        const prof = [];
+        for (let j = 0; j <= 9; j++) {
+          const t = j / 9, s = t * t * (3 - 2 * t);       // 입구에서도 바닥에서도 완만한 S자 단면
+          prof.push([into * LIP * (1 - t), side * (H - DEPTH * s), 1 - 0.55 * s]);
+        }
+        parts.push(strip(r, nr, prof, -into, [0, 0, side], [0, 0, side]));
+        lips.push(pushOut(r, nr, into * LIP));
+      });
+      parts.push(flat(faceRing, [lips[0]], side * H, up, 1));                        // 앞(뒤) 평면, 글자 자리는 뚫림
+      for (const island of lips.slice(1)) parts.push(flat(island, [], side * H, up, 1));   // 글자 안의 섬
+      parts.push(flat(rs[0], rs.slice(1), side * (H - DEPTH), up, 0.45));            // 음각 바닥: 그늘져 어두움
+      inlays.push(flat(rs[0], rs.slice(1), side * (H - DEPTH + 0.08), up, 1));
+    }
+    const body = mergeGeometries(parts), inlay = mergeGeometries(inlays);
+    body.scale(K, K, K); inlay.scale(K, K, K);
+    return built[glyph] = { body, inlay };
+  }
+
+  // ══ 재질 ══ 오로라 유광: 매끈한 흰 유약 위로 보는 각도에 따라 옅은 무지갯빛이 돎. 음각의 그늘은 꼭짓점 밝기로 들어 있음
+  const MODEL_V = 8;   // 모델·문양 파일을 다시 만들면 올림 (브라우저가 예전 파일을 쥐고 있지 않게)
+  const GLYPH = 'carattere', INLAY = true;   // INLAY: J 음각 안에 포인트 색(델프트 블루)을 넣음
+  // 장식 문양 (tools/build_ornament.py → models/ornament.png): 모양을 실제로 올리지 않고,
+  // 높낮이 그림으로 빛만 다르게 받게 해서 도드라져 보이게 함 (양각)
+  const ornament = new THREE.TextureLoader().load(`models/ornament.png?v=${MODEL_V}`, () => { dirty = true; });
+  ornament.flipY = false; ornament.anisotropy = 8;
+  const stoneMat = new THREE.MeshPhysicalMaterial({
+    vertexColors: true, bumpMap: ornament, color: 0xCDD2DA, metalness: 0, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 0.55,
+    iridescence: 1, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 520],
+    bumpScale: -1.1   // 음수: 그림의 어두운 선이 솟아오름
+  });
+  // 음각 안쪽에 입히는 포인트 색: 빛을 되비추지 않는 무광
+  const pointMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, envMapIntensity: 0.12,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });   // 음각 면과 겹쳐 그려도 깜빡이지 않게
+
+  const piece = new THREE.Mesh(undefined, stoneMat);
+  piece.castShadow = true;
+  const inlay = new THREE.Mesh(undefined, pointMat);
+  pivot.add(piece, inlay);
+
+  // ══ 조각 모델 ══ Blender로 만든 파일(tools/build_piece.py → models/piece-<글씨체>.glb)을 불러온다.
+  // 서버 없이 파일을 직접 연 경우처럼 불러오지 못하면, 위에서 코드로 만든 조각을 대신 쓴다.
+  const gltf = new GLTFLoader().setDRACOLoader(
+    new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/'));
+  let dirty = true, ready = false;
+  inlay.visible = INLAY;
+  pointMat.color.set(getComputedStyle(root).getPropertyValue('--point').trim() || '#3A62A8');
+  gltf.loadAsync(`models/piece-${GLYPH}.glb?v=${MODEL_V}`)
+    .then(f => ({ body: f.scene.getObjectByName('body').geometry, inlay: f.scene.getObjectByName('inlay').geometry }))
+    .catch(() => pieceWith(GLYPH))
+    .then(g => { piece.geometry = g.body; inlay.geometry = g.inlay; ready = dirty = true; });
+
+  // ══ 조명 ══ 위에서 떨어지는 흰 주조명 + 뒤쪽 가장자리 빛 + 약한 정면 빛
+  const key = new THREE.SpotLight(0xffffff, 2.4, 0, 0.36, 0.9, 0);
+  key.position.set(2.2, 9, 2.6);   // 빛줄기와 같은 쪽(오른쪽 위)에서 비춤
+  key.target.position.set(0, FLOOR, 0);
+  key.castShadow = true;
+  key.shadow.mapSize.set(256, 256);
+  key.shadow.camera.near = 4; key.shadow.camera.far = 18;
+  key.shadow.bias = -0.0005; key.shadow.normalBias = 0.02;
+  const rim = new THREE.DirectionalLight(0xdfe8ff, 1.1);
+  rim.position.set(-5, 2.5, -6);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+  fill.position.set(-3.5, 2, 8);
+  rig.add(key, key.target, rim, fill);
+
+  // ── 바닥에 떨어진 빛: 천창 모양대로 네모나고, 물결이 비친 것처럼 얼룩덜룩함. 그 위에 조각 그림자
+  const pool = new THREE.Mesh(
+    new THREE.PlaneGeometry(BEAM_W * 1.25, 3.2),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+      map: new THREE.CanvasTexture((() => {
+        const c = document.createElement('canvas'); c.width = c.height = 512;
+        const g = c.getContext('2d');
+        g.filter = 'blur(22px)'; g.fillStyle = 'rgba(255,255,255,.9)'; g.fillRect(64, 96, 384, 320);
+        g.globalCompositeOperation = 'destination-out'; g.filter = 'blur(9px)';     // 물결 그늘
+        for (let i = 0; i < 46; i++) {
+          g.fillStyle = `rgba(0,0,0,${0.25 + Math.random() * 0.4})`;
+          g.beginPath(); g.ellipse(40 + Math.random() * 432, 70 + Math.random() * 372, 14 + Math.random() * 38, 5 + Math.random() * 11, Math.random() * 0.6 - 0.3, 0, 7); g.fill();
+        }
+        return c;
+      })()) })
+  );
+  pool.rotation.x = -Math.PI / 2; pool.position.set(BEAM_X, FLOOR, 0); pool.renderOrder = 1;
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: 0.36 }));
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = FLOOR + 0.02; shadow.receiveShadow = true; shadow.renderOrder = 2;
+  rig.add(pool, shadow);
+
+  // ── 빛줄기: 오른쪽 위 천창에서 비스듬히 쏟아짐. 세로로 결이 보이고 아주 천천히 일렁임.
+  //    화면을 향한 넓적한 면 두 장(조각 뒤와 앞)으로 부피감을 냄
+  const beamGeo = new THREE.BufferGeometry();
+  beamGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-BEAM_W / 2, 0, 0, BEAM_W / 2, 0, 0, -BEAM_W / 2, 1, 0, BEAM_W / 2, 1, 0]), 3));
+  beamGeo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), 2));
+  beamGeo.setIndex([0, 1, 2, 1, 3, 2]);
+  const beamTime = { value: 0 };
+  const beam = (z, opacity, seed) => {
+    const m = new THREE.Mesh(beamGeo, new THREE.ShaderMaterial({
+      uniforms: { uOpacity: { value: opacity }, uSeed: { value: seed }, uTime: beamTime },
+      vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform float uOpacity, uSeed, uTime; varying vec2 vUv;
+        float hash(float n) { return fract(sin(n) * 43758.5453); }
+        float noise(float x) { float i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f); return mix(hash(i), hash(i + 1.0), f); }
+        void main() {
+          float x = vUv.x + uSeed;
+          float rays = 0.5 * noise(x * 8.0 + uTime * 0.05) + 0.32 * noise(x * 21.0 - uTime * 0.08) + 0.18 * noise(x * 55.0 + uTime * 0.12);
+          rays = smoothstep(0.28, 0.8, rays);
+          float edge = smoothstep(0.0, 0.07, vUv.x) * smoothstep(1.0, 0.93, vUv.x);
+          float fall = mix(0.2, 1.0, pow(vUv.y, 1.3)) * smoothstep(0.0, 0.04, vUv.y);
+          gl_FragColor = vec4(vec3(0.93, 0.96, 1.0), uOpacity * edge * fall * (0.3 + 0.7 * rays));
+        }`,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    m.position.set(BEAM_X, FLOOR, z); m.renderOrder = 3; m.frustumCulled = false;
+    return m;
+  };
+  rig.add(beam(-1.3, 0.34, 0), beam(1.3, 0.14, 3.7));
+
+  // ── 빛기둥 속에 떠다니는 먼지
+  const DUST = 110;
+  let beamTop = 9;   // 지금 빛줄기의 높이 (화면 맞춤에서 정함)
+  const dustSeed = new Float32Array(DUST * 4);   // 원판 위 x, z, 높이 비율, 속도
+  for (let i = 0; i < DUST; i++) {
+    const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 0.92;
+    dustSeed.set([Math.cos(a) * r, Math.sin(a) * r, Math.random(), 0.006 + Math.random() * 0.014], i * 4);
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(DUST * 3), 3));
+  const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.036, transparent: true, opacity: 0.4,
+    blending: THREE.AdditiveBlending, depthWrite: false }));
+  dust.renderOrder = 4; dust.frustumCulled = false;
+  rig.add(dust);
+  function moveDust(dt) {
+    const p = dustGeo.attributes.position;
+    for (let i = 0; i < DUST; i++) {
+      const h = dustSeed[i * 4 + 2] = (dustSeed[i * 4 + 2] + dustSeed[i * 4 + 3] * dt) % 1;
+      p.setXYZ(i, BEAM_X + dustSeed[i * 4] * BEAM_W * 0.5 + SLANT * h * beamTop, FLOOR + h * beamTop, dustSeed[i * 4 + 1] * 0.9);
+    }
+    p.needsUpdate = true;
+  }
+
+  // ── 화면 맞춤: 캔버스는 첫 화면 전체, 조각은 오른쪽 자리(#exhibit) 한가운데
+  function layout() {
+    const r = heroEl.getBoundingClientRect(), b = slot.getBoundingClientRect();
+    const W = Math.max(1, r.width), H2 = Math.max(1, r.height);
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(W, H2, false);
+    const cx = b.left - r.left + b.width / 2, cy = b.top - r.top + b.height / 2;
+    const P = Math.min(b.width * 0.68, b.height * 0.44, 340);   // 조각 폭(px)
+    camera.aspect = W / H2;
+    camera.setViewOffset(W, H2, W / 2 - cx, H2 / 2 - cy, W, H2);
+    camera.updateProjectionMatrix();
+    rig.scale.setScalar(P * (FRAME / H2) / 2);
+    beamTop = (cy / (P / 2)) * 1.25 + 1.5 - FLOOR;   // 빛줄기가 화면 위쪽 밖까지 닿게
+    const bp = beamGeo.attributes.position;
+    bp.setXY(2, -BEAM_W / 2 + SLANT * beamTop, beamTop); bp.setXY(3, BEAM_W / 2 + SLANT * beamTop, beamTop); bp.needsUpdate = true;
+    dirty = true;
+  }
+  new ResizeObserver(layout).observe(heroEl);
+  layout();
+
+  // ── 움직임: 천천히 떠서 돌고, 잡아서 돌리거나 한 번 눌러서 돌릴 수 있음
+  let yaw = -0.5, pitch = 0.06, vel = AUTO, t = 0, last = performance.now();
+  let dragging = false, px = 0, py = 0, pt = 0, moved = 0;
+  slot.addEventListener('pointerdown', e => {
+    dragging = true; moved = 0; px = e.clientX; py = e.clientY; pt = performance.now(); vel = 0;
+    slot.setPointerCapture(e.pointerId); slot.classList.add('is-dragging');
+  });
+  slot.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - px, dy = e.clientY - py, now = performance.now();
+    yaw += dx * 0.009;
+    pitch = THREE.MathUtils.clamp(pitch + dy * 0.006, -0.7, 0.7);
+    vel = vel * 0.6 + (dx * 0.009 / Math.max((now - pt) / 1000, 0.008)) * 0.4;
+    moved += Math.abs(dx) + Math.abs(dy); px = e.clientX; py = e.clientY; pt = now; dirty = true;
+  });
+  const release = () => {
+    if (!dragging) return;
+    dragging = false; slot.classList.remove('is-dragging');
+    vel = moved < 5 ? 7 : THREE.MathUtils.clamp(vel, -12, 12);   // 누르기만 하면 한 번 힘차게 돎
+  };
+  slot.addEventListener('pointerup', release);
+  slot.addEventListener('pointercancel', release);
+
+  let raf = 0, visible = true;
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    if (!dragging) {
+      vel += (AUTO - vel) * (1 - Math.exp(-dt * 1.4));
+      yaw += vel * dt;
+      pitch += (0.06 - pitch) * (1 - Math.exp(-dt * 1.8));
+    }
+    const moving = !still || dragging || Math.abs(vel) > 0.002 || Math.abs(pitch - 0.06) > 0.002;
+    if (!moving && !dirty) return;
+    if (!still) t += dt;
+    pivot.rotation.set(pitch + Math.sin(t * 0.5) * 0.05, yaw, Math.sin(t * 0.37) * 0.03);
+    pivot.position.y = Math.sin(t * 0.9) * 0.08;
+    moveDust(still ? 0 : dt);
+    beamTime.value = t;
+    renderer.render(scene, camera);
+    if (dirty) { dirty = false; if (ready) root.classList.add('has-3d'); }
+  }
+  const run = () => {
+    cancelAnimationFrame(raf);
+    if (visible && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); }
+  };
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(heroEl);
+  document.addEventListener('visibilitychange', run);
+  run();
+}
 </script>
 </body>
 </html>
