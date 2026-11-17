@@ -37,11 +37,8 @@ public class CustomizedSynthesisProviderInputFactory {
                         value.postingEvidenceIds(), value.allowedCandidateEvidenceIds()))
                 .toList();
         Map<SourceIdentity, List<String>> candidateEvidenceIds = candidateEvidenceIds(authority);
-        boolean questionGenerationEnabled = !requirements.isEmpty()
-                && authority.evidence().stream().anyMatch(value ->
-                value.role() == CustomizedSynthesisEvidenceCatalog.EvidenceRole.CANDIDATE)
-                && guide.getMatchType() != null
-                && guide.getMatchType() != com.example.jobpuzzle.guide.entity.GuideMatchType.NONE;
+        // v2(평가 명세 1장): 분석과 자료 기반 질문 생성을 나눴다. JSON-05는 분석만 하고 질문은 만들지 않는다.
+        boolean questionGenerationEnabled = false;
         return new CustomizedSynthesisProviderInput(
                 new CustomizedSynthesisProviderInput.JobContext(mainCategory, subCategory, careerLevel),
                 requirements,

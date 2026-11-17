@@ -102,10 +102,11 @@ class AnalysisResultQueryServiceTest {
     }
 
     @Test
-    void rejectsQuestionSetMismatchWhenQuestionsAreRequired() {
-        // 질문 생성 가능 readiness에는 COMPANY_FIT question set이 반드시 있어야 한다.
-        prerequisites(true);
-        when(sets.findBySnapshot_SnapshotIdAndInterviewMode(SNAPSHOT_ID, InterviewSessionMode.COMPANY_FIT)).thenReturn(Optional.empty());
+    void rejectsV1QuestionSetOnAnAnalysisThatCannotGenerateQuestions() {
+        // v2 분석은 질문 세트가 없어도 되지만, 세트가 있는데 readiness가 질문 불가면 저장이 어긋난 것이다.
+        prerequisites(false);
+        when(sets.findBySnapshot_SnapshotIdAndInterviewMode(SNAPSHOT_ID, InterviewSessionMode.COMPANY_FIT))
+                .thenReturn(Optional.of(mock(QuestionSet.class)));
 
         assertError(ErrorCode.JSON05_RESULT_INTEGRITY_CONFLICT);
     }

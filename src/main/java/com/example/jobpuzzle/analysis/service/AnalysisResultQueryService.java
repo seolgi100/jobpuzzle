@@ -50,7 +50,8 @@ public class AnalysisResultQueryService {
             throw integrity();
         QuestionSet qs = sets.findBySnapshot_SnapshotIdAndInterviewMode(s.getSnapshotId(), InterviewSessionMode.COMPANY_FIT).orElse(null);
         List<InterviewQuestion> q = qs == null ? List.of() : questions.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(qs.getQuestionSetId());
-        if (r.isCanGenerateQuestions() == (qs == null) || q.stream().anyMatch(x -> x.getReviewStatus() != InterviewQuestionReviewStatus.PASS))
+        // v2 분석은 질문 세트가 없다(질문은 자료 기반 면접 생성 때 만든다). v1 질문 세트가 있으면 예전 규칙으로 검사한다.
+        if ((qs != null && !r.isCanGenerateQuestions()) || q.stream().anyMatch(x -> x.getReviewStatus() != InterviewQuestionReviewStatus.PASS))
             throw integrity();
         Optional<InterviewSession> linkedSession = qs == null
                 ? Optional.empty()

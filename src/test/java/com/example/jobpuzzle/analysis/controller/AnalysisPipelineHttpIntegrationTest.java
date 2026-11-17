@@ -103,26 +103,25 @@ class AnalysisPipelineHttpIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.analysisCaseStatus").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.questionSetAvailable").value(true));
+                .andExpect(jsonPath("$.data.canGenerateQuestions").value(true))
+                // v2: 분석은 질문 세트를 만들지 않는다. 자료 기반 질문은 면접 생성 때 만든다.
+                .andExpect(jsonPath("$.data.questionSetAvailable").value(false));
 
         mockMvc.perform(get("/analysis/cases/{caseId}/result", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.questionSet.questions").isNotEmpty());
+                .andExpect(jsonPath("$.data.readiness.canGenerateQuestions").value(true))
+                .andExpect(jsonPath("$.data.questionSet.questions").isEmpty());
 
-        // 세션 모듈은 Repository가 아닌 이 handoff API만으로 PASS 질문 세트를 받아야 한다.
         mockMvc.perform(get("/analysis/cases/{caseId}/question-set", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.mode").value("COMPANY_FIT"))
                 .andExpect(jsonPath("$.data.canGenerateQuestions").value(true))
-                .andExpect(jsonPath("$.data.questionSetId").isNumber())
-                .andExpect(jsonPath("$.data.questions").isNotEmpty())
-                .andExpect(jsonPath("$.data.questions[0].questionId").isNumber())
-                .andExpect(jsonPath("$.data.questions[0].displayOrder").value(0));
+                .andExpect(jsonPath("$.data.questionSetId").doesNotExist())
+                .andExpect(jsonPath("$.data.questions").isEmpty());
     }
 
     @Test

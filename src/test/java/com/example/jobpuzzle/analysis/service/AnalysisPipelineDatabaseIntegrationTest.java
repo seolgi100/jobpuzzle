@@ -146,11 +146,15 @@ class AnalysisPipelineDatabaseIntegrationTest {
         assertThat(retrievalResultRepository.findAll()).isNotEmpty()
                 .allSatisfy(result -> assertThat(result.getStatus()).isIn(RetrievalStatus.COMPLETED, RetrievalStatus.EMPTY));
 
-        // mock 응답은 candidate evidence가 있으므로 충분한 준비도와 질문 세트를 저장해야 한다.
-        assertThat(readinessResultRepository.findBySnapshot_SnapshotId(snapshot.getSnapshotId()).orElseThrow().getStatus())
-                .isEqualTo(ReadinessResultStatus.SUFFICIENT);
+        // mock 응답은 candidate evidence가 있으므로 충분한 준비도를 저장한다.
+        // v2: 분석은 자료 기반 면접이 가능하다고만 표시하고 질문 세트는 만들지 않는다(면접 생성 때 만든다).
+        var readiness = readinessResultRepository.findBySnapshot_SnapshotId(snapshot.getSnapshotId()).orElseThrow();
+        assertThat(readiness.getStatus()).isEqualTo(ReadinessResultStatus.SUFFICIENT);
+        assertThat(readiness.isCanGenerateQuestions()).isTrue();
         assertThat(questionSetRepository.existsBySnapshot_SnapshotIdAndInterviewMode(snapshot.getSnapshotId(),
-                com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT)).isTrue();
+                com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT)).isFalse();
+        // v2 분석은 1장만 쓴다 (충전 10장 - 1장).
+        assertThat(ticketService.getBalance(fixture.user().getUserId()).balance()).isEqualTo(9);
     }
 
     @Test

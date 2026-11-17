@@ -49,7 +49,8 @@ public class CustomizedSynthesisResultWriter {
                 .collect(java.util.stream.Collectors.toMap(MatchAnalysisResult::getMatchKey, Function.identity()));
         readinessRepository.save(ReadinessResult.from(snapshot, log, result.getReadiness()));
 
-        if (result.getReadiness().isCanGenerateQuestions()) {
+        // v2에서는 질문이 비어 있어 질문 세트를 만들지 않는다. 자료 기반 질문은 면접 생성 때 따로 만든다.
+        if (result.getReadiness().isCanGenerateQuestions() && !result.getQuestions().isEmpty()) {
             QuestionSet questionSet = questionSetRepository.save(QuestionSet.companyFit(snapshot, guideContext, log));
             interviewQuestionRepository.saveAll(java.util.stream.IntStream.range(0, result.getQuestions().size())
                     .mapToObj(index -> InterviewQuestion.from(questionSet,

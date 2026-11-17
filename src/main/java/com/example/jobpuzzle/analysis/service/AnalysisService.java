@@ -81,8 +81,8 @@ public class AnalysisService {
 
     // JSON-01·02와 JSON-04 뒤에 snapshot 고정 retrieval을 준비한 다음 JSON-05를 실행한다.
     public void runCustomizedAnalysis(Long userId, Long analysisCaseId) {
-        // 상태를 ANALYZING으로 바꾸기 전에 잔액부터 확인한다.
-        int ticketCost = ticketService.cost(TicketUsage.COMPANY_FIT);
+        // 상태를 ANALYZING으로 바꾸기 전에 잔액부터 확인한다. v2: 분석은 1장, 자료 기반 질문은 면접 생성 때 따로 차감한다.
+        int ticketCost = ticketService.cost(TicketUsage.ANALYSIS);
         ticketService.requireBalance(userId, ticketCost);
         // 상태 잠금으로 새 실행 소유권을 얻지 못한 동시 요청은 기존 실행을 그대로 둔다(티켓도 차감하지 않음).
         if (!statusTransitionService.startOrRestart(userId, analysisCaseId)) {
@@ -90,7 +90,7 @@ public class AnalysisService {
         }
         Long ticketUseId = null;
         try {
-            ticketUseId = ticketService.use(userId, TicketUsage.COMPANY_FIT, ticketCost);
+            ticketUseId = ticketService.use(userId, TicketUsage.ANALYSIS, ticketCost);
             vectorIndexService.requireReady(userId, analysisCaseId);
             runInitialAnalysis(userId, analysisCaseId);
 

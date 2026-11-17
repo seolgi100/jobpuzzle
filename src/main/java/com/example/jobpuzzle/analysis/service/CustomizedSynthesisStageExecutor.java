@@ -747,15 +747,14 @@ public class CustomizedSynthesisStageExecutor {
         List<MatchAnalysisResult> matches = matchRepository.findBySnapshot_SnapshotIdOrderByMatchIdAsc(id);
         if (!hasExpectedMatches(id, matches)) return false;
         if (matches.stream().anyMatch(value -> !sameLog(resultLog, value.getAiCallLog()))) return false;
-        if (readiness.isCanGenerateQuestions()) {
-            var set = questionSetRepository.findBySnapshot_SnapshotIdAndInterviewMode(id, com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT).orElse(null);
-            var questions = set == null ? List.<com.example.jobpuzzle.interview.entity.InterviewQuestion>of()
-                    : questionRepository.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(set.getQuestionSetId());
-            if (set == null || !sameLog(resultLog, set.getAiCallLog()) || questions.isEmpty() || questions.size() > 10
+        // v2 분석은 질문 세트가 없다. v1 분석에서 함께 만든 질문 세트가 있으면 그것만 예전 규칙으로 검사한다.
+        var set = questionSetRepository.findBySnapshot_SnapshotIdAndInterviewMode(id, com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT).orElse(null);
+        if (set != null) {
+            var questions = questionRepository.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(set.getQuestionSetId());
+            if (!readiness.isCanGenerateQuestions() || !sameLog(resultLog, set.getAiCallLog()) || questions.isEmpty() || questions.size() > 10
                     || questions.stream().anyMatch(question -> question.getReviewStatus() != com.example.jobpuzzle.interview.entity.InterviewQuestionReviewStatus.PASS))
                 return false;
-        } else if (questionSetRepository.existsBySnapshot_SnapshotIdAndInterviewMode(id, com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT))
-            return false;
+        }
         List<ActionPlan> actions = actionPlanRepository.findBySnapshot_SnapshotIdOrderByActionPlanIdAsc(id);
         return actions.stream().allMatch(value -> sameLog(resultLog, value.getAiCallLog()))
                 && matches.stream().filter(value -> value.getMatchLevel() != MatchAnalysisResultMatchLevel.HIGH)
