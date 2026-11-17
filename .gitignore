@@ -10,3 +10,14 @@
 ### 브랜치별 디자인 스킬·로컬 설정 (커밋 제외) ###
 /.claude/
 /skills-lock.json
+
+### 디자인 도구 작업 파일 ###
+/.impeccable/
+
+### IntelliJ 설정, 파이썬 캐시 ###
+/.idea/
+__pycache__/
+
+### 이미지 폴더, md 문서 (커밋하지 않음) ###
+/img/
+*.md
