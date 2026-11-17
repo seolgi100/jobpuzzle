@@ -18,6 +18,11 @@ public class AdminViewController {
         return "admin/job-categories";
     }
 
+    @GetMapping("/admin/competency")
+    public String competency() {
+        return "admin/competency";
+    }
+
     @GetMapping("/admin/guide-usage")
     public String guideUsage() {
         return "admin/guide-usage";
