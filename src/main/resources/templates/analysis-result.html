@@ -1,37 +1,27 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>지원 분석 결과 — JobPuzzle</title>
-  <link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-  <link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-  <link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
-  <link rel="stylesheet" href="/css/analysis-result.css" th:href="@{/css/analysis-result.css}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지원 분석 결과 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="stylesheet" href="/css/ds/report.css" th:href="@{/css/ds/report.css}">
+<link rel="stylesheet" href="/css/ds/analysis.css" th:href="@{/css/ds/analysis.css}">
 </head>
-<body class="jp-app-theme jp-analysis-result-page">
+<body class="app">
+
 <div th:replace="~{fragments/header :: appHeader('interview')}"></div>
-<main class="result-page">
-  <div class="result-orb result-orb--blue" aria-hidden="true"></div>
-  <div class="result-orb result-orb--mint" aria-hidden="true"></div>
-  <div
-    id="analysis-result-root"
-    class="result-shell"
-    th:attr="data-analysis-case-id=${analysisCaseId}"
-    aria-live="polite"
-    aria-busy="true"
-  >
-    <section class="result-loading">
-      <span class="result-loading__mark" aria-hidden="true"></span>
-      <p>분석 결과를 정리하고 있어요.</p>
-    </section>
-  </div>
+
+<main class="dash-wrap" id="analysis-result-root" th:attr="data-analysis-case-id=${analysisCaseId}" aria-live="polite" aria-busy="true">
+  <p class="rs-sub" style="margin-top:40px; text-align:center">분석 결과를 정리하고 있어요.</p>
 </main>
+
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
+
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
 <script src="/js/common.js" th:src="@{/js/common.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-<script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
+<script src="/js/ds-ui.js" th:src="@{/js/ds-ui.js}"></script>
 <script src="/js/analysis-result.js" th:src="@{/js/analysis-result.js}"></script>
 </body>
 </html>

@@ -33,6 +33,17 @@
     var codeStep = document.getElementById('code-step');
     var passwordStep = document.getElementById('password-step');
     var resultBox = document.getElementById('passwd-reset-result');
+    var infoForm = document.getElementById('info-form');
+    var newPasswordCheckInput = document.getElementById('newPasswordCheck');
+
+    // 단계 표시(1 본인 확인 → 2 새 비밀번호)
+    function setStep(step) {
+      document.querySelectorAll('[data-step]').forEach(function (el) {
+        var n = Number(el.dataset.step);
+        el.classList.toggle('is-now', n === step);
+        el.classList.toggle('is-done', n < step);
+      });
+    }
 
     var sendHint = document.getElementById('send-hint');
     var codeHint = document.getElementById('code-hint');
@@ -136,7 +147,9 @@
         })
         .then(function (result) {
           if (result.ok && result.body.success) {
+            infoForm.hidden = true;
             passwordStep.hidden = false;
+            setStep(2);
           } else {
             showError(errorEl, result.body.message || '인증 코드가 올바르지 않습니다.');
           }
@@ -160,6 +173,10 @@
         showError(errorEl, '새 비밀번호를 입력해주세요.');
         return;
       }
+      if (newPassword !== newPasswordCheckInput.value) {
+        showError(errorEl, '비밀번호가 일치하지 않습니다.');
+        return;
+      }
 
       resetBtn.disabled = true;
       fetch(window.JobPuzzleRoutes.path('/user/passwd-reset/reset'), {
@@ -176,6 +193,7 @@
             stopCountdown();
             codeStep.hidden = true;
             passwordStep.hidden = true;
+            document.getElementById('reset-steps').hidden = true;
             resultBox.hidden = false;
           } else {
             showError(errorEl, result.body.message || '비밀번호 변경에 실패했습니다.');

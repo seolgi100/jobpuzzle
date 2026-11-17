@@ -13,7 +13,7 @@ public record TicketBalanceResponse(
         Costs costs,
         List<History> history
 ) {
-    public record Costs(int basic, int weakness, int companyFitMin, int companyFitMax) {
+    public record Costs(int basic, int weakness, int companyFit) {
     }
 
     public record History(String type, String usage, int amount, int balanceAfter, boolean freeUse, LocalDateTime createdAt) {
@@ -24,7 +24,7 @@ public record TicketBalanceResponse(
                 wallet.getBalance(),
                 !wallet.isFreeBasicUsed(),
                 new Costs(properties.getBasicCost(), properties.getWeaknessCost(),
-                        properties.getCompanyFitMinCost(), properties.getCompanyFitMaxCost()),
+                        properties.getCompanyFitCost()),
                 transactions.stream()
                         .map(t -> new History(t.getType().name(), t.getUsage() == null ? null : t.getUsage().name(),
                                 t.getAmount(), t.getBalanceAfter(), t.isFreeUse(), t.getCreatedAt()))

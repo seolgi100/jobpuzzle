@@ -4,58 +4,54 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>티켓 충전 — JobPuzzle</title>
-<link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-<link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-<link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
 <style>
   .ticket-balance { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  .ticket-balance__num { font-size:40px; font-weight:800; color:#1f2d4d; }
-  .ticket-balance__num small { font-size:18px; font-weight:600; margin-left:4px; color:#5b6370; }
+  .ticket-balance__num { font-size:40px; font-weight:800; color:var(--text); }
+  .ticket-balance__num small { font-size:18px; font-weight:600; margin-left:4px; color:var(--text-2); }
   .ticket-costs { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:16px; }
-  .ticket-cost { border:1px solid #e3e8f2; border-radius:12px; padding:14px 16px; background:#f8faff; font-size:14px; }
-  .ticket-cost b { display:block; font-size:16px; margin-bottom:4px; color:#1f2d4d; }
+  .ticket-cost { border:1px solid var(--card-line); border-radius:12px; padding:14px 16px; background:#F7F9FD; font-size:14px; }
+  .ticket-cost b { display:block; font-size:16px; margin-bottom:4px; color:var(--text); }
   .ticket-products { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; }
-  .ticket-product { border:1px solid #dce2ec; border-radius:14px; padding:20px; background:#fff; display:flex; flex-direction:column; gap:6px; }
-  .ticket-product__count { font-size:26px; font-weight:800; color:#4160A1; }
-  .ticket-product__price { font-size:15px; color:#5b6370; margin-bottom:8px; }
-  .ticket-section-title { font-size:17px; font-weight:800; margin:0 0 14px; color:#1f2d4d; }
-  .ticket-notice { margin-top:12px; font-size:13px; color:#6a7388; line-height:1.6; }
+  .ticket-product { border:1px solid var(--card-line); border-radius:14px; padding:20px; background:#fff; display:flex; flex-direction:column; gap:6px; }
+  .ticket-product__count { font-size:26px; font-weight:800; color:var(--sky-strong); }
+  .ticket-product__price { font-size:15px; color:var(--text-2); margin-bottom:8px; }
+  .ticket-section-title { font-size:17px; font-weight:800; margin:0 0 14px; color:var(--text); }
+  .ticket-notice { margin-top:12px; font-size:13px; color:var(--text-3); line-height:1.6; }
   .ticket-result { border-radius:12px; padding:14px 16px; margin-bottom:18px; font-size:14px; }
   .ticket-result--ok { background:#eaf7ef; color:#1e7a4e; }
   .ticket-result--error { background:#fbeeec; color:#b5433d; }
   .ticket-history { width:100%; border-collapse:collapse; font-size:13.5px; }
-  .ticket-history th, .ticket-history td { text-align:left; padding:9px 8px; border-bottom:1px solid #eef1f6; }
+  .ticket-history th, .ticket-history td { text-align:left; padding:9px 8px; border-bottom:1px solid #EEF2F8; }
   .ticket-history td.plus { color:#1e8e5a; font-weight:700; }
   .ticket-history td.minus { color:#b5433d; font-weight:700; }
 </style>
 </head>
-<body class="jp-app-theme">
+<body class="app">
 
 <div th:replace="~{fragments/header :: appHeader('tickets')}"></div>
 
-<div class="app-shell">
-  <div class="app-container app-container--narrow">
-
-    <header style="margin-bottom:20px;">
-      <p class="eyebrow-label">면접 티켓</p>
-      <h1 class="page-title">티켓 충전</h1>
-      <p class="page-subtitle">면접 질문을 만들 때 모드별로 티켓이 차감돼요. AI 오류로 생성에 실패하면 티켓을 돌려드려요.</p>
-    </header>
+<main class="dash-wrap" style="max-width:860px">
+  <div class="phead" style="margin-bottom:20px"><div>
+    <p class="phead__eyebrow">INTERVIEW TICKETS</p>
+    <h1 class="phead__title">티켓 충전</h1>
+    <p class="phead__sub">면접 질문을 만들 때 모드별로 티켓이 차감돼요. AI 오류로 생성에 실패하면 티켓을 돌려드려요.</p>
+  </div></div>
 
     <div id="ticket-result" hidden></div>
 
-    <section class="card card--pad-lg" style="margin-bottom:18px;">
+    <section class="dcard" style="margin-bottom:18px;">
       <div class="ticket-balance">
         <div>
           <p class="ticket-section-title" style="margin-bottom:4px;">보유 티켓</p>
           <div class="ticket-balance__num"><span id="ticket-balance">-</span><small>장</small></div>
         </div>
-        <span class="badge-pill" id="ticket-free-badge" hidden style="background:#eaf7ef;color:#1e8e5a;">기본 면접 첫 1회 무료</span>
+        <span class="pill pill--done" id="ticket-free-badge" hidden>기본 면접 첫 1회 무료</span>
       </div>
       <div class="ticket-costs" id="ticket-costs"></div>
     </section>
 
-    <section class="card card--pad-lg" style="margin-bottom:18px;">
+    <section class="dcard" style="margin-bottom:18px;">
       <p class="ticket-section-title">티켓 묶음 구매</p>
       <div class="ticket-products" id="ticket-products"></div>
       <p class="ticket-notice">
@@ -63,16 +59,16 @@
       </p>
     </section>
 
-    <section class="card card--pad-lg">
+    <section class="dcard">
       <p class="ticket-section-title">최근 이용 내역</p>
       <table class="ticket-history">
         <thead><tr><th>일시</th><th>내용</th><th>변동</th><th>잔액</th></tr></thead>
         <tbody id="ticket-history"></tbody>
       </table>
     </section>
+</main>
 
-  </div>
-</div>
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
 
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>

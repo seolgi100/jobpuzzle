@@ -16,9 +16,7 @@ public class TicketProperties {
 
     private int basicCost = 1;
     private int weaknessCost = 1;
-    // 공고 맞춤: 이력서 1종이면 최소값, 지원자 자료 종류가 늘 때마다 1장씩, 최대값까지
-    private int companyFitMinCost = 3;
-    private int companyFitMaxCost = 5;
+    private int companyFitCost = 3;
     private List<Product> products = new ArrayList<>();
     private Toss toss = new Toss();
 

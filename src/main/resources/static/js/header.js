@@ -146,7 +146,9 @@
         fetch(window.JobPuzzleRoutes.path('/user/me'), { credentials: 'same-origin' })
             .then(function (response) { return response.json().then(function (body) { return { ok: response.ok, body: body }; }); })
             .then(function (result) {
-                applyGuestHeaderState(result.ok && result.body.success ? result.body.data : null);
+                var user = result.ok && result.body.success ? result.body.data : null;
+                applyGuestHeaderState(user);
+                document.dispatchEvent(new CustomEvent('guest-header-auth', { detail: user }));
             })
             .catch(function () { applyGuestHeaderState(null); });
     }

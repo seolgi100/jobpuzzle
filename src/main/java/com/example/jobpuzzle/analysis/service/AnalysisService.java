@@ -4,8 +4,6 @@ import com.example.jobpuzzle.ai.log.AiExecutionStage;
 import com.example.jobpuzzle.analysis.dto.AnalysisInputSnapshotContext;
 import com.example.jobpuzzle.analysis.dto.AnalysisInputSnapshotContextSource;
 import com.example.jobpuzzle.analysis.entity.AnalysisCase;
-import com.example.jobpuzzle.analysis.entity.AnalysisCaseSource;
-import com.example.jobpuzzle.analysis.repository.AnalysisCaseSourceRepository;
 import com.example.jobpuzzle.ticket.entity.TicketUsage;
 import com.example.jobpuzzle.ticket.service.TicketService;
 import com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus;
@@ -47,7 +45,6 @@ public class AnalysisService {
     private final RequirementRetrievalService requirementRetrievalService;
     private final AnalysisVectorIndexService vectorIndexService;
     private final CustomizedSynthesisStageExecutor customizedSynthesisStageExecutor;
-    private final AnalysisCaseSourceRepository analysisCaseSourceRepository;
     private final TicketService ticketService;
 
     // JSON-03을 한 번 조회해 독립적인 JSON-01·02 실행 단계에 전달한다.
@@ -84,11 +81,8 @@ public class AnalysisService {
 
     // JSON-01·02와 JSON-04 뒤에 snapshot 고정 retrieval을 준비한 다음 JSON-05를 실행한다.
     public void runCustomizedAnalysis(Long userId, Long analysisCaseId) {
-        // 공고 맞춤은 지원자 자료 종류 수에 따라 3~5장. 상태를 ANALYZING으로 바꾸기 전에 잔액부터 확인한다.
-        int ticketCost = ticketService.companyFitCost(analysisCaseSourceRepository
-                .findByAnalysisCase_AnalysisCaseIdOrderByAnalysisCaseSourceIdAsc(analysisCaseId).stream()
-                .map(AnalysisCaseSource::getDocumentType)
-                .toList());
+        // 상태를 ANALYZING으로 바꾸기 전에 잔액부터 확인한다.
+        int ticketCost = ticketService.cost(TicketUsage.COMPANY_FIT);
         ticketService.requireBalance(userId, ticketCost);
         // 상태 잠금으로 새 실행 소유권을 얻지 못한 동시 요청은 기존 실행을 그대로 둔다(티켓도 차감하지 않음).
         if (!statusTransitionService.startOrRestart(userId, analysisCaseId)) {

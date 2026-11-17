@@ -106,6 +106,22 @@ public class InterviewSessionService {
     }
 
     @Transactional(readOnly = true)
+    // 해결(RESOLVED)된 약점 태그를 이름만 정리해 돌려준다. 다시 약점으로 잡히면 미해결 목록으로 옮겨 간다.
+    public List<WeaknessTagResponse> getResolvedWeaknessTags(Long userId) {
+        return weaknessTagStatusRepository
+                .findByUser_UserIdAndStatus(userId, WeaknessTagResolveStatus.RESOLVED)
+                .stream()
+                .map(status -> weaknessTagNormalizer.canonicalTag(status.getTag()))
+                .distinct()
+                .map(tag -> WeaknessTagResponse.builder()
+                        .tag(tag)
+                        .displayName(weaknessTagNormalizer.displayName(tag))
+                        .description(weaknessTagNormalizer.displayName(tag) + " 기준을 넘겨 해결했어요.")
+                        .recentOccurrences(List.of())
+                        .build())
+                .toList();
+    }
+
     public List<WeaknessTagResponse> getUnresolvedWeaknessTagDetails(Long userId) {
         var allLogs = weaknessTagLogRepository.findByUser_UserIdOrderByTagLogIdDesc(userId);
         var statuses = weaknessTagStatusRepository
@@ -841,7 +857,8 @@ public class InterviewSessionService {
         return SessionResponse.from(session, questions.size(), hasAnyAnswer(sessionId));
     }
 
-    public SessionQuestionResponse deferCurrentQuestion(
+    // 면접 중 건너뛰기: 첫 답변을 내지 않은 질문만 SKIPPED로 빼고, 평가 비용은 들지 않는다.
+    public SessionQuestionResponse skipQuestion(
             Long userId,
             Long sessionQuestionId
     ) {
@@ -853,7 +870,10 @@ public class InterviewSessionService {
                 || question.getStatus() == InterviewSessionQuestionStatus.SKIPPED) {
             throw new CustomException(ErrorCode.SESSION_QUESTION_NOT_FOUND);
         }
-        question.defer();
+        if (hasOriginalAnswer(sessionQuestionId)) {
+            throw new CustomException(ErrorCode.ANSWER_ALREADY_CONFIRMED);
+        }
+        question.skip();
         question.getSession().touch();
         return toSessionQuestionResponse(question);
     }

@@ -17,6 +17,7 @@ import com.example.jobpuzzle.interview.entity.InterviewMessage;
 import com.example.jobpuzzle.interview.entity.InterviewMessageType;
 import com.example.jobpuzzle.interview.entity.InterviewQuestion;
 import com.example.jobpuzzle.interview.entity.InterviewSessionQuestion;
+import com.example.jobpuzzle.interview.entity.InterviewSessionQuestionStatus;
 import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
 import com.example.jobpuzzle.interview.entity.InterviewSession;
 import com.example.jobpuzzle.interview.entity.QuestionSet;
@@ -207,5 +208,42 @@ class InterviewSessionLifecycleServiceTest {
 
         assertThat(response.isEvaluationRetryRequired()).isTrue();
         assertThat(response.isAnswerAttemptsExhausted()).isFalse();
+    }
+
+    @Test
+    void unansweredQuestionCanBeSkippedDuringInterview() {
+        InterviewSession session = mock(InterviewSession.class);
+        when(session.isEditable()).thenReturn(true);
+        InterviewSessionQuestion sessionQuestion =
+                InterviewSessionQuestion.snapshot(session, mock(InterviewQuestion.class), 1);
+        when(sessionQuestionRepository.findBySessionQuestionIdAndSession_User_UserId(21L, 7L))
+                .thenReturn(Optional.of(sessionQuestion));
+        when(interviewMessageRepository.findBySessionQuestion_SessionQuestionIdAndMessageType(
+                21L, InterviewMessageType.ORIGINAL_ANSWER)).thenReturn(Optional.empty());
+
+        service.skipQuestion(7L, 21L);
+
+        assertThat(sessionQuestion.getStatus()).isEqualTo(InterviewSessionQuestionStatus.SKIPPED);
+        verify(session).touch();
+    }
+
+    @Test
+    void answeredQuestionCannotBeSkipped() {
+        InterviewSessionQuestion sessionQuestion = mock(InterviewSessionQuestion.class);
+        InterviewSession session = mock(InterviewSession.class);
+        when(sessionQuestion.getSession()).thenReturn(session);
+        when(sessionQuestion.getStatus()).thenReturn(InterviewSessionQuestionStatus.IN_PROGRESS);
+        when(session.isEditable()).thenReturn(true);
+        when(sessionQuestionRepository.findBySessionQuestionIdAndSession_User_UserId(22L, 7L))
+                .thenReturn(Optional.of(sessionQuestion));
+        when(interviewMessageRepository.findBySessionQuestion_SessionQuestionIdAndMessageType(
+                22L, InterviewMessageType.ORIGINAL_ANSWER))
+                .thenReturn(Optional.of(mock(InterviewMessage.class)));
+
+        assertThatThrownBy(() -> service.skipQuestion(7L, 22L))
+                .isInstanceOf(CustomException.class)
+                .extracting(error -> ((CustomException) error).getErrorCode())
+                .isEqualTo(ErrorCode.ANSWER_ALREADY_CONFIRMED);
+        verify(sessionQuestion, never()).skip();
     }
 }

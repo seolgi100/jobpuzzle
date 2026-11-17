@@ -39,12 +39,10 @@
     document.getElementById('ticket-balance').textContent = data.balance;
     document.getElementById('ticket-free-badge').hidden = !data.freeBasicAvailable;
     var c = data.costs;
-    var fitCost = c.companyFitMin === c.companyFitMax ? c.companyFitMin + '장' : c.companyFitMin + '~' + c.companyFitMax + '장';
     document.getElementById('ticket-costs').innerHTML =
       '<div class="ticket-cost"><b>기본 면접 ' + c.basic + '장</b>첫 1회는 무료</div>' +
       '<div class="ticket-cost"><b>약점 보완 ' + c.weakness + '장</b>쌓인 약점으로 질문 생성</div>' +
-      '<div class="ticket-cost"><b>공고 맞춤 ' + fitCost + '</b>이력서만이면 ' + c.companyFitMin +
-      '장, 자기소개서·포트폴리오·경험정리를 더할수록 1장씩</div>';
+      '<div class="ticket-cost"><b>공고 맞춤 ' + c.companyFit + '장</b>공고와 내 자료로 맞춤 질문 생성</div>';
     var rows = (data.history || []).map(function (h) {
       var label = (TYPE_LABEL[h.type] || h.type) + (h.usage ? ' · ' + (USAGE_LABEL[h.usage] || h.usage) : '') +
         (h.freeUse ? ' (무료)' : '');
@@ -64,7 +62,7 @@
     document.getElementById('ticket-products').innerHTML = data.products.map(function (p) {
       return '<div class="ticket-product"><span class="ticket-product__count">' + esc(p.tickets) + '장</span>' +
         '<span class="ticket-product__price">' + Number(p.price).toLocaleString('ko-KR') + '원</span>' +
-        '<button type="button" class="btn btn--primary" data-product="' + esc(p.code) + '">구매하기</button></div>';
+        '<button type="button" class="dbtn dbtn--navy" data-product="' + esc(p.code) + '">구매하기</button></div>';
     }).join('');
     document.querySelectorAll('[data-product]').forEach(function (button) {
       button.addEventListener('click', function () { buy(button.dataset.product, button); });

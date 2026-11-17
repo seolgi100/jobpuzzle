@@ -141,13 +141,13 @@ public class InterviewSessionController {
         ));
     }
 
-    @PostMapping("/interview-session-questions/{sessionQuestionId}/defer")
-    public ResponseEntity<ApiResponse<SessionQuestionResponse>> deferCurrentQuestion(
+    @PostMapping("/interview-session-questions/{sessionQuestionId}/skip")
+    public ResponseEntity<ApiResponse<SessionQuestionResponse>> skipQuestion(
             @AuthenticationPrincipal(expression = "user") User user,
             @PathVariable Long sessionQuestionId
     ) {
         return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.deferCurrentQuestion(user.getUserId(), sessionQuestionId)
+                interviewSessionService.skipQuestion(user.getUserId(), sessionQuestionId)
         ));
     }
 
@@ -200,6 +200,16 @@ public class InterviewSessionController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 interviewSessionService.getActiveSession(user.getUserId())
+        ));
+    }
+
+    // 대시보드 '해결된 약점 태그' 목록
+    @GetMapping("/interview-weakness-tags/resolved")
+    public ResponseEntity<ApiResponse<List<WeaknessTagResponse>>> getResolvedWeaknessTags(
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                interviewSessionService.getResolvedWeaknessTags(user.getUserId())
         ));
     }
 

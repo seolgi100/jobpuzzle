@@ -1,60 +1,50 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>면접 결과 | JobPuzzle</title>
-  <link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-  <link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-  <link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
-  <link rel="stylesheet" href="/css/interview-result.css" th:href="@{/css/interview-result.css}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>면접 결과 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="stylesheet" href="/css/ds/report.css" th:href="@{/css/ds/report.css}">
 </head>
-<body class="jp-app-theme jp-interview-result-page">
+<body class="app">
 
 <div th:replace="~{fragments/header :: appHeader('interview')}"></div>
 
-<div class="app-shell">
-  <main class="app-container">
-    <div class="result-top-actions">
-      <a href="/jobpuzzle/interview" th:href="@{/interview}" class="result-nav-link">
-        <span aria-hidden="true">←</span> 새 면접 시작
-      </a>
-      <a href="/jobpuzzle/reports" th:href="@{/reports}" class="result-nav-link result-nav-link--report">
-        리포트 목록 <span aria-hidden="true">→</span>
-      </a>
+<main class="dash-wrap">
+  <div class="rs-links"><a href="/jobpuzzle/interview" th:href="@{/interview}">← 새 면접 시작</a><a href="/jobpuzzle/reports" th:href="@{/reports}">리포트 목록 →</a></div>
+  <section class="rs-banner">
+    <div>
+      <p class="rs-banner__label">INTERVIEW RESULT</p>
+      <p class="rs-banner__title" id="result-title">면접 결과</p>
+      <p class="rs-banner__meta" id="result-meta">결과를 불러오고 있어요.</p>
     </div>
+    <div class="rs-banner__score" data-final><b>-</b><small>종합 점수 / 100</small></div>
+  </section>
 
-    <div class="result-layout">
-      <header class="result-banner">
-        <div class="result-heading">
-          <p class="eyebrow-label">면접 결과</p>
-          <h1 id="result-title">면접 결과</h1>
-          <p id="result-meta">결과를 불러오는 중입니다.</p>
-        </div>
-        <canvas class="result-banner__puzzle" data-job-puzzle-scene data-result-puzzle aria-hidden="true"></canvas>
-      </header>
+  <section class="interim" id="interim" hidden></section>
 
-      <nav class="tabbar result-tabs" aria-label="면접 결과 보기">
-        <button class="tabbar__btn is-active" data-tab="final">최종 리포트</button>
-        <button class="tabbar__btn" data-tab="list">질문별 결과</button>
-      </nav>
-
-      <section id="interim-actions" class="interim-actions" hidden></section>
-
-      <div class="tab-panel" data-panel="final">
-        <section class="card final-report-panel" id="final-report-panel">
-          <p class="result-empty-copy">최종 리포트를 불러오는 중입니다.</p>
-        </section>
-      </div>
-
-      <div class="tab-panel" data-panel="list" hidden>
-        <div class="q-layout">
-          <div class="q-list" id="q-list"></div>
-          <article class="card q-detail" id="q-detail"></article>
-        </div>
-      </div>
+  <div class="dtabs" role="tablist" aria-label="결과 보기">
+    <button class="dtab" role="tab" aria-selected="true" data-tab="final" data-final>최종 리포트</button>
+    <button class="dtab" role="tab" aria-selected="false" data-tab="questions">질문별 결과</button>
+  </div>
+  <div class="dpanel" id="p-final" aria-live="polite"></div>
+  <div class="dpanel" id="p-questions" hidden>
+    <div class="qr">
+      <div class="dcard qr-list" id="qlist"></div>
+      <section class="dcard" id="qdetail"></section>
     </div>
-  </main>
+  </div>
+</main>
+
+<!-- 남은 질문 추가 -->
+<div class="modal" id="remaining" hidden role="dialog" aria-modal="true" aria-labelledby="remaining-title">
+  <div class="modal__box">
+    <div class="modal__head"><h2 class="modal__title" id="remaining-title">연습할 질문을 골라주세요</h2><button type="button" class="modal__x" data-close aria-label="닫기">×</button></div>
+    <p class="rs-sub" style="margin-top:-8px">고른 순서가 아니라 아래 순서대로 면접이 진행돼요.</p>
+    <div id="remaining-list"></div>
+    <div class="modal__foot"><button type="button" class="dbtn dbtn--ghost" data-close>취소</button><button type="button" class="dbtn dbtn--navy" data-add-remaining>고른 질문으로 시작</button></div>
+  </div>
 </div>
 
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
@@ -62,8 +52,7 @@
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
 <script src="/js/common.js" th:src="@{/js/common.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-<script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
-<script src="/js/interview-result.js" th:src="@{/js/interview-result.js}"></script>
+<script src="/js/ds-ui.js" th:src="@{/js/ds-ui.js}"></script>
 <script src="/js/interview-result-live.js" th:src="@{/js/interview-result-live.js}"></script>
 </body>
 </html>

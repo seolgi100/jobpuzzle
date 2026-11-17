@@ -1,6 +1,5 @@
 package com.example.jobpuzzle.ticket.service;
 
-import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.ticket.config.TicketProperties;
@@ -17,9 +16,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -28,10 +24,6 @@ import java.util.function.Supplier;
  */
 @Service
 public class TicketService {
-
-    private static final Set<UserDocumentType> CANDIDATE_TYPES = EnumSet.of(
-            UserDocumentType.RESUME, UserDocumentType.COVER_LETTER,
-            UserDocumentType.PORTFOLIO, UserDocumentType.EXPERIENCE_NOTE);
 
     private final TicketWalletRepository walletRepository;
     private final TicketTransactionRepository transactionRepository;
@@ -51,16 +43,10 @@ public class TicketService {
         return switch (usage) {
             case BASIC -> properties.getBasicCost();
             case WEAKNESS_REVIEW -> properties.getWeaknessCost();
-            case COMPANY_FIT -> properties.getCompanyFitMinCost();
+            case COMPANY_FIT -> properties.getCompanyFitCost();
         };
     }
 
-    // 공고 맞춤 분석: 지원자 자료 종류 수만큼 AI 분석이 늘어나므로 1종이면 최소값, 1종 늘 때마다 +1, 최대값까지.
-    public int companyFitCost(Collection<UserDocumentType> sourceTypes) {
-        long candidateKinds = sourceTypes.stream().filter(CANDIDATE_TYPES::contains).distinct().count();
-        int cost = properties.getCompanyFitMinCost() + (int) Math.max(0, candidateKinds - 1);
-        return Math.min(cost, properties.getCompanyFitMaxCost());
-    }
 
     /** 티켓을 먼저 차감하고 작업을 실행한다. 작업이 실패하면(AI 오류 등) 차감한 티켓을 돌려주고 예외를 그대로 던진다. */
     public <T> T spend(Long userId, TicketUsage usage, int cost, Supplier<T> work) {

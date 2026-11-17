@@ -52,7 +52,6 @@
     var editProfileBtn = document.getElementById('edit-profile-btn');
     var saveProfileBtn = document.getElementById('save-profile-btn');
     var saveSuccessModal = document.getElementById('save-success-modal');
-    var saveSuccessConfirm = document.getElementById('save-success-confirm');
 
     // 아이디/이메일은 수정 대상이 아니라 항상 읽기 전용 - 이름만 편집 가능
     function setProfileEditMode(editing) {
@@ -121,6 +120,9 @@
       // 소셜 로그인 계정은 아이디를 직접 로그인에 쓰지 않으므로 아이디 항목을 숨김
       var idRow = document.getElementById('settings-id-row');
       idRow.style.display = user.socialProvider ? 'none' : '';
+      var provider = { KAKAO: '카카오', GOOGLE: '구글' }[String(user.socialProvider || '').toUpperCase()];
+      document.getElementById('settings-login-method').textContent = user.socialProvider ? (provider || user.socialProvider) + ' 계정' : '아이디·비밀번호';
+      document.getElementById('settings-passwd-link').hidden = !!user.socialProvider;
     }
 
     // header.js가 헤더 표시를 위해 이미 /jobpuzzle/user/me를 불러오므로, 중복 호출 없이 그 결과를 그대로 재사용함
@@ -214,14 +216,17 @@
       }, profileError, function () {
         currentUser.name = name;
         setProfileEditMode(false);
-        saveSuccessModal.hidden = false;
+        showSavedToast();
         document.dispatchEvent(new CustomEvent('app-user-updated', { detail: currentUser }));
       });
     });
 
-    saveSuccessConfirm.addEventListener('click', function () {
-      saveSuccessModal.hidden = true;
-    });
+    var saveToastTimer = 0;
+    function showSavedToast() {
+      saveSuccessModal.hidden = false;
+      clearTimeout(saveToastTimer);
+      saveToastTimer = setTimeout(function () { saveSuccessModal.hidden = true; }, 2000);
+    }
 
     saveJobCategoryBtn.addEventListener('click', function () {
       hideError(jobCategoryError);
@@ -238,7 +243,7 @@
         defaultJobCategoryId: Number(selectedJobCategoryId)
       }, jobCategoryError, function () {
         currentUser.defaultJobCategoryId = Number(selectedJobCategoryId);
-        saveSuccessModal.hidden = false;
+        showSavedToast();
       });
     });
 
@@ -250,8 +255,13 @@
     var withdrawConfirmBtn = document.getElementById('withdraw-confirm-btn');
     var withdrawDoneConfirm = document.getElementById('withdraw-done-confirm');
 
+    var withdrawAgree = document.getElementById('withdraw-agree');
+    withdrawAgree.addEventListener('change', function () { withdrawConfirmBtn.disabled = !withdrawAgree.checked; });
+
     withdrawBtn.addEventListener('click', function () {
       hideError(withdrawError);
+      withdrawAgree.checked = false;
+      withdrawConfirmBtn.disabled = true;
       withdrawConfirmModal.hidden = false;
     });
 

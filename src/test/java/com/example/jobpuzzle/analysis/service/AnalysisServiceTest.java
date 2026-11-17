@@ -71,9 +71,6 @@ class AnalysisServiceTest {
     private AnalysisInputSnapshotContext context;
 
     @Mock
-    private com.example.jobpuzzle.analysis.repository.AnalysisCaseSourceRepository analysisCaseSourceRepository;
-
-    @Mock
     private com.example.jobpuzzle.ticket.service.TicketService ticketService;
 
     @InjectMocks

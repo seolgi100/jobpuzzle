@@ -1,0 +1,80 @@
+/* 액션플랜 — app.css 위에 얹음 */
+.ap-stats { margin-top: 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ap-stat { padding: 20px; }
+.ap-stat__label { margin: 0; font-size: 13px; color: var(--text-2); }
+.ap-stat__value { margin: 4px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.ap-stat__value small { margin-left: 3px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.ap-stat__value--danger { color: var(--danger); }
+.ap-bar { height: 8px; margin-top: 10px; border-radius: 99px; background: #EEF2F8; overflow: hidden; }
+.ap-bar i { display: block; height: 100%; border-radius: inherit; background: var(--sky); }
+
+/* 분석별 묶음 */
+.ap-group { margin-top: 16px; padding: 0; overflow: hidden; }
+.ap-group__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px 24px; border-bottom: 1px solid #EEF2F8; background: #FBFCFE; }
+.ap-group__title { margin: 0; font-size: 16px; font-weight: 700; }
+.ap-group__meta { margin: 4px 0 0; font-size: 13px; color: var(--text-3); }
+.ap-group__right { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-2); }
+.ap-mini { width: 90px; height: 6px; border-radius: 99px; background: #EEF2F8; overflow: hidden; }
+.ap-mini i { display: block; height: 100%; background: var(--sky); }
+.ap-group__link { color: var(--sky-strong); font-weight: 600; text-decoration: none; }
+.ap-group__link:hover { text-decoration: underline; }
+
+.ap-item { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 18px 24px; border-top: 1px solid #EEF2F8; }
+.ap-item:first-of-type { border-top: 0; }
+.ap-item.is-hl { background: var(--sky-tint); }
+.ap-check { width: 24px; height: 24px; margin-top: 1px; border: 2px solid #C9D7EE; border-radius: 7px; background: #fff; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ap-check svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 3; opacity: 0; }
+.ap-item.is-done .ap-check { border-color: var(--ok); background: var(--ok); }
+.ap-item.is-done .ap-check svg { opacity: 1; }
+.ap-item__title { margin: 0; font-size: 15px; font-weight: 700; }
+.ap-item.is-done .ap-item__title { color: var(--text-3); text-decoration: line-through; }
+.ap-item__desc { margin: 6px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+.ap-item__tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.ap-item__side { display: grid; justify-items: end; gap: 8px; }
+.ap-due { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--card-line); border-radius: 9px; background: #fff; font: inherit; font-size: 13px; color: var(--text-2); cursor: pointer; }
+.ap-due svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.ap-due--over { border-color: #F5B5B5; color: var(--danger); }
+.ap-due--empty { border-style: dashed; color: var(--text-3); }
+.ap-empty { padding: 56px 24px; text-align: center; }
+.ap-empty b { display: block; font-size: 16px; }
+.ap-empty p { margin: 8px 0 18px; font-size: 14px; color: var(--text-2); }
+
+/* 달력 */
+.ap-cal[hidden] { display: none; }
+.ap-cal { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.cal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal__head b { font-size: 17px; }
+.cal__nav { display: flex; gap: 6px; }
+.cal__nav button { width: 32px; height: 32px; border: 1px solid var(--card-line); border-radius: 8px; background: #fff; font: inherit; color: var(--text-2); cursor: pointer; }
+.cal__nav button.cal__today { width: auto; padding: 0 10px; font-size: 13px; font-weight: 600; }
+.cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal__dow { padding: 6px 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-3); }
+.cal__day { min-height: 76px; padding: 6px 8px; border: 1px solid transparent; border-radius: 10px; background: #FBFCFE; font: inherit; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.cal__day:hover { border-color: #C9D7EE; }
+.cal__day.is-out { opacity: .35; }
+.cal__day.is-today .cal__n { background: #0F1E33; color: #fff; }
+.cal__day[aria-pressed="true"] { border-color: var(--sky); background: var(--sky-tint); }
+.cal__n { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; font-size: 13px; font-weight: 600; }
+.cal__ev { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 2px 6px; border-radius: 5px; font-size: 11.5px; font-weight: 600; background: var(--sky-tint); color: var(--sky-strong); }
+.cal__ev--over { background: var(--danger-tint); color: var(--danger); }
+.cal__ev--done { background: var(--ok-tint); color: var(--ok); text-decoration: line-through; }
+.cal-side__date { margin: 0 0 12px; font-size: 15px; font-weight: 700; }
+.cal-side__item { padding: 12px 0; border-top: 1px solid #EEF2F8; }
+.cal-side__item p { margin: 0; font-size: 14px; font-weight: 600; }
+.cal-side__item small { display: block; margin-top: 4px; font-size: 12.5px; color: var(--text-3); }
+.cal-side__nodue { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--card-line); font-size: 13px; color: var(--text-2); }
+
+@media (max-width: 960px) {
+  .ap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ap-cal { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .ap-item { grid-template-columns: 28px minmax(0, 1fr); }
+  .ap-item__side { grid-column: 2; justify-items: start; grid-auto-flow: column; }
+  .cal__day { min-height: 52px; padding: 4px; }
+  .cal__ev { font-size: 0; height: 6px; padding: 0; }
+}
+/* 마감일 고르기: 버튼이 숨긴 날짜 입력의 달력을 연다 */
+.ap-item__side { position: relative; }
+.ap-due__input { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.ap-check:disabled { opacity: .5; cursor: progress; }

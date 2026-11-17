@@ -1,57 +1,46 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>희망 직무 설정 — JobPuzzle</title>
-  <link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
-  <link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
-  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>희망 직무 설정 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="stylesheet" href="/css/ds/auth.css" th:href="@{/css/ds/auth.css}">
 </head>
+<body>
 
-<body class="jp-auth-theme">
+<div th:replace="~{fragments/header :: landingHeader}"></div>
 
-  <div th:replace="~{fragments/header :: landingHeader}"></div>
-
-  <main class="auth-shell">
+<main class="auth-main">
+  <section class="auth-panel">
     <div class="auth-card">
-      <h1 class="auth-card__title">희망 직무를 설정해주세요</h1>
-      <p class="auth-card__subtitle">메인 화면과 리포트 기본값으로 활용돼요. 설정은 나중에 언제든 바꿀 수 있어요</p>
-
-      <div class="auth-error" id="job-category-error"></div>
+      <div class="auth-card__logo"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt=""></div>
+      <h1 class="auth-card__title">희망 직무를 알려주세요</h1>
+      <p class="auth-card__subtitle">대시보드·면접 질문·리포트의 기준이 돼요. 설정에서 언제든 바꿀 수 있어요</p>
 
       <form class="auth-form" id="job-category-form" novalidate>
+        <div class="auth-error" id="job-category-error" role="alert"></div>
         <div class="auth-field">
-          <label class="field-label" for="mainCategory">관심 직무 - 대분류</label>
-          <select class="select-input" id="mainCategory" name="mainCategory" required>
-            <option value="">선택해주세요</option>
-          </select>
+          <label for="mainCategory">대분류</label>
+          <select class="auth-input" id="mainCategory" name="mainCategory" required><option value="">선택해주세요</option></select>
         </div>
-
         <div class="auth-field">
-          <label class="field-label" for="subCategory">관심 직무 - 중분류</label>
-          <select class="select-input" id="subCategory" name="subCategory" required disabled>
-            <option value="">대분류를 먼저 선택해주세요</option>
-          </select>
+          <label for="subCategory">중분류</label>
+          <select class="auth-input" id="subCategory" name="subCategory" required disabled><option value="">대분류를 먼저 골라주세요</option></select>
         </div>
-
         <div class="auth-field">
-          <label class="field-label" for="careerLevel">경력</label>
-          <select class="select-input" id="careerLevel" name="careerLevel" required disabled>
-            <option value="">중분류를 먼저 선택해주세요</option>
-          </select>
-          <span class="field-hint" id="jobCategory-hint"></span>
+          <label for="careerLevel">경력</label>
+          <select class="auth-input" id="careerLevel" name="careerLevel" required disabled><option value="">중분류를 먼저 골라주세요</option></select>
+          <span class="auth-hint field-hint" id="jobCategory-hint"></span>
         </div>
-
-        <button class="btn btn--primary auth-submit" type="submit">저장하고 시작하기</button>
+        <button class="auth-submit" type="submit">저장하고 시작하기</button>
       </form>
     </div>
-  </main>
+  </section>
+</main>
 
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-  <script src="/js/job-category-setup.js" th:src="@{/js/job-category-setup.js}"></script>
+<script src="/js/job-category-setup.js" th:src="@{/js/job-category-setup.js}"></script>
 </body>
-
 </html>

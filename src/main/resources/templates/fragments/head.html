@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <!-- 새 디자인 공통 스타일: 글꼴 · 토큰(preview) · 헤더 · 서비스 공통(app). 페이지 전용 CSS는 각 템플릿에서 뒤에 붙인다. -->
+    <th:block th:fragment="dsCss">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+      <link rel="stylesheet" href="/css/ds/preview.css" th:href="@{/css/ds/preview.css}">
+      <link rel="stylesheet" href="/css/ds/header.css" th:href="@{/css/ds/header.css}">
+      <link rel="stylesheet" href="/css/ds/app.css" th:href="@{/css/ds/app.css}">
+    </th:block>
+  </head>
+</html>
