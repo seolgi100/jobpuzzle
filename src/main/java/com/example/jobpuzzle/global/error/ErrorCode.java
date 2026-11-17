@@ -109,6 +109,9 @@ public enum ErrorCode {
     WEAKNESS_NOT_AVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_011", "약점 보완에 사용할 미해결 약점이 없습니다."),
     ANSWER_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "INTERVIEW_012", "답변 기준 메시지를 찾을 수 없습니다."),
     ANSWER_SUBMISSION_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "INTERVIEW_013", "이 질문의 답변 제출 기회를 모두 사용했습니다."),
+    MATERIAL_INTERVIEW_UNAVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_014", "이 분석 결과로는 자료 기반 면접을 만들 수 없습니다. 자료를 보완한 뒤 다시 분석해 주세요."),
+    PERSONALITY_JOB_REQUIRED(HttpStatus.CONFLICT, "INTERVIEW_015", "인성 면접은 회원 정보에서 직무를 먼저 설정해야 합니다."),
+    PERSONALITY_QUESTION_EMPTY(HttpStatus.CONFLICT, "INTERVIEW_016", "이 직무에 등록된 인성 질문이 없습니다."),
 
     // interview / report
     INTERVIEW_SESSION_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "REPORT_002", "완료되지 않은 세션은 최종 리포트를 생성할 수 없습니다."),

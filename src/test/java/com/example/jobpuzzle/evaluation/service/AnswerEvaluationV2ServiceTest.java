@@ -59,6 +59,9 @@ class AnswerEvaluationV2ServiceTest {
         when(question.getSessionQuestionId()).thenReturn(10L);
         when(question.getQuestionTextSnapshot()).thenReturn("성능을 개선한 경험을 말해 주십시오.");
         when(question.getIntentSnapshot()).thenReturn("본인 기여와 결과 확인");
+        com.example.jobpuzzle.interview.entity.InterviewQuestion source = mock(com.example.jobpuzzle.interview.entity.InterviewQuestion.class);
+        when(source.getCompetencyTags()).thenReturn(java.util.List.of("PROBLEM_SOLVING"));
+        when(question.getQuestion()).thenReturn(source);
         when(answer.getSessionQuestion()).thenReturn(question);
         when(answer.getMessageId()).thenReturn(1L);
         when(answer.getMessageText()).thenReturn("API 응답 속도를 개선했습니다.");

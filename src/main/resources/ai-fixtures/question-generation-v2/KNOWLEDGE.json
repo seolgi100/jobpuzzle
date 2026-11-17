@@ -1,0 +1,34 @@
+{
+  "questions": [
+    {
+      "question": "공고에서 요구하는 핵심 기술 하나를 골라 그 기술이 동작하는 원리를 설명해 주시겠습니까?",
+      "intent": "핵심 기술의 정의를 넘어 동작 원리와 이유까지 설명하는지 확인합니다.",
+      "competencyTags": ["REASONING"],
+      "relatedRequirementId": null
+    },
+    {
+      "question": "같은 문제를 해결하는 두 가지 기술 방식을 비교하고, 어떤 상황에서 각각을 선택하는지 말씀해 주시겠습니까?",
+      "intent": "기술 간 차이를 이해하고 상황에 맞게 선택하는 기준을 갖고 있는지 확인합니다.",
+      "competencyTags": ["REASONING", "PROBLEM_SOLVING"],
+      "relatedRequirementId": null
+    },
+    {
+      "question": "서비스에서 성능 문제가 생겼을 때 원인을 좁혀 가는 순서를 설명해 주시겠습니까?",
+      "intent": "문제를 단계적으로 분석하는 방법과 근거를 알고 있는지 확인합니다.",
+      "competencyTags": ["PROBLEM_SOLVING"],
+      "relatedRequirementId": null
+    },
+    {
+      "question": "요구사항이 모호한 기능을 맡았을 때 구현 전에 무엇을 확인해야 하는지 설명해 주시겠습니까?",
+      "intent": "요구사항을 구체화하기 위해 확인해야 할 항목을 알고 있는지 확인합니다.",
+      "competencyTags": ["REQUIREMENT_ANALYSIS"],
+      "relatedRequirementId": null
+    },
+    {
+      "question": "최근에 새로 익힌 기술 개념 하나를 실무에서 어떻게 활용할 수 있는지 설명해 주시겠습니까?",
+      "intent": "새 개념을 이해하고 실제 쓰임과 연결하는지 확인합니다.",
+      "competencyTags": ["LEARNING_ADAPTABILITY"],
+      "relatedRequirementId": null
+    }
+  ]
+}

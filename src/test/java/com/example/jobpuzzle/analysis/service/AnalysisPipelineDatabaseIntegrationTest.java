@@ -36,7 +36,16 @@ import com.example.jobpuzzle.guide.repository.JobGuideChunkRepository;
 import com.example.jobpuzzle.guide.repository.JobGuideDocumentRepository;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
+import com.example.jobpuzzle.competency.repository.PersonalityQuestionRepository;
+import com.example.jobpuzzle.interview.dto.SessionCreateRequest;
+import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
+import com.example.jobpuzzle.interview.repository.InterviewSessionRepository;
 import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
+import com.example.jobpuzzle.interview.service.InterviewSessionService;
+import com.example.jobpuzzle.interview.service.QuestionGenerationV2Service;
+import com.example.jobpuzzle.ticket.entity.TicketUsage;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionTemplate;
 import com.example.jobpuzzle.jobcategory.entity.JobCategory;
 import com.example.jobpuzzle.jobcategory.entity.JobCategoryCareerLevel;
 import com.example.jobpuzzle.jobcategory.repository.JobCategoryRepository;
@@ -108,6 +117,11 @@ class AnalysisPipelineDatabaseIntegrationTest {
     @Autowired private QuestionSetRepository questionSetRepository;
     @Autowired private AiCallLogRepository aiCallLogRepository;
     @Autowired private TicketService ticketService;
+    @Autowired private QuestionGenerationV2Service questionGenerationV2Service;
+    @Autowired private InterviewSessionService interviewSessionService;
+    @Autowired private InterviewSessionRepository interviewSessionRepository;
+    @Autowired private PersonalityQuestionRepository personalityQuestionRepository;
+    @Autowired private TransactionTemplate transactionTemplate;
     @SpyBean private InMemoryVectorSearchAdapter vectorSearchAdapter;
     @SpyBean private MockAiClient mockAiClient;
 
@@ -257,6 +271,91 @@ class AnalysisPipelineDatabaseIntegrationTest {
                 .extracting(log -> log.getCallRole())
                 .containsExactlyInAnyOrder(AiCallLogRole.PROVIDER_CALL, AiCallLogRole.AGGREGATE_RESULT);
         verify(vectorSearchAdapter, never()).search(any());
+    }
+
+    @Test
+    void generatesKnowledgeAndMaterialQuestionsFromTheChosenAnalysis() throws IOException {
+        Fixture fixture = fixture();
+        Long userId = fixture.user().getUserId();
+        Long caseId = fixture.analysisCase().getAnalysisCaseId();
+        analysisCaseService.confirmInput(userId, caseId);
+        analysisService.runCustomizedAnalysis(userId, caseId);
+
+        var knowledge = questionGenerationV2Service.generate(userId, InterviewSessionMode.KNOWLEDGE, caseId);
+        var material = questionGenerationV2Service.generate(userId, InterviewSessionMode.MATERIAL, caseId);
+        // 같은 분석 결과·같은 모드로 다시 만들 수 있다 (예전 (snapshot, mode) 유일 조건 제거)
+        var knowledgeAgain = questionGenerationV2Service.generate(userId, InterviewSessionMode.KNOWLEDGE, caseId);
+
+        assertThat(knowledge.getMode()).isEqualTo("KNOWLEDGE");
+        assertThat(material.getMode()).isEqualTo("MATERIAL");
+        assertThat(knowledgeAgain.getQuestionSetId()).isNotEqualTo(knowledge.getQuestionSetId());
+        assertThat(List.of(knowledge, material)).allSatisfy(set -> assertThat(set.getQuestions()).hasSize(5)
+                .allSatisfy(q -> {
+                    assertThat(q.getIntent()).isNotBlank();
+                    assertThat(q.getCompetencyTags()).hasSizeBetween(1, 2);
+                }));
+
+        // 그 묶음으로 면접을 만들면 고른 분석 결과가 세션에 고정되고, 평가 입력에 쓸 태그도 질문에 남는다.
+        SessionCreateRequest request = new SessionCreateRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", material.getQuestionSetId());
+        ReflectionTestUtils.setField(request, "selectedQuestionIds",
+                material.getQuestions().stream().map(q -> q.getQuestionId()).toList());
+        Long sessionId = interviewSessionService.createSession(userId, request).getSessionId();
+        transactionTemplate.executeWithoutResult(status -> {
+            var session = interviewSessionRepository.findById(sessionId).orElseThrow();
+            assertThat(session.getMode()).isEqualTo(InterviewSessionMode.MATERIAL);
+            assertThat(session.getJobPostingAnalysis()).isNotNull();
+            assertThat(session.getCandidateAnalysis()).isNotNull();
+        });
+    }
+
+    @Test
+    void refundsTicketsAndKeepsTheFailedLogWhenQuestionGenerationKeepsFailing() throws IOException {
+        Fixture fixture = fixture();
+        Long userId = fixture.user().getUserId();
+        Long caseId = fixture.analysisCase().getAnalysisCaseId();
+        analysisCaseService.confirmInput(userId, caseId);
+        analysisService.runCustomizedAnalysis(userId, caseId);
+        long setsBefore = questionSetRepository.count();
+        // 목록에 없는 역량 태그 → 검증 실패 → 첫 호출 + 재호출 2번 모두 실패
+        doReturn("{\"questions\":[{\"question\":\"q\",\"intent\":\"i\",\"competencyTags\":[\"NOT_A_TAG\"],\"relatedRequirementId\":null}]}")
+                .when(mockAiClient).generateQuestionsV2(any());
+
+        // 컨트롤러와 같은 방식으로 티켓을 쓴다 (분석 1장 뒤 잔액 9장, 자료 기반 3장)
+        assertThatThrownBy(() -> ticketService.spend(userId, TicketUsage.MATERIAL, ticketService.cost(TicketUsage.MATERIAL),
+                () -> questionGenerationV2Service.generate(userId, InterviewSessionMode.MATERIAL, caseId)))
+                .isInstanceOf(CustomException.class)
+                .extracting(error -> ((CustomException) error).getErrorCode()).isEqualTo(ErrorCode.AI_RESPONSE_INVALID);
+
+        verify(mockAiClient, org.mockito.Mockito.times(3)).generateQuestionsV2(any());
+        assertThat(ticketService.getBalance(userId).balance()).isEqualTo(9);
+        assertThat(questionSetRepository.count()).isEqualTo(setsBefore);
+        assertThat(aiCallLogRepository.findAll()).filteredOn(log -> log.getExecutionStage() == AiExecutionStage.QUESTION_GENERATION)
+                .filteredOn(log -> log.getStatus() == AiCallLogStatus.FAILED).isNotEmpty();
+    }
+
+    @Test
+    void picksPersonalityQuestionsFromTheMembersJobWithoutAi() {
+        JobCategory backendNew = jobCategoryRepository.findAll().stream()
+                .filter(c -> c.getMainCategory().equals("IT·개발") && c.getSubCategory().equals("백엔드 개발")
+                        && c.getCareerLevel() == JobCategoryCareerLevel.NEW)
+                .findFirst().orElseThrow();
+        String suffix = java.util.UUID.randomUUID().toString();
+        User user = userRepository.save(User.createLocalUser("personality-" + suffix, "encoded", suffix + "@example.test",
+                "Personality", backendNew));
+
+        var set = questionGenerationV2Service.generatePersonality(user.getUserId());
+
+        assertThat(set.getMode()).isEqualTo("PERSONALITY");
+        assertThat(set.getGenerationSource()).isEqualTo("ADMIN_POOL");
+        assertThat(set.getQuestions()).hasSize(5).allSatisfy(q -> assertThat(q.getCompetencyTags()).hasSizeBetween(1, 2));
+        verify(mockAiClient, never()).generateQuestionsV2(any());
+        // 신입 회원에게는 경력 전용 질문이 나오지 않는다
+        var experiencedOnly = personalityQuestionRepository
+                .findByMainCategoryAndSubCategoryOrderByPersonalityQuestionIdAsc("IT·개발", "백엔드 개발").stream()
+                .filter(q -> q.getCareerLevel() == JobCategoryCareerLevel.EXPERIENCED)
+                .map(q -> q.getQuestion()).toList();
+        assertThat(set.getQuestions()).noneMatch(q -> experiencedOnly.contains(q.getQuestion()));
     }
 
     // 전체 실행에 필요한 확정 문서, 활성 가이드, 활성 JSON-01·02·05 템플릿을 실제 DB에 준비한다.

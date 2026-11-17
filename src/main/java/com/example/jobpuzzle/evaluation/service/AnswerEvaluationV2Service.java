@@ -12,8 +12,7 @@ import com.example.jobpuzzle.ai.prompt.PromptTemplateRepository;
 import com.example.jobpuzzle.ai.service.AiClientService;
 import com.example.jobpuzzle.ai.service.GenerationClientSelection;
 import com.example.jobpuzzle.ai.validation.AiResponseProcessor;
-import com.example.jobpuzzle.analysis.entity.CandidateMaterialAnalysis;
-import com.example.jobpuzzle.analysis.entity.JobPostingAnalysis;
+import com.example.jobpuzzle.analysis.service.AnalysisSummaries;
 import com.example.jobpuzzle.evaluation.entity.AnswerEvaluation;
 import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
 import com.example.jobpuzzle.evaluation.v2.AnswerEvaluationV2Validator;
@@ -149,14 +148,14 @@ public class AnswerEvaluationV2Service {
         return message;
     }
 
-    /** 명세 5장 "AI 평가 입력". 역량 태그와 다회차 비교는 질문 생성·다회차 단계에서 채운다. */
+    /** 명세 5장 "AI 평가 입력". 다회차 비교는 다회차 단계에서 채운다. */
     private Map<String, Object> input(InterviewMessage answer, InterviewSessionQuestion question,
                                       InterviewSession session, List<EvaluationCriterion> criteria) {
         Map<String, Object> input = new LinkedHashMap<>();
         input.put("mode", session.getMode().name());
         input.put("question", question.getQuestionTextSnapshot());
         input.put("intent", question.getIntentSnapshot());
-        input.put("competencyTags", List.of());
+        input.put("competencyTags", Objects.requireNonNullElse(question.getQuestion().getCompetencyTags(), List.of()));
         input.put("answer", answer.getMessageText());
         input.put("criteria", criteria.stream().map(c -> Map.of(
                 "code", c.name(), "label", c.label(), "question", c.question(),
@@ -164,14 +163,16 @@ public class AnswerEvaluationV2Service {
 
         Map<String, Object> context = new LinkedHashMap<>();
         switch (session.getMode()) {
-            case KNOWLEDGE -> context.put("jobRequirements", requirements(session.getJobPostingAnalysis()));
+            case KNOWLEDGE -> context.put("jobRequirements", AnalysisSummaries.requirements(session.getJobPostingAnalysis()));
             case MATERIAL -> {
-                context.put("jobRequirements", requirements(session.getJobPostingAnalysis()));
-                context.put("candidate", candidate(session.getCandidateAnalysis()));
+                context.put("jobRequirements", AnalysisSummaries.requirements(session.getJobPostingAnalysis()));
+                context.put("candidate", AnalysisSummaries.candidate(session.getCandidateAnalysis()));
             }
             case PERSONALITY -> {
                 context.put("jobCategory", session.getJobCategory() == null ? null : session.getJobCategory().getSubCategory());
-                if (session.getCandidateAnalysis() != null) context.put("candidate", candidate(session.getCandidateAnalysis()));
+                if (session.getCandidateAnalysis() != null) {
+                    context.put("candidate", AnalysisSummaries.candidate(session.getCandidateAnalysis()));
+                }
                 input.put("previousAnswers", previousAnswers(session, question));
             }
             default -> throw new IllegalArgumentException("v2 평가 대상 모드가 아님: " + session.getMode());
@@ -179,32 +180,6 @@ public class AnswerEvaluationV2Service {
         input.put("context", context);
         input.put("previousRound", null);
         return input;
-    }
-
-    private List<String> requirements(JobPostingAnalysis analysis) {
-        if (analysis == null) return List.of();
-        List<String> texts = new ArrayList<>();
-        if (analysis.getRequirements() != null) analysis.getRequirements().forEach(r -> texts.add(r.getText()));
-        if (analysis.getPreferred() != null) analysis.getPreferred().forEach(r -> texts.add("(우대) " + r.getText()));
-        return texts;
-    }
-
-    /** 지원자 분석에서 평가에 필요한 요약만. 원문 근거(sourceRefs)는 토큰을 아끼려고 뺀다. */
-    private Map<String, Object> candidate(CandidateMaterialAnalysis analysis) {
-        if (analysis == null) return null;
-        Map<String, Object> candidate = new LinkedHashMap<>();
-        if (analysis.getResumeAnalysis() != null && analysis.getResumeAnalysis().getExperiences() != null) {
-            candidate.put("experiences", analysis.getResumeAnalysis().getExperiences().stream()
-                    .map(e -> e.getTitle() + ": " + e.getSummary()).toList());
-        }
-        if (analysis.getCoverLetterAnalysis() != null && analysis.getCoverLetterAnalysis().getMotivation() != null) {
-            candidate.put("motivation", analysis.getCoverLetterAnalysis().getMotivation().getSummary());
-        }
-        if (analysis.getPortfolioAnalysis() != null && analysis.getPortfolioAnalysis().getProjects() != null) {
-            candidate.put("projects", analysis.getPortfolioAnalysis().getProjects().stream()
-                    .map(p -> p.getProjectName() + " (" + p.getRole() + ")").toList());
-        }
-        return candidate;
     }
 
     /** 인성 면접 일관성 확인용: 같은 면접에서 이 질문보다 앞선 질문의 본 답변. */

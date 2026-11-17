@@ -108,6 +108,11 @@ public class AnthropicClient implements AiClient {
     }
 
     @Override
+    public String generateQuestionsV2(String renderedPrompt) {
+        return message(AiExecutionStage.QUESTION_GENERATION, renderedPrompt);
+    }
+
+    @Override
     public String evaluateAnswer(String renderedPrompt) {
         return message(AiExecutionStage.ANSWER_EVALUATION, renderedPrompt);
     }

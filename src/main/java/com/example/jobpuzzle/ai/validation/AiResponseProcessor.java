@@ -373,6 +373,10 @@ public class AiResponseProcessor {
         return parse(rawJson, com.example.jobpuzzle.ai.dto.AnswerEvaluationV2Result.class, "JSON-06-V2");
     }
 
+    public com.example.jobpuzzle.ai.dto.QuestionGenerationV2Result parseQuestionGenerationV2(String rawJson) {
+        return parse(rawJson, com.example.jobpuzzle.ai.dto.QuestionGenerationV2Result.class, "JSON-12");
+    }
+
     private ObjectNode weaknessFollowUp(int depth, String question) {
         ObjectNode value = strictObjectMapper.createObjectNode();
         value.put("depth", depth);

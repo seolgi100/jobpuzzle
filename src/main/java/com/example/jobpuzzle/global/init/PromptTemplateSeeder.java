@@ -40,6 +40,8 @@ public class PromptTemplateSeeder implements ApplicationRunner {
                         "prompts/json-06-answer-evaluation.txt"),
                 new Seed("INTERVIEW_ANSWER_EVALUATION_V2", "면접 답변 평가 v2 (6개 항목, 1~5점)", "JSON-06-V2",
                         "prompts/json-06-v2-answer-evaluation.txt"),
+                new Seed("INTERVIEW_QUESTION_GENERATION_V2", "기초 지식·자료 기반 면접 질문 생성 v2", "JSON-12",
+                        "prompts/json-12-v2-question-generation.txt"),
                 new Seed("INTERVIEW_FINAL_REPORT", "면접 최종 리포트", "JSON-07",
                         "prompts/json-07-final-report.txt")
         );

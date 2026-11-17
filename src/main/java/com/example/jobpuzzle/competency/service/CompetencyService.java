@@ -21,7 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** 직무별 역량 태그·인성 질문 관리 (평가 명세 4장·8장). */
 @Service
@@ -99,16 +102,26 @@ public class CompetencyService {
     /** 질문 태그 규칙 (명세 4-2): 1~2개, 중복 없이, 공통 역량 또는 그 직무의 역량 태그만. */
     @Transactional(readOnly = true)
     public void validateTags(String mainCategory, String subCategory, List<String> codes) {
+        String problem = tagProblem(codes, availableTags(mainCategory, subCategory).keySet());
+        if (problem != null) throw new CustomException(ErrorCode.COMPETENCY_TAG_INVALID, problem);
+    }
+
+    /** 태그 규칙에 맞으면 null, 아니면 이유. AI 응답 검증처럼 예외 대신 결과로 받아야 하는 곳에서 쓴다. */
+    public static String tagProblem(List<String> codes, Set<String> allowed) {
         if (codes == null || codes.isEmpty() || codes.size() > 2 || new HashSet<>(codes).size() != codes.size()) {
-            throw new CustomException(ErrorCode.COMPETENCY_TAG_INVALID);
+            return ErrorCode.COMPETENCY_TAG_INVALID.getMessage();
         }
-        List<String> jobCodes = tags(mainCategory, subCategory).stream().map(JobCompetencyTag::getCode).toList();
-        for (String code : codes) {
-            if (!CommonCompetencyTag.contains(code) && !jobCodes.contains(code)) {
-                throw new CustomException(ErrorCode.COMPETENCY_TAG_INVALID,
-                        "공통 역량이나 이 직무의 역량 태그가 아닙니다: " + code);
-            }
-        }
+        return codes.stream().filter(code -> !allowed.contains(code)).findFirst()
+                .map(code -> "공통 역량이나 이 직무의 역량 태그가 아닙니다: " + code).orElse(null);
+    }
+
+    /** 이 직무에서 쓸 수 있는 태그 code → 이름 (공통 역량 먼저, 그다음 직무별 역량). */
+    @Transactional(readOnly = true)
+    public Map<String, String> availableTags(String mainCategory, String subCategory) {
+        Map<String, String> tags = new LinkedHashMap<>();
+        Arrays.stream(CommonCompetencyTag.values()).forEach(tag -> tags.put(tag.name(), tag.getLabel()));
+        tags(mainCategory, subCategory).forEach(tag -> tags.put(tag.getCode(), tag.getName()));
+        return tags;
     }
 
     private void requireJob(String mainCategory, String subCategory) {

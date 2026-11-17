@@ -66,6 +66,8 @@ public class QuestionSetResponse {
         private String question;
         private String intent;
         private Object evaluationFocus;
+        // v2 질문의 역량 태그 코드 (v1 질문은 빈 목록)
+        private List<String> competencyTags;
         private int displayOrder;
         private Long originSessionId;
         private String originMode;
@@ -85,6 +87,7 @@ public class QuestionSetResponse {
                     .question(value.getQuestion())
                     .intent(value.getIntent())
                     .evaluationFocus(value.getEvaluationFocus())
+                    .competencyTags(value.getCompetencyTags() == null ? List.of() : value.getCompetencyTags())
                     .displayOrder(value.getDisplayOrder())
                     .originSessionId(value.getOriginEvaluation() == null
                             ? null

@@ -130,6 +130,7 @@ app:
           json06: ${ANTHROPIC_JSON06_MAX_OUTPUT_TOKENS:4096}
           json07: ${ANTHROPIC_JSON07_MAX_OUTPUT_TOKENS:6144}
           json11: ${ANTHROPIC_JSON11_MAX_OUTPUT_TOKENS:4096}
+          json12: ${ANTHROPIC_JSON12_MAX_OUTPUT_TOKENS:4096}
       input-limits:
         # fixture 8·9 실측보다 충분히 큰 기본값이다. 초과 입력은 자동 축약하지 않고 Provider 호출 전에 실패한다.
         json01-rendered-prompt-chars: ${AI_JSON01_RENDERED_PROMPT_CHARS:40000}
@@ -140,6 +141,11 @@ app:
         json05-requirement-count: ${AI_JSON05_REQUIREMENT_COUNT:20}
         json05-retrieval-chars: ${AI_JSON05_RETRIEVAL_CHARS:36000}
         json05-rendered-prompt-chars: ${AI_JSON05_RENDERED_PROMPT_CHARS:64000}
+
+  # v2 면접 질문 수: 기초 지식·자료 기반은 AI가 만들 질문 수, 인성은 관리자 등록 질문 중 고를 수
+  interview:
+    generated-question-count: 5
+    personality-question-count: 5
 
   # 면접 티켓: 기본 면접 1장, 공고 맞춤 3장
   ticket:

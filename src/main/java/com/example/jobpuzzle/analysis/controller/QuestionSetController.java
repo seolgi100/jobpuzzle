@@ -1,6 +1,9 @@
 package com.example.jobpuzzle.analysis.controller;
 
+import com.example.jobpuzzle.analysis.dto.AnalysisQuestionRequest;
 import com.example.jobpuzzle.analysis.dto.BasicQuestionRequest;
+import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
+import com.example.jobpuzzle.interview.service.QuestionGenerationV2Service;
 import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
 import com.example.jobpuzzle.analysis.dto.PreparedQuestionSetResponse;
 import com.example.jobpuzzle.analysis.service.QuestionGenerationService;
@@ -24,6 +27,7 @@ import java.util.List;
 public class QuestionSetController {
 
     private final QuestionGenerationService questionGenerationService;
+    private final QuestionGenerationV2Service questionGenerationV2Service;
     private final TicketService ticketService;
 
     @PostMapping("/basic")
@@ -36,6 +40,37 @@ public class QuestionSetController {
                 ticketService.spend(user.getUserId(), TicketUsage.BASIC, ticketService.cost(TicketUsage.BASIC),
                         () -> questionGenerationService.generateBasicQuestionSet(user.getUserId(), request))
         ));
+    }
+
+    // 평가 명세 v2 1장: 기초 지식·자료 기반·인성 면접 질문 생성. AI가 최종 실패하면 spend가 티켓을 돌려준다.
+    @PostMapping("/knowledge")
+    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateKnowledge(
+            @AuthenticationPrincipal(expression = "user") User user,
+            @Valid @RequestBody AnalysisQuestionRequest request
+    ) {
+        return created(ticketService.spend(user.getUserId(), TicketUsage.KNOWLEDGE, ticketService.cost(TicketUsage.KNOWLEDGE),
+                () -> questionGenerationV2Service.generate(user.getUserId(), InterviewSessionMode.KNOWLEDGE, request.analysisCaseId())));
+    }
+
+    @PostMapping("/material")
+    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateMaterial(
+            @AuthenticationPrincipal(expression = "user") User user,
+            @Valid @RequestBody AnalysisQuestionRequest request
+    ) {
+        return created(ticketService.spend(user.getUserId(), TicketUsage.MATERIAL, ticketService.cost(TicketUsage.MATERIAL),
+                () -> questionGenerationV2Service.generate(user.getUserId(), InterviewSessionMode.MATERIAL, request.analysisCaseId())));
+    }
+
+    @PostMapping("/personality")
+    public ResponseEntity<ApiResponse<QuestionSetResponse>> generatePersonality(
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        return created(ticketService.spend(user.getUserId(), TicketUsage.PERSONALITY, ticketService.cost(TicketUsage.PERSONALITY),
+                () -> questionGenerationV2Service.generatePersonality(user.getUserId())));
+    }
+
+    private static ResponseEntity<ApiResponse<QuestionSetResponse>> created(QuestionSetResponse response) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @GetMapping("/{questionSetId}")

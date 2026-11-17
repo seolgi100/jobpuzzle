@@ -605,15 +605,30 @@ public class MockAiClient implements AiClient {
      */
     @Override
     public String evaluateAnswer(String renderedPrompt) {
+        JsonNode input = stubInput(renderedPrompt);
+        String kind = input.path("answer").asText().strip().length() < 30 ? "low" : "normal";
+        return fixture("ai-fixtures/answer-evaluation-v2/" + input.path("mode").asText() + "-" + kind + ".json");
+    }
+
+    /** 평가 명세 9-2 stub: [INPUT]의 mode로 미리 쓴 질문 생성 응답을 고른다. 태그는 모든 직무에 있는 공통 역량만 쓴다. */
+    @Override
+    public String generateQuestionsV2(String renderedPrompt) {
+        return fixture("ai-fixtures/question-generation-v2/" + stubInput(renderedPrompt).path("mode").asText() + ".json");
+    }
+
+    private JsonNode stubInput(String renderedPrompt) {
         try {
-            JsonNode input = objectMapper.readTree(renderedPrompt.substring(renderedPrompt.lastIndexOf("[INPUT]") + "[INPUT]".length()));
-            String kind = input.path("answer").asText().strip().length() < 30 ? "low" : "normal";
-            String path = "ai-fixtures/answer-evaluation-v2/" + input.path("mode").asText() + "-" + kind + ".json";
-            try (var stream = new org.springframework.core.io.ClassPathResource(path).getInputStream()) {
-                return new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            }
+            return objectMapper.readTree(renderedPrompt.substring(renderedPrompt.lastIndexOf("[INPUT]") + "[INPUT]".length()));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("stub 입력을 읽을 수 없습니다", exception);
+        }
+    }
+
+    private String fixture(String path) {
+        try (var stream = new org.springframework.core.io.ClassPathResource(path).getInputStream()) {
+            return new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (java.io.IOException exception) {
-            throw new IllegalStateException("stub 평가 응답을 읽을 수 없습니다", exception);
+            throw new IllegalStateException("stub 응답을 읽을 수 없습니다: " + path, exception);
         }
     }
 

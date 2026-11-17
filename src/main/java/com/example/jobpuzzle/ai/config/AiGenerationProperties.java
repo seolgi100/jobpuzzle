@@ -85,6 +85,7 @@ public class AiGenerationProperties {
         private int json06 = 4_096;
         private int json07 = 6_144;
         private int json11 = 4_096;
+        private int json12 = 4_096;
 
         public int forStage(AiExecutionStage stage) {
             return switch (stage) {
@@ -94,6 +95,7 @@ public class AiGenerationProperties {
                 case ANSWER_EVALUATION -> json06;
                 case FINAL_REPORT -> json07;
                 case BASIC_QUESTION_GENERATION -> json11;
+                case QUESTION_GENERATION -> json12;
                 default -> throw new IllegalArgumentException("generation output token policy is unavailable for " + stage);
             };
         }

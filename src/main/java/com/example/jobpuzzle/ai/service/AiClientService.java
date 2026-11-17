@@ -129,6 +129,11 @@ public class AiClientService {
         return selection.client().generateBasicQuestions(renderedPrompt);
     }
 
+    public String generateQuestionsV2(GenerationClientSelection selection, String renderedPrompt) {
+        requireStage(selection, AiExecutionStage.QUESTION_GENERATION);
+        return selection.client().generateQuestionsV2(renderedPrompt);
+    }
+
     public String evaluateAnswer(GenerationClientSelection selection, String renderedPrompt) {
         requireStage(selection, AiExecutionStage.ANSWER_EVALUATION);
         return selection.client().evaluateAnswer(renderedPrompt);

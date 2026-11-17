@@ -506,8 +506,9 @@ public class InterviewSessionService {
         }
         selectedQuestions.sort(Comparator.comparingInt(InterviewQuestion::getDisplayOrder));
 
+        // 분석 결과로 만든 묶음(v1 공고 맞춤, v2 기초 지식·자료 기반)은 그 분석 결과를 세션에 고정한다.
         InterviewSession session = interviewSessionRepository.save(
-                questionSet.getInterviewMode() == InterviewSessionMode.COMPANY_FIT
+                questionSet.getSnapshot() != null
                         ? InterviewSession.create(
                                 questionSet, jobPostingAnalysisOf(questionSet), candidateAnalysisOf(questionSet))
                         : InterviewSession.create(questionSet)
