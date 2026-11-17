@@ -48,6 +48,9 @@ tasks.named('test') {
     // 테스트 실행에서만 mock/fake로 강제한다. 실제 AI 확인은 bootRun에서 한다.
     environment 'AI_GENERATION_DEFAULT_PROVIDER', 'mock'
     environment 'RAG_MODE', 'fake'
+    // 테스트는 소셜 로그인을 실제로 호출하지 않는다. 키가 비면 앱이 뜨지 않아서 가짜 값을 넣는다.
+    environment 'KAKAO_CLIENT_ID', 'test-kakao-client-id'
+    environment 'GOOGLE_CLIENT_ID', 'test-google-client-id'
 }
 
 tasks.named('bootJar') {

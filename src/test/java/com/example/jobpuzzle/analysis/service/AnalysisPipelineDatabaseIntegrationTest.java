@@ -40,6 +40,7 @@ import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
 import com.example.jobpuzzle.jobcategory.entity.JobCategory;
 import com.example.jobpuzzle.jobcategory.entity.JobCategoryCareerLevel;
 import com.example.jobpuzzle.jobcategory.repository.JobCategoryRepository;
+import com.example.jobpuzzle.ticket.service.TicketService;
 import com.example.jobpuzzle.user.entity.User;
 import com.example.jobpuzzle.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -106,6 +107,7 @@ class AnalysisPipelineDatabaseIntegrationTest {
     @Autowired private ReadinessResultRepository readinessResultRepository;
     @Autowired private QuestionSetRepository questionSetRepository;
     @Autowired private AiCallLogRepository aiCallLogRepository;
+    @Autowired private TicketService ticketService;
     @SpyBean private InMemoryVectorSearchAdapter vectorSearchAdapter;
     @SpyBean private MockAiClient mockAiClient;
 
@@ -218,8 +220,9 @@ class AnalysisPipelineDatabaseIntegrationTest {
     void retriesAfterJson05FailureAndReusesCompletedInitialStagesGuideAndRetrievals() throws IOException {
         Fixture fixture = fixture();
         AnalysisInputSnapshotResponse snapshot = analysisCaseService.confirmInput(fixture.user().getUserId(), fixture.analysisCase().getAnalysisCaseId());
-        doThrow(new AiProcessingException(com.example.jobpuzzle.ai.log.AiCallLogErrorType.RESPONSE_VALIDATION_FAILED, "forced JSON-05 failure"))
-                .doCallRealMethod().when(mockAiClient).generateCustomizedAnalysis(any());
+        // 검증 실패는 같은 입력 재시도가 막혀 있으므로(retryBlocked) 재시도 가능한 공급자 오류로 실패시킨다.
+        doThrow(new AiProcessingException(com.example.jobpuzzle.ai.log.AiCallLogErrorType.PROVIDER_ERROR, "forced JSON-05 failure"))
+                .doCallRealMethod().when(mockAiClient).generateCustomizedAnalysisV18(any(), any());
 
         assertThatThrownBy(() -> analysisService.runCustomizedAnalysis(fixture.user().getUserId(), fixture.analysisCase().getAnalysisCaseId()))
                 .isInstanceOf(CustomException.class)
@@ -262,13 +265,14 @@ class AnalysisPipelineDatabaseIntegrationTest {
         JobCategory category = jobCategoryRepository.save(JobCategory.builder()
                 .mainCategory("TEST").subCategory("BACKEND-" + suffix).careerLevel(JobCategoryCareerLevel.NEW).build());
         User user = userRepository.save(User.createLocalUser("pipeline-" + suffix, "encoded", suffix + "@example.test", "Pipeline", category));
+        ticketService.charge(user.getUserId(), 10, "test-" + suffix);
         AnalysisCase analysisCase = analysisCaseRepository.save(AnalysisCase.builder().user(user).jobCategory(category).build());
         saveSource(user, analysisCase, UserDocumentType.JOB_POSTING, "Java와 Spring Boot 기반 백엔드 개발자를 찾습니다.");
         saveSource(user, analysisCase, UserDocumentType.RESUME, "Java와 Spring Boot로 REST API를 구현한 백엔드 개발 경험이 있습니다.");
         JobGuideDocument guide = withActiveGuide ? saveActiveCategoryGuide(user, category, suffix) : null;
-        savePrompt("PT-JOB-" + suffix, "JSON-01", "prompts/json-01-v1.3.txt");
-        savePrompt("PT-CAND-" + suffix, "JSON-02", "prompts/json-02-v1.6.txt");
-        savePrompt("PT-SYN-" + suffix, "JSON-05", "prompts/json-05-v1.10.txt");
+        savePrompt("PT-JOB-" + suffix, "JSON-01", "prompts/json-01-v1.3.txt", "v1.0");
+        savePrompt("PT-CAND-" + suffix, "JSON-02", "prompts/json-02-v1.6.txt", "v1.0");
+        savePrompt("PT-SYN-" + suffix, "JSON-05", "prompts/json-05-v1.10.txt", "v1.10");
         return new Fixture(user, analysisCase, guide);
     }
 
@@ -298,10 +302,10 @@ class AnalysisPipelineDatabaseIntegrationTest {
     }
 
     // 배포 정본 프롬프트를 테스트 DB에도 그대로 넣어 renderer와 MockAiClient 태그 계약을 함께 검증한다.
-    private void savePrompt(String code, String targetJson, String resourcePath) throws IOException {
+    private void savePrompt(String code, String targetJson, String resourcePath, String version) throws IOException {
         String template = new ClassPathResource(resourcePath).getContentAsString(StandardCharsets.UTF_8);
         promptTemplateRepository.saveAndFlush(PromptTemplate.builder().promptCode(code).name(targetJson + " pipeline test")
-                .version("v1.0").targetJson(targetJson).templateText(template).forbiddenRules("JSON 이외의 응답 금지").isActive(true).build());
+                .version(version).targetJson(targetJson).templateText(template).forbiddenRules("JSON 이외의 응답 금지").isActive(true).build());
     }
 
     private record Fixture(User user, AnalysisCase analysisCase, JobGuideDocument guide) { }
