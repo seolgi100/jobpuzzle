@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대시보드 — 잡퍼즐</title>
+<meta name="description" content="내 준비가 어디까지 왔는지, 다음에 할 일이 무엇인지 한눈에 봅니다">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="app.css">
+<style>
+/* ───── 대시보드: 준비 과정 전체가 맞물려 가는 퍼즐판 한 줄 + 그 아래 장부 ───── */
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; padding-bottom: 32px; border-bottom: 1px solid var(--ink); }
+.head .lead { margin-top: 10px; }
+.job { text-align: right; font-size: 16px; }
+.job dt { color: var(--text-2); }
+.job dd { margin-top: 2px; font-weight: 600; }
+.job .links { margin-top: 10px; display: flex; gap: 20px; justify-content: flex-end; }
+
+/* 다음 할 일 + 준비 퍼즐판 */
+.now { margin-top: 48px; display: grid; grid-template-columns: 5fr 7fr; }
+.next { padding: 40px 44px 44px; }
+.next .label { font-size: 16px; color: var(--text-2); }
+.next h2 { margin-top: 10px; font-family: var(--serif); font-weight: 600; font-size: 30px; line-height: 1.45; letter-spacing: -0.015em; }
+.next .ctx { margin-top: 14px; font-size: 16px; color: var(--text-2); }
+.next .ctx b { color: var(--text); font-weight: 600; }
+.next .btn { margin-top: 32px; }
+
+.steps { padding: 40px 44px 36px; border: 1px solid var(--line); border-left: 0; background: var(--wall); }
+.steps .label { font-size: 16px; color: var(--text-2); }
+.steps .label b { color: var(--text); font-weight: 600; }
+.chain { display: block; width: 100%; height: auto; margin-top: 28px; overflow: visible; }
+.chain .done { fill: var(--ink); }
+.chain .now-piece { fill: var(--point); }
+.chain .todo { fill: var(--paper); stroke: #A9B1BD; stroke-width: 2; stroke-dasharray: 7 6; }
+.chain text { font-family: var(--serif); font-weight: 600; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
+.chain .done + text, .chain .now-piece + text { fill: #fff; }
+.chain .todo + text { fill: var(--text-2); }
+.step-names { margin-top: 14px; display: grid; grid-template-columns: repeat(6, 1fr); font-size: 15px; line-height: 1.5; color: var(--text-2); text-align: center; }
+.step-names li { padding-inline: 4px; }
+.step-names li.is-done { color: var(--text); }
+.step-names li.is-now { color: var(--accent); font-weight: 600; }
+.step-mobile { display: none; }
+
+/* 요약 숫자: 표 한 줄 */
+.tally { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+.tally div { padding: 20px 0 20px 24px; border-left: 1px solid var(--line); }
+.tally div:first-child { border-left: 0; padding-left: 0; }
+.tally dt { font-size: 16px; color: var(--text-2); }
+.tally dd { margin-top: 2px; font-family: var(--serif); font-weight: 600; font-size: 34px; line-height: 1.3; }
+.tally dd small { font-family: var(--sans); font-size: 16px; font-weight: 500; color: var(--text-2); margin-left: 4px; }
+.tally .is-late dd { color: var(--caution); }
+
+/* 탭 */
+.tabs { margin-top: 72px; display: flex; gap: 36px; border-bottom: 1px solid var(--line); }
+.tabs button { position: relative; padding: 0 0 16px; border: 0; background: none; cursor: pointer; font-family: var(--serif); font-weight: 600; font-size: 23px; color: var(--text-2); transition: color .3s; }
+.tabs button small { font-family: var(--sans); font-size: 16px; font-weight: 500; margin-left: 6px; }
+.tabs button::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--point); transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease); }
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-selected="true"] { color: var(--text); }
+.tabs button[aria-selected="true"]::after { transform: scaleX(1); }
+.panel { padding-top: 36px; }
+.panel[hidden] { display: none; }
+.group + .group { margin-top: 56px; }
+.group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.group-head p { font-size: 16px; color: var(--text-2); }
+.rows { margin-top: 16px; border-top: 1px solid var(--ink); }
+.rows li { display: grid; align-items: center; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.rows .name { font-weight: 600; }
+.rows .sub { font-size: 16px; color: var(--text-2); }
+.rows .act { justify-self: end; }
+.rows .act .btn { min-height: 44px; padding: 0 18px; font-size: 15px; white-space: nowrap; }
+.empty-note { padding: 28px 0; border-bottom: 1px solid var(--line); color: var(--text-2); font-size: 16px; }
+
+/* 면접 세션 줄 */
+.sessions li { grid-template-columns: minmax(0, 1fr) 190px 120px 210px; }
+.mini { display: flex; gap: 4px; }
+.mini .piece { width: 16px; height: 16px; }
+.mini .piece.is-todo { fill: none; stroke: #A9B1BD; stroke-width: 7; }
+.score { font-family: var(--serif); font-weight: 600; font-size: 26px; text-align: right; }
+.score small { font-family: var(--sans); font-size: 15px; font-weight: 500; color: var(--text-2); margin-left: 3px; }
+.status { font-size: 16px; }
+.status.is-live { color: var(--accent); font-weight: 600; }
+
+/* 약점 태그 줄 */
+.weak li { grid-template-columns: 22px minmax(0, 1fr) 140px 210px; }
+.weak .count { font-size: 16px; text-align: right; color: var(--text-2); }
+.weak .count b { color: var(--text); font-weight: 600; }
+
+/* 과제 */
+.view { display: inline-flex; border: 1px solid var(--line); background: var(--paper); }
+.view button { height: 38px; padding: 0 16px; border: 0; background: none; cursor: pointer; font-size: 15px; color: var(--text-2); }
+.view button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.tasks li { grid-template-columns: 22px minmax(0, 1fr) 160px 210px; }
+.check { width: 22px; height: 22px; border: 1px solid var(--ink); border-radius: 2px; background: var(--paper); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.check svg { width: 12px; height: 12px; opacity: 0; }
+.check[aria-checked="true"] { background: var(--ink); }
+.check[aria-checked="true"] svg { opacity: 1; color: #fff; }
+.due { font-size: 16px; text-align: right; }
+.due.is-late { color: var(--caution); font-weight: 600; }
+.due button { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; }
+.due button:hover { text-decoration: underline; }
+
+/* 달력 */
+.cal { margin-top: 16px; border-top: 1px solid var(--ink); }
+.cal-head { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; }
+.cal-head b { font-family: var(--serif); font-weight: 600; font-size: 21px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+.cal-grid > * { min-height: 96px; padding: 8px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); font-size: 15px; }
+.cal-grid .dow { min-height: 0; padding: 8px 10px; background: var(--wall); color: var(--text-2); font-size: 15px; }
+.cal-grid .day.is-today b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; }
+.cal-grid .day b { font-weight: 500; }
+.cal-grid .task { display: block; margin-top: 6px; padding: 4px 6px; border-left: 2px solid var(--ink); background: var(--wall); font-size: 14px; line-height: 1.4; }
+.cal-grid .task.is-late { border-left-color: var(--caution); color: var(--caution); }
+.cal-note { margin-top: 14px; font-size: 16px; color: var(--text-2); }
+
+@media (max-width: 1100px) {
+  .now { grid-template-columns: 1fr; }
+  .steps { border-left: 1px solid var(--line); border-top: 0; }
+  .sessions li, .weak li, .tasks li { grid-template-columns: minmax(0, 1fr) auto; }
+  .sessions .mini, .weak .count { display: none; }
+  .sessions li > :nth-child(3) { display: none; }
+  .tasks li .check { display: none; }
+  .weak li > svg { display: none; }
+}
+@media (max-width: 760px) {
+  .job { text-align: left; }
+  .job .links { justify-content: flex-start; }
+  .now { margin-top: 32px; }
+  .next, .steps { padding: 28px 20px; }
+  .next h2 { font-size: 24px; }
+  .next .btn { width: 100%; }
+  .step-names { display: none; }
+  .step-mobile { display: block; margin-top: 14px; font-size: 16px; }
+  .step-mobile b { color: var(--accent); }
+  .tally { grid-template-columns: 1fr 1fr; }
+  .tally div:nth-child(3) { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
+  .tally div:nth-child(4) { border-top: 1px solid var(--line); }
+  .tally dd { font-size: 28px; }
+  .tabs { margin-top: 56px; gap: 22px; overflow-x: auto; }
+  .tabs button { font-size: 19px; white-space: nowrap; }
+  .rows li { grid-template-columns: 1fr; gap: 10px; }
+  .rows .act { justify-self: start; }
+  .score, .due, .weak .count { text-align: left; }
+  .cal-grid > * { min-height: 64px; padding: 6px; }
+  .cal-grid .task { font-size: 0; padding: 0; height: 4px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 공용 도형 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="logo-piece" d="M30 20 H130 V55 A17 17 0 1 1 130 85 V120 H95 A15 15 0 0 0 65 120 H30 V85 A17 17 0 1 1 30 55 Z"/>
+    <mask id="j-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="300">
+      <rect width="220" height="300" fill="#fff"/>
+      <use href="#logo-piece" fill="#000" transform="translate(46 150) scale(.7)"/>
+      <rect x="96" y="140" width="10" height="34" fill="#000"/>
+    </mask>
+    <symbol id="j-symbol" viewBox="0 0 220 300">
+      <path mask="url(#j-cut)" fill="currentColor" d="M105 50 L214 0 V192 A107 107 0 0 1 0 192 V140 H106 Z"/>
+    </symbol>
+    <symbol id="pc" viewBox="34 6 160 160">
+      <path d="M46,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H154 Q160,40 160,46 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V154 Q160,160 154,160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H46 Q40,160 40,154 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 V46 Q40,40 46,40 Z"/>
+    </symbol>
+    <!-- 준비 단계 조각: 왼쪽은 홈, 오른쪽은 돌기. 나란히 놓으면 옆 조각과 맞물림 -->
+    <path id="link" d="M0 0 H100 V32 A16 16 0 1 1 100 68 V100 H0 V68 A16 16 0 1 0 0 32 Z"/>
+    <symbol id="arrow" viewBox="0 0 16 16"><path d="M2 8h11.5M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="chev" viewBox="0 0 14 14"><path d="M2.5 5 7 9.5 11.5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="tick" viewBox="0 0 12 12"><path d="M2 6.2 4.8 9 10 3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="잡퍼즐 처음으로"><span class="mark" aria-hidden="true"></span><span>JobPuzzle</span></a>
+    <nav class="menu" aria-label="주요 메뉴">
+      <a href="#" aria-current="page">대시보드</a>
+      <a href="#">자료 관리</a>
+      <a href="#">면접 준비</a>
+      <a href="report.html">리포트</a>
+      <a href="#">액션플랜</a>
+    </nav>
+    <div class="nav-user">
+      <a class="tickets" href="#">티켓 <b class="num">8</b>장</a>
+      <button class="who" type="button" aria-haspopup="menu">김지원님 <svg aria-hidden="true"><use href="#chev"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <h1 class="title">나의 준비 현황</h1>
+        <p class="lead">오늘도 면접을 위해 한 조각씩 맞춰 갑니다.</p>
+      </div>
+      <dl class="job">
+        <dt>희망 직무</dt>
+        <dd>백엔드 개발 · 신입</dd>
+        <div class="links"><a class="link" href="#">수정</a><a class="link" href="#">내 자료 확인하기</a></div>
+      </dl>
+    </div>
+
+    <!-- 다음 할 일 + 준비 6단계 -->
+    <section class="now" aria-label="다음 할 일과 준비 단계">
+      <div class="paper next">
+        <p class="label">다음 할 일</p>
+        <h2>진행 중인 면접 마무리하기</h2>
+        <p class="ctx"><b>가온테크(가상) 백엔드 개발자 신입</b> · 자료 기반 면접 2회차 · 질문 3 / 6</p>
+        <a class="btn btn-primary" href="interview-live.html">이어서 하기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </div>
+      <div class="steps">
+        <p class="label">준비 단계 <b class="num">4</b> / 6 완료</p>
+        <svg class="chain" viewBox="-2 -2 620 104" role="img" aria-label="준비 6단계 중 4단계 완료, 5단계 진행 중">
+          <use href="#link" class="done" x="0"/><text x="50" y="50">1</text>
+          <use href="#link" class="done" x="100"/><text x="150" y="50">2</text>
+          <use href="#link" class="done" x="200"/><text x="250" y="50">3</text>
+          <use href="#link" class="done" x="300"/><text x="350" y="50">4</text>
+          <use href="#link" class="now-piece" x="400"/><text x="450" y="50">5</text>
+          <use href="#link" class="todo" x="500"/><text x="550" y="50">6</text>
+        </svg>
+        <ol class="step-names">
+          <li class="is-done">희망 직무 정하기</li>
+          <li class="is-done">내 자료 확정하기</li>
+          <li class="is-done">채용공고 분석하기</li>
+          <li class="is-done">모의면접 시작하기</li>
+          <li class="is-now">면접·답변 평가 받기</li>
+          <li>약점 보완하기</li>
+        </ol>
+        <p class="step-mobile">지금 단계: <b>5. 면접·답변 평가 받기</b></p>
+      </div>
+    </section>
+
+    <!-- 요약 -->
+    <dl class="tally" aria-label="요약">
+      <div><dt>진행 중인 면접</dt><dd class="num">1<small>건</small></dd></div>
+      <div><dt>해결하지 않은 약점</dt><dd class="num">2<small>건</small></dd></div>
+      <div class="is-late"><dt>마감 지난 과제</dt><dd class="num">1<small>건</small></dd></div>
+      <div><dt>마감일 없는 과제</dt><dd class="num">2<small>건</small></dd></div>
+    </dl>
+
+    <!-- 탭 -->
+    <div class="tabs" role="tablist" aria-label="준비 기록">
+      <button role="tab" id="tab-s" aria-controls="panel-s" aria-selected="true">면접 세션<small class="num">3</small></button>
+      <button role="tab" id="tab-w" aria-controls="panel-w" aria-selected="false" tabindex="-1">약점 태그<small class="num">3</small></button>
+      <button role="tab" id="tab-t" aria-controls="panel-t" aria-selected="false" tabindex="-1">과제<small class="num">4</small></button>
+    </div>
+
+    <!-- 면접 세션 -->
+    <section class="panel" id="panel-s" role="tabpanel" aria-labelledby="tab-s">
+      <div class="group">
+        <div class="group-head"><h2 class="h3">진행 중인 면접</h2></div>
+        <ul class="rows sessions">
+          <li>
+            <div><div class="name">가온테크(가상) 백엔드 개발자 신입</div><div class="sub">자료 기반 면접 · 2회차 · 11월 17일 시작</div></div>
+            <div class="mini" role="img" aria-label="질문 6개 중 2개 답변">
+              <svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece is-point"><use href="#pc"/></svg><svg class="piece is-todo"><use href="#pc"/></svg><svg class="piece is-todo"><use href="#pc"/></svg><svg class="piece is-todo"><use href="#pc"/></svg>
+            </div>
+            <div class="status is-live">면접 중 3 / 6</div>
+            <div class="act"><a class="btn btn-primary" href="interview-live.html">이어서 하기</a></div>
+          </li>
+        </ul>
+      </div>
+      <div class="group">
+        <div class="group-head"><h2 class="h3">완료된 면접</h2><a class="link" href="#">리포트 전체 보기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+        <ul class="rows sessions">
+          <li>
+            <div><div class="name">가온테크(가상) 백엔드 개발자 신입</div><div class="sub">자료 기반 면접 · 1회차 · 11월 10일 완료</div></div>
+            <div class="mini" role="img" aria-label="질문 6개 모두 답변">
+              <svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg>
+            </div>
+            <div class="score num">68<small>/ 100</small></div>
+            <div class="act"><a class="btn btn-ghost" href="report.html">리포트 보기</a></div>
+          </li>
+          <li>
+            <div><div class="name">기본 질문</div><div class="sub">백엔드 개발 · 신입 · 11월 6일 완료</div></div>
+            <div class="mini" role="img" aria-label="질문 5개 중 4개 답변, 1개 건너뜀">
+              <svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg><svg class="piece is-empty"><use href="#pc"/></svg><svg class="piece"><use href="#pc"/></svg>
+            </div>
+            <div class="score num">71<small>/ 100</small></div>
+            <div class="act"><a class="btn btn-ghost" href="report.html">리포트 보기</a></div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 약점 태그 -->
+    <section class="panel" id="panel-w" role="tabpanel" aria-labelledby="tab-w" hidden>
+      <div class="group">
+        <div class="group-head"><h2 class="h3">해결하지 않은 약점</h2><p>항목별 점수와 최종 점수가 모두 70점을 넘어야 해결로 처리됩니다.</p></div>
+        <ul class="rows weak">
+          <li>
+            <svg class="piece is-empty" aria-hidden="true"><use href="#pc"/></svg>
+            <div><div class="name">성과 수치 제시 부족</div><div class="sub">최근 면접 · 성과 및 결과 표현 58점</div></div>
+            <div class="count">보완 필요 <b class="num">2</b>건</div>
+            <div class="act"><a class="btn btn-primary" href="#">약점 보완으로 연습하기</a></div>
+          </li>
+          <li>
+            <svg class="piece is-empty" aria-hidden="true"><use href="#pc"/></svg>
+            <div><div class="name">테스트 경험 미확인</div><div class="sub">최근 면접 · 질문 건너뜀</div></div>
+            <div class="count">보완 필요 <b class="num">1</b>건</div>
+            <div class="act"><a class="btn btn-ghost" href="#">보완 기록 보기</a></div>
+          </li>
+        </ul>
+      </div>
+      <div class="group">
+        <div class="group-head"><h2 class="h3">해결된 약점</h2><p>같은 약점이 다시 나오면 자동으로 해결하지 않은 약점으로 돌아갑니다.</p></div>
+        <ul class="rows weak">
+          <li>
+            <svg class="piece" aria-hidden="true"><use href="#pc"/></svg>
+            <div><div class="name">본인 역할 설명 부족</div><div class="sub">11월 17일 해결 · 본인 역할 82점</div></div>
+            <div class="count"></div>
+            <div class="act"><a class="btn btn-ghost" href="#">보완 기록 보기</a></div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 과제 -->
+    <section class="panel" id="panel-t" role="tabpanel" aria-labelledby="tab-t" hidden>
+      <div class="group">
+        <div class="group-head">
+          <h2 class="h3">과제 목록</h2>
+          <div class="view" role="group" aria-label="보기 방식"><button type="button" aria-pressed="true" data-view="list">목록</button><button type="button" aria-pressed="false" data-view="cal">달력</button></div>
+        </div>
+        <ul class="rows tasks" data-view-panel="list">
+          <li>
+            <button class="check" role="checkbox" aria-checked="false" aria-label="완료로 표시"><svg aria-hidden="true"><use href="#tick"/></svg></button>
+            <div><div class="name">테스트 코드 작성 경험 정리하기</div><div class="sub">가온테크(가상) 지원 분석에서</div></div>
+            <div class="due is-late">2일 지남 · 11월 15일</div>
+            <div class="act"><a class="btn btn-ghost" href="#">상세 보기</a></div>
+          </li>
+          <li>
+            <button class="check" role="checkbox" aria-checked="false" aria-label="완료로 표시"><svg aria-hidden="true"><use href="#tick"/></svg></button>
+            <div><div class="name">배포 경험에 자동화 계획 덧붙이기</div><div class="sub">가온테크(가상) 지원 분석에서</div></div>
+            <div class="due">11월 24일</div>
+            <div class="act"><a class="btn btn-ghost" href="#">상세 보기</a></div>
+          </li>
+          <li>
+            <button class="check" role="checkbox" aria-checked="false" aria-label="완료로 표시"><svg aria-hidden="true"><use href="#tick"/></svg></button>
+            <div><div class="name">조회 쿼리 개선 수치를 이력서에 적기</div><div class="sub">가온테크(가상) 지원 분석에서</div></div>
+            <div class="due"><button type="button">마감일 정하기</button></div>
+            <div class="act"><a class="btn btn-ghost" href="#">상세 보기</a></div>
+          </li>
+          <li>
+            <button class="check" role="checkbox" aria-checked="true" aria-label="완료 취소"><svg aria-hidden="true"><use href="#tick"/></svg></button>
+            <div><div class="name">결제 실패 처리 설계를 한 장으로 정리하기</div><div class="sub">가온테크(가상) 지원 분석에서 · 완료</div></div>
+            <div class="due"><button type="button">마감일 정하기</button></div>
+            <div class="act"><a class="btn btn-ghost" href="#">상세 보기</a></div>
+          </li>
+        </ul>
+        <div class="cal" data-view-panel="cal" hidden>
+          <div class="cal-head"><b>2026년 11월</b></div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <p class="cal-note">2개는 마감일이 없어 달력에 보이지 않습니다. 목록에서 마감일을 정해 주십시오.</p>
+        </div>
+      </div>
+    </section>
+
+    <p class="meta" style="margin-top:56px">표시된 내용은 이해를 돕기 위한 예시입니다.</p>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="잡퍼즐 처음으로"><svg aria-hidden="true"><use href="#j-symbol"/></svg><span>잡퍼즐</span></a>
+    <span>© 잡퍼즐</span>
+    <a href="#">이용약관</a>
+    <a href="#">개인정보처리방침</a>
+  </div>
+</footer>
+
+<script>
+  // 탭: 누르거나 왼쪽·오른쪽 화살표로 이동
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  const select = tab => tabs.forEach(t => {
+    const on = t === tab;
+    t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+  });
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; select(n); n.focus(); }
+    });
+  });
+
+  // 과제 완료 표시
+  document.querySelectorAll('.check').forEach(c => c.addEventListener('click', () => {
+    const on = c.getAttribute('aria-checked') !== 'true';
+    c.setAttribute('aria-checked', on); c.setAttribute('aria-label', on ? '완료 취소' : '완료로 표시');
+  }));
+
+  // 과제 보기: 목록 / 달력
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-view]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('[data-view-panel]').forEach(p => p.hidden = p.dataset.viewPanel !== b.dataset.view);
+  }));
+
+  // 달력: 2026년 11월 (1일이 일요일), 오늘 17일
+  const grid = document.getElementById('cal-grid');
+  const due = { 15: ['테스트 코드 작성 경험 정리하기', true], 24: ['배포 경험에 자동화 계획 덧붙이기', false] };
+  grid.innerHTML = ['일', '월', '화', '수', '목', '금', '토'].map(d => `<div class="dow">${d}</div>`).join('') +
+    Array.from({ length: 30 }, (_, i) => {
+      const d = i + 1, t = due[d];
+      return `<div class="day${d === 17 ? ' is-today' : ''}"><b class="num">${d}</b>${t ? `<span class="task${t[1] ? ' is-late' : ''}">${t[0]}</span>` : ''}</div>`;
+    }).join('') + '<div class="day"></div><div class="day"></div><div class="day"></div><div class="day"></div><div class="day"></div>';
+</script>
+</body>
+</html>

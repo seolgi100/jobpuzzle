@@ -1,0 +1,161 @@
+/* 잡퍼즐 로그인 후 화면 공통 스타일.
+   메인(index.html)의 밝은 섹션과 같은 세계: 푸른 기 도는 흰 벽 위의 흰 종이, 먹색 글자, 명조 제목, 1px 선, 델프트 블루 하나.
+   기준 문서: design-test/DESIGN-SYSTEM.md */
+
+:root {
+  --room: #0B0D11;          /* 전시실 어둠 (메인 첫 화면) */
+  --ink: #12151B;           /* 먹: 글자, 주요 버튼, 굵은 선 */
+  --wall: #F5F7FA;          /* 푸른 기 도는 흰 벽: 페이지 바탕 */
+  --paper: #FFFFFF;         /* 종이: 보고서·표·입력창 */
+  --text: #12151B;
+  --text-2: #4F5764;        /* 보조 글자 (벽 위 6.4:1, 종이 위 7.0:1) */
+  --line: #D6DBE3;          /* 가는 선 */
+  --point: #3A62A8;         /* 포인트 색 (델프트 블루). 한 화면에 몇 군데만 */
+  --point-soft: #EDF2FA;    /* 포인트 색을 아주 옅게 깐 면 */
+  --on-point: #FFFFFF;
+  --accent: #3A62A8;        /* 포인트 색의 글자용 톤 (벽 위 5.6:1) */
+  --caution: #8A4B14;       /* 보완이 필요한 것 (글자용, 벽 위 6.9:1). 경고색이 아니라 가라앉은 갈색 */
+
+  --serif: "Noto Serif KR", serif;
+  --sans: "Pretendard Variable", Pretendard, sans-serif;
+
+  --wrap: min(1200px, calc(100% - 48px));
+  --nav-h: 72px;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --lift: 0 1px 2px rgba(18, 24, 38, .04), 0 18px 36px -22px rgba(18, 24, 38, .22);
+  --float: 0 1px 2px rgba(18, 24, 38, .04), 0 28px 56px -28px rgba(18, 24, 38, .2), 0 72px 96px -72px rgba(18, 24, 38, .3);
+}
+@media (max-width: 760px) {
+  :root { --wrap: calc(100% - 32px); --nav-h: 60px; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 16px); scrollbar-color: #9BA3B0 var(--wall); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--wall); color: var(--text);
+  font-family: var(--sans); font-size: 17px; line-height: 1.75;
+  word-break: keep-all; overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased; caret-color: var(--accent);
+}
+@media (max-width: 760px) { body { font-size: 16px; } }
+::selection { background: var(--point); color: var(--on-point); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+h1, h2, h3, h4, p, dl, dd, ul, ol, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .25em; }
+button { font: inherit; color: inherit; }
+.wrap { width: var(--wrap); margin-inline: auto; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── 글자 */
+.title { font-family: var(--serif); font-weight: 600; font-size: 40px; line-height: 1.35; letter-spacing: -0.02em; text-wrap: balance; }
+.h2 { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.4; letter-spacing: -0.015em; }
+.h3 { font-family: var(--serif); font-weight: 600; font-size: 21px; line-height: 1.5; letter-spacing: -0.01em; }
+.meta { font-size: 16px; color: var(--text-2); }
+.lead { color: var(--text-2); max-width: 38em; text-wrap: pretty; }
+@media (max-width: 760px) {
+  .title { font-size: 28px; }
+  .h2 { font-size: 23px; }
+  .h3 { font-size: 19px; }
+}
+
+/* ── 버튼 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 48px; padding: 0 22px;
+  font: 600 16px/1 var(--sans); letter-spacing: -0.005em; text-decoration: none;
+  border: 1px solid transparent; border-radius: 2px; background: none; cursor: pointer;
+  transition: background-color .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease), transform .2s var(--ease);
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--ink); color: #fff; }
+.btn-primary:hover { background: var(--point); color: var(--on-point); }
+.btn-ghost { color: var(--text); border-color: var(--line); background: var(--paper); }
+.btn-ghost:hover { border-color: var(--ink); }
+.btn .arrow { width: 16px; height: 16px; flex: none; transition: transform .45s var(--ease); }
+.btn:hover .arrow { transform: translateX(4px); }
+.btn:hover .arrow.back { transform: translateX(-4px); }
+.link { color: var(--accent); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.link:hover { text-decoration: underline; }
+.link .arrow { width: 14px; height: 14px; }
+
+/* ── 상단 메뉴 (로그인 후): 벽과 같은 바탕, 지금 있는 메뉴에만 델프트 블루 밑줄 */
+.nav {
+  position: sticky; top: 0; z-index: 50; height: var(--nav-h);
+  background: var(--wall); border-bottom: 1px solid var(--line);
+}
+.nav .wrap { display: flex; align-items: center; height: 100%; gap: 48px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex: none; }
+.logo svg { width: 22px; height: 30px; }
+.logo span { font-family: var(--serif); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
+.logo .mark {   /* Jpen 로고 (assets/jpen-logo.png). 글자색을 따라 칠함: 어두운 바탕에서는 흰색, 밝은 바탕에서는 먹색 */
+  width: 19px; height: 31px; flex: none; background: currentColor;
+  -webkit-mask: url(assets/jpen-logo.png) center / contain no-repeat; mask: url(assets/jpen-logo.png) center / contain no-repeat;
+}
+.menu { display: flex; gap: 32px; font-size: 16px; font-weight: 500; }
+.menu a { position: relative; text-decoration: none; padding: 8px 0; color: var(--text-2); transition: color .3s; }
+.menu a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--point);
+  transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease);
+}
+.menu a:hover { color: var(--text); }
+.menu a[aria-current="page"] { color: var(--text); font-weight: 600; }
+.menu a[aria-current="page"]::after, .menu a:hover::after { transform: scaleX(1); }
+.menu a:hover:not([aria-current])::after { background: var(--line); }
+.nav-user { margin-left: auto; display: flex; align-items: center; gap: 20px; font-size: 16px; }
+.nav-user .tickets { display: inline-flex; align-items: center; gap: 8px; color: var(--text-2); text-decoration: none; }
+.nav-user .tickets b { color: var(--text); font-weight: 600; }
+.nav-user .tickets:hover { color: var(--text); }
+.nav-user .who { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px; border: 0; background: none; cursor: pointer; font-weight: 500; }
+.nav-user .who svg { width: 12px; height: 12px; }
+@media (max-width: 960px) {
+  .menu { display: none; }
+  .nav-user .tickets { display: none; }
+}
+
+/* ── 페이지 머리말 */
+.page { padding-block: 56px 120px; }
+.crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; color: var(--text-2); text-decoration: none; }
+.crumb:hover { color: var(--text); text-decoration: underline; }
+.crumb svg { width: 14px; height: 14px; }
+@media (max-width: 760px) { .page { padding-block: 32px 96px; } }
+
+/* ── 종이: 보고서처럼 읽는 덩어리. 윗변 먹선 2px, 떠 있는 그림자 */
+.paper {
+  background: var(--paper); border: 1px solid var(--line); border-top: 2px solid var(--ink);
+  box-shadow: var(--float);
+}
+
+/* ── 퍼즐 조각 표시: 채움(맞물림) / 점선(빈 조각). 상태를 색이 아니라 모양으로.
+   <use> 안쪽까지 닿도록 상속되는 속성(fill, stroke)만 씀 */
+.piece { width: 22px; height: 22px; flex: none; fill: var(--ink); overflow: visible; }
+.piece.is-point { fill: var(--point); }
+.piece.is-empty { fill: none; stroke: var(--text-2); stroke-width: 6; stroke-dasharray: 10 9; }
+
+/* ── 점수 막대: 가는 선 위에 굵은 선, 끝에 눈금 */
+.bar { position: relative; height: 1px; background: var(--line); }
+.bar b { position: absolute; left: 0; top: -1px; height: 3px; width: var(--v); background: var(--ink); }
+.bar b::after { content: ""; position: absolute; right: -1px; top: -4px; width: 1px; height: 11px; background: inherit; }
+.bar.is-point b { background: var(--point); }
+
+/* ── 예시 표시 */
+.chip {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 2px; background: var(--paper);
+  font-size: 15px; line-height: 1; font-weight: 500; color: var(--text-2); white-space: nowrap;
+}
+
+/* ── 푸터 */
+.footer { border-top: 1px solid var(--line); padding-block: 28px 36px; font-size: 15px; color: var(--text-2); }
+.footer .wrap { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; }
+.footer .logo { color: var(--text); margin-right: auto; }
+.footer .logo svg { width: 16px; height: 22px; }
+.footer .logo span { font-size: 16px; }
+.footer a { text-decoration: none; }
+.footer a:hover { text-decoration: underline; color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

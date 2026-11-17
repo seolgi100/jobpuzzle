@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>면접 진행 — 잡퍼즐</title>
+<meta name="description" content="질문에 답하고 평가를 받는 면접 진행 화면">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="app.css">
+<style>
+/* ───── 면접 진행: 메뉴를 걷어 낸 면접실. 질문 하나와 답 쓰는 종이 한 장에 시선을 모음 ───── */
+
+/* 면접 중 머리줄: 다른 메뉴로 새지 않게 로고·면접 이름·나가기만 */
+.room-bar { position: sticky; top: 0; z-index: 50; height: var(--nav-h); background: var(--wall); border-bottom: 1px solid var(--line); }
+.room-bar .wrap { display: flex; align-items: center; height: 100%; gap: 28px; }
+.room-bar .session { font-size: 16px; color: var(--text-2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-bar .session b { color: var(--text); font-weight: 600; }
+.room-bar .end { margin-left: auto; flex: none; min-height: 40px; padding: 0 16px; font-size: 15px; }
+
+/* 진행: 질문 하나가 조각 하나. 끝낸 것은 채움, 지금 것은 델프트 블루, 남은 것은 선만 */
+.progress { display: flex; align-items: center; gap: 28px; padding-block: 36px 0; }
+.progress .pieces { display: flex; gap: 8px; }
+.progress .piece { width: 30px; height: 30px; }
+.progress .piece.is-todo { fill: none; stroke: #A9B1BD; stroke-width: 5; }
+.progress .count { font-size: 16px; color: var(--text-2); }
+.progress .count b { font-family: var(--serif); font-weight: 600; font-size: 22px; color: var(--text); margin-right: 2px; }
+.progress .exit { margin-left: auto; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 64px; margin-top: 40px; align-items: start; }
+
+/* 질문 */
+.question .no { font-size: 16px; color: var(--text-2); }
+.question h1 { margin-top: 10px; font-family: var(--serif); font-weight: 600; font-size: 32px; line-height: 1.5; letter-spacing: -0.015em; text-wrap: pretty; }
+/* AI 추가 질문: 원래 질문 아래에 델프트 블루 세로선으로 이어 붙음 */
+.follow { margin-top: 32px; padding: 4px 0 4px 24px; border-left: 2px solid var(--point); }
+.follow .who { font-size: 15px; font-weight: 600; color: var(--accent); }
+.follow p { margin-top: 6px; font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.6; }
+.follow small { display: block; margin-top: 10px; font-size: 16px; color: var(--text-2); }
+
+/* 답 쓰는 종이 */
+.answer { margin-top: 40px; }
+.answer label { display: block; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.sheet { padding: 0; }
+.sheet textarea {
+  display: block; width: 100%; min-height: 260px; padding: 28px 32px; border: 0; resize: vertical;
+  background: transparent; font: inherit; font-size: 18px; line-height: 1.8; color: var(--text);
+}
+.sheet textarea::placeholder { color: #7C8492; }
+.sheet textarea:focus { outline: none; }
+.sheet:focus-within { border-color: var(--point); border-top-color: var(--ink); }
+.sheet .tools { display: flex; align-items: center; gap: 20px; padding: 14px 16px 14px 24px; border-top: 1px solid var(--line); }
+.voice { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px 0 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); font-size: 15px; font-weight: 600; cursor: pointer; transition: border-color .3s; }
+.voice:hover { border-color: var(--ink); }
+.voice svg { width: 18px; height: 18px; }
+.voice[aria-pressed="true"] { border-color: var(--point); color: var(--accent); }
+.state { font-size: 15px; color: var(--text-2); }
+.state b { color: var(--text); font-weight: 600; }
+.state .saved::before { content: "·"; margin: 0 8px; }
+.sheet .submit { margin-left: auto; }
+
+/* 평가하는 중 */
+.sheet.is-busy textarea { opacity: .45; }
+.busy { display: none; align-items: center; gap: 14px; padding: 16px 24px; border-top: 1px solid var(--line); background: var(--point-soft); font-size: 16px; }
+.sheet.is-busy .busy { display: flex; }
+.sheet.is-busy .tools { display: none; }
+.busy .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--point); animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .25; } }
+
+.quiet { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 6px 28px; font-size: 16px; }
+.quiet button, .quiet a { border: 0; background: none; padding: 6px 0; color: var(--text-2); cursor: pointer; text-decoration: none; }
+.quiet button:hover, .quiet a:hover { color: var(--text); text-decoration: underline; }
+
+/* 오른쪽: 이 질문의 답변 과정과 힌트 */
+.side { position: sticky; top: calc(var(--nav-h) + 32px); display: grid; gap: 40px; }
+.side .h3 + * { margin-top: 16px; }
+.talk { border-left: 1px solid var(--line); padding-left: 24px; display: grid; gap: 20px; }
+.talk li { position: relative; font-size: 16px; line-height: 1.7; }
+.talk li::before { content: ""; position: absolute; left: -28px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); }
+.talk li.is-ai::before { background: var(--point); border-color: var(--point); }
+.talk li.is-now::before { background: var(--ink); }
+.talk .who { font-size: 15px; font-weight: 600; color: var(--text-2); }
+.talk li.is-ai .who { color: var(--accent); }
+.talk p { margin-top: 2px; }
+.talk li.is-now p { color: var(--text-2); }
+
+.hint { border-top: 1px solid var(--ink); }
+.hint summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 0; font-weight: 600; }
+.hint summary::-webkit-details-marker { display: none; }
+.hint summary svg { width: 14px; height: 14px; color: var(--text-2); transition: transform .4s var(--ease); }
+.hint[open] summary svg { transform: rotate(180deg); }
+.hint dl { padding-bottom: 8px; }
+.hint dt { font-size: 15px; font-weight: 600; color: var(--text-2); padding-top: 14px; border-top: 1px solid var(--line); }
+.hint dd { margin-top: 4px; padding-bottom: 14px; font-size: 16px; line-height: 1.7; }
+.hint ul { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+/* 확인 창 */
+dialog { width: min(520px, calc(100% - 32px)); padding: 0; border: 1px solid var(--line); border-top: 2px solid var(--ink); border-radius: 0; background: var(--paper); color: var(--text); box-shadow: var(--float); }
+dialog::backdrop { background: rgba(11, 13, 17, .45); }
+dialog .in { padding: 32px 32px 24px; }
+dialog h2 { font-family: var(--serif); font-weight: 600; font-size: 23px; line-height: 1.45; }
+dialog p { margin-top: 12px; color: var(--text-2); font-size: 16px; line-height: 1.7; }
+dialog .row { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 24px; }
+
+@media (max-width: 1100px) {
+  .stage { grid-template-columns: 1fr; gap: 48px; }
+  .side { position: static; }
+}
+@media (max-width: 760px) {
+  .room-bar .session { display: none; }
+  .progress { padding-top: 24px; gap: 16px; flex-wrap: wrap; }
+  .progress .piece { width: 24px; height: 24px; }
+  .progress .exit { margin-left: 0; width: 100%; }
+  .stage { margin-top: 28px; }
+  .question h1 { font-size: 24px; }
+  .follow p { font-size: 19px; }
+  .sheet textarea { min-height: 220px; padding: 20px; font-size: 17px; }
+  .sheet .tools { flex-wrap: wrap; padding: 12px 16px; }
+  /* 모바일: 제출 버튼은 화면 아래에 붙어 있음 */
+  .sheet .submit { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 40; min-height: 54px; box-shadow: var(--lift); }
+  .page { padding-bottom: 140px; }
+  dialog .row { flex-direction: column-reverse; }
+  dialog .row .btn { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- 공용 도형 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="logo-piece" d="M30 20 H130 V55 A17 17 0 1 1 130 85 V120 H95 A15 15 0 0 0 65 120 H30 V85 A17 17 0 1 1 30 55 Z"/>
+    <mask id="j-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="300">
+      <rect width="220" height="300" fill="#fff"/>
+      <use href="#logo-piece" fill="#000" transform="translate(46 150) scale(.7)"/>
+      <rect x="96" y="140" width="10" height="34" fill="#000"/>
+    </mask>
+    <symbol id="j-symbol" viewBox="0 0 220 300">
+      <path mask="url(#j-cut)" fill="currentColor" d="M105 50 L214 0 V192 A107 107 0 0 1 0 192 V140 H106 Z"/>
+    </symbol>
+    <symbol id="pc" viewBox="34 6 160 160">
+      <path d="M46,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H154 Q160,40 160,46 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V154 Q160,160 154,160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H46 Q40,160 40,154 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 V46 Q40,40 46,40 Z"/>
+    </symbol>
+    <symbol id="arrow" viewBox="0 0 16 16"><path d="M2 8h11.5M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="arrow-left" viewBox="0 0 16 16"><path d="M14 8H2.5M7 3.5 2.5 8 7 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="chev" viewBox="0 0 14 14"><path d="M2.5 5 7 9.5 11.5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="mic" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.4"><rect x="6.2" y="1.8" width="5.6" height="9.4" rx="2.8"/><path d="M3.5 8.6a5.5 5.5 0 0 0 11 0M9 14.2v2.4M6.4 16.6h5.2"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="room-bar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="잡퍼즐 처음으로"><span class="mark" aria-hidden="true"></span><span>JobPuzzle</span></a>
+    <p class="session"><b>가온테크(가상) 백엔드 개발자 신입</b> · 자료 기반 면접 · 2회차</p>
+    <button class="btn btn-ghost end" type="button" data-open="end-dialog">면접 끝내기</button>
+  </div>
+</header>
+
+<main class="page" style="padding-top:0">
+  <div class="wrap">
+    <div class="progress">
+      <div class="pieces" role="img" aria-label="질문 6개 중 3번째 질문, 2개 답변 완료">
+        <svg class="piece"><use href="#pc"/></svg>
+        <svg class="piece"><use href="#pc"/></svg>
+        <svg class="piece is-point"><use href="#pc"/></svg>
+        <svg class="piece is-todo"><use href="#pc"/></svg>
+        <svg class="piece is-todo"><use href="#pc"/></svg>
+        <svg class="piece is-todo"><use href="#pc"/></svg>
+      </div>
+      <p class="count">질문 <b class="num">3</b>/ 6</p>
+      <a class="crumb exit" href="#"><svg aria-hidden="true"><use href="#arrow-left"/></svg>면접 준비로 나가기</a>
+    </div>
+
+    <div class="stage">
+      <section class="question" aria-labelledby="q-title">
+        <p class="no">질문 3</p>
+        <h1 id="q-title">팀 프로젝트에서 API 응답 속도를 개선했다고 적으셨습니다. 원인을 어떻게 찾았는지 설명해 주세요.</h1>
+
+        <div class="follow">
+          <div class="who">AI 추가 질문</div>
+          <p>인덱스를 추가한 뒤 응답 시간은 어떻게 달라졌습니까?</p>
+          <small>답변을 조금 더 확인해야 할 때만 이어집니다. 여기서 이 질문을 마쳐도 됩니다.</small>
+        </div>
+
+        <form class="answer" id="answer-form">
+          <label for="answer">AI 추가 질문에 답하기</label>
+          <div class="paper sheet" id="sheet">
+            <textarea id="answer" name="answer" placeholder="상황, 본인 역할, 행동, 결과를 중심으로 답해 주세요"></textarea>
+            <div class="tools">
+              <button class="voice" type="button" aria-pressed="false" id="voice"><svg aria-hidden="true"><use href="#mic"/></svg><span>음성으로 답하기</span></button>
+              <p class="state" aria-live="polite">남은 기회 <b class="num">2</b>번<span class="saved" id="saved" hidden>임시 저장됨</span></p>
+              <button class="btn btn-primary submit" type="submit">추가 답변 제출<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></button>
+            </div>
+            <div class="busy" role="status"><span class="dot" aria-hidden="true"></span><span><b>평가하는 중</b> · AI가 답변을 평가하고 있습니다. 잠시만 기다려 주십시오.</span></div>
+          </div>
+        </form>
+
+        <div class="quiet">
+          <button type="button" data-open="skip-dialog">건너뛰기</button>
+          <button type="button">이 질문 마치기</button>
+          <a href="report.html">지금까지 결과</a>
+        </div>
+      </section>
+
+      <aside class="side" aria-label="이 질문의 답변 과정과 힌트">
+        <section>
+          <h2 class="h3">답변 과정</h2>
+          <ol class="talk">
+            <li><div class="who">첫 답변</div><p>목록 조회가 느리다는 이야기를 듣고 쿼리 실행 계획을 확인했습니다. 조건에 맞는 인덱스가 없어 전체 테이블을 읽고 있었고, 자주 쓰는 조건에 복합 인덱스를 추가했습니다.</p></li>
+            <li class="is-ai"><div class="who">AI 추가 질문</div><p>인덱스를 추가한 뒤 응답 시간은 어떻게 달라졌습니까?</p></li>
+            <li class="is-now"><div class="who">추가 답변</div><p>지금 쓰는 중</p></li>
+          </ol>
+        </section>
+
+        <details class="hint">
+          <summary>힌트 보기<svg aria-hidden="true"><use href="#chev"/></svg></summary>
+          <dl>
+            <dt>이 질문의 의도</dt>
+            <dd>문제의 원인을 분석한 과정과 본인이 맡은 역할을 확인합니다.</dd>
+            <dt>집중 평가 기준</dt>
+            <dd><ul><li>문제 해결 과정</li><li>본인 역할</li><li>성과 및 결과 표현</li></ul></dd>
+          </dl>
+        </details>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<!-- 확인 창: 브라우저 confirm 대신 -->
+<dialog id="skip-dialog" aria-labelledby="skip-title">
+  <div class="in">
+    <h2 id="skip-title">이 질문을 건너뛰시겠습니까?</h2>
+    <p>건너뛴 질문은 다시 나오지 않고 평가에서도 빠집니다.</p>
+  </div>
+  <form method="dialog" class="row">
+    <button class="btn btn-ghost" value="cancel">계속 답하기</button>
+    <button class="btn btn-primary" value="skip">건너뛰기</button>
+  </form>
+</dialog>
+<dialog id="end-dialog" aria-labelledby="end-title">
+  <div class="in">
+    <h2 id="end-title">면접을 끝내시겠습니까?</h2>
+    <p>지금까지 답한 질문으로 리포트를 만듭니다. 끝낸 면접은 다시 이어서 할 수 없습니다.</p>
+  </div>
+  <form method="dialog" class="row">
+    <button class="btn btn-ghost" value="cancel">계속하기</button>
+    <button class="btn btn-primary" value="end">면접 끝내기</button>
+  </form>
+</dialog>
+
+<script>
+  // 시안용 동작: 임시 저장 표시, 음성 입력 버튼, 제출하면 "평가하는 중", 확인 창
+  const answer = document.getElementById('answer'), saved = document.getElementById('saved');
+  let t;
+  answer.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { saved.hidden = !answer.value.trim(); }, 600); });
+
+  const voice = document.getElementById('voice');
+  voice.addEventListener('click', () => {
+    const on = voice.getAttribute('aria-pressed') !== 'true';
+    voice.setAttribute('aria-pressed', on);
+    voice.querySelector('span').textContent = on ? '음성 입력 멈추기' : '음성으로 답하기';
+  });
+
+  const sheet = document.getElementById('sheet');
+  document.getElementById('answer-form').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!answer.value.trim()) { answer.focus(); answer.setAttribute('placeholder', '답을 써야 제출할 수 있습니다.'); return; }
+    sheet.classList.add('is-busy'); answer.readOnly = true;
+    setTimeout(() => { sheet.classList.remove('is-busy'); answer.readOnly = false; }, 2400);
+  });
+
+  document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.open).showModal()));
+</script>
+</body>
+</html>
