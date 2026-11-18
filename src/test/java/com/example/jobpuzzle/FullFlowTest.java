@@ -1,6 +1,11 @@
 package com.example.jobpuzzle;
 
+import com.example.jobpuzzle.ai.client.MockAiClient;
+import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
+import com.example.jobpuzzle.ai.log.AiCallLogRepository;
+import com.example.jobpuzzle.ai.log.AiExecutionStage;
 import com.example.jobpuzzle.ai.prompt.PromptTemplate;
+import com.example.jobpuzzle.ai.validation.AiProcessingException;
 import com.example.jobpuzzle.ai.prompt.PromptTemplateRepository;
 import com.example.jobpuzzle.global.security.CustomUserDetails;
 import com.example.jobpuzzle.guide.entity.GuideScopeType;
@@ -20,6 +25,7 @@ import com.example.jobpuzzle.user.repository.UserRepository;
 import com.example.jobpuzzle.user.service.MailService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,6 +35,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -39,6 +46,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -67,42 +79,34 @@ class FullFlowTest {
     @Autowired private PromptTemplateRepository promptTemplateRepository;
     @Autowired private JobGuideDocumentRepository guideDocumentRepository;
     @Autowired private JobGuideChunkRepository guideChunkRepository;
+    @Autowired private AiCallLogRepository aiCallLogRepository;
     @MockitoBean private MailService mailService;
+    // 평소에는 stub 그대로 응답하고, 시간 초과 테스트에서만 일부 호출이 시간 초과를 던지게 바꾼다
+    @MockitoSpyBean private MockAiClient stubAi;
 
     private RequestPostProcessor auth;
+    private JobCategory backend;
+    private User admin;
+
+    // 두 테스트가 같은 메모리 DB를 쓰므로 공통 준비는 한 번만 한다
+    @BeforeEach
+    void prepare() throws Exception {
+        backend = jobCategoryRepository
+                .findByMainCategoryAndSubCategoryAndCareerLevel("IT·개발", "백엔드 개발", JobCategoryCareerLevel.NEW).orElseThrow();
+        admin = userRepository.findByLoginId("flowadmin").orElse(null);
+        if (admin != null) return;
+        admin = admin(backend);
+        prepareAnalysisPrompts();
+        prepareGuide(backend, admin);
+    }
 
     @Test
     void signUpToAdminFeaturesInStubMode() throws Exception {
-        JobCategory backend = jobCategoryRepository
-                .findByMainCategoryAndSubCategoryAndCareerLevel("IT·개발", "백엔드 개발", JobCategoryCareerLevel.NEW).orElseThrow();
-        User admin = admin(backend);
-        prepareAnalysisPrompts();
-        prepareGuide(backend, admin);
-
         // 1. 회원가입 → 로그인 (메일 발송만 막고, 인증 코드는 저장소에 직접 넣는다)
-        emailVerificationStore.save("flow@example.test", 123456);
-        call(post("/user/join"), Map.of("loginId", "flowuser", "password", "flowpass123", "email", "flow@example.test",
-                "name", "흐름", "defaultJobCategoryId", backend.getJobCategoryId(), "code", 123456), 200);
-        MockHttpSession session = new MockHttpSession();
-        mockMvc.perform(post("/user/login").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"loginId\":\"flowuser\",\"password\":\"flowpass123\"}"));
-        auth = request -> { request.setSession(session); return request; };
-        Long userId = data(get("/user/me"), null, 200).path("userId").asLong();
-        assertThat(userId).isEqualTo(userRepository.findByLoginId("flowuser").orElseThrow().getUserId());
-        ticketService.charge(userId, 100, "flow-order");
+        signUp("flowuser");
 
-        // 2. 자료 등록: 직접 입력 → 확정
-        List<Long> extractionIds = new ArrayList<>();
-        extractionIds.add(document("JOB_POSTING", "Java와 Spring Boot 기반 백엔드 개발자를 찾습니다. RDB 설계 경험을 우대합니다."));
-        extractionIds.add(document("RESUME", "Java와 Spring Boot로 주문 REST API를 구현했고 MariaDB 인덱스로 조회 속도를 개선했습니다."));
-        extractionIds.add(document("COVER_LETTER", "사용자가 기다리지 않는 서비스를 만들고 싶어 성능 개선에 집중해 왔습니다."));
-
-        // 3. 분석: 케이스 생성 → 자료 연결 → 확정 → 색인 → 실행
-        Long caseId = data(post("/analysis-cases"), Map.of("jobCategoryId", backend.getJobCategoryId()), 201).path("analysisCaseId").asLong();
-        for (Long id : extractionIds) data(post("/analysis-cases/" + caseId + "/sources"), Map.of("extractionId", id), 201);
-        data(post("/analysis-cases/" + caseId + "/confirm"), null, 201);
-        data(post("/analysis-cases/" + caseId + "/index"), null, 200);
-        assertThat(data(post("/analysis/cases/" + caseId + "/run"), null, 200).path("status").asText()).isEqualTo("COMPLETED");
+        // 2~3. 자료 등록 → 분석
+        Long caseId = analyzedCase();
         assertThat(data(get("/analysis/cases/" + caseId + "/status"), null, 200).path("analysisCaseStatus").asText()).isEqualTo("COMPLETED");
 
         // 4. 세 모드 면접: 질문 생성 → 면접 → 최종 보고서
@@ -158,6 +162,103 @@ class FullFlowTest {
         data(delete("/admin-api/competency/tags/" + tagId), null, 200);
     }
 
+    /**
+     * 평가 명세 9-5의 2단계 "타임아웃 → 실패 처리": AI가 매번 시간 초과를 내면
+     * 정해진 횟수만큼 다시 부른 뒤 실패로 끝나고, 티켓을 쓰는 작업은 티켓을 돌려준다. 답변 평가는 그 답변만 다시 낼 수 있다.
+     */
+    @Test
+    void aiTimeoutsFailCleanlyAndRefundTickets() throws Exception {
+        signUp("timeoutuser");
+        AiProcessingException timeout = new AiProcessingException(AiCallLogErrorType.TIMEOUT, "stub timeout");
+
+        // 분석: 공고 분석이 시간 초과 → 분석 FAILED, 티켓 그대로, 다시 실행하면 끝난다
+        doThrow(timeout).when(stubAi).analyzeJobPosting(anyString());
+        Long caseId = preparedCase();
+        int balance = balance();
+        assertThat(call(post("/analysis/cases/" + caseId + "/run"), null, -1).path("success").asBoolean()).isFalse();
+        assertThat(data(get("/analysis/cases/" + caseId + "/status"), null, 200).path("analysisCaseStatus").asText()).isEqualTo("FAILED");
+        assertThat(balance()).isEqualTo(balance);
+        assertThat(timeoutLogs(AiExecutionStage.JOB_POSTING_ANALYSIS)).isPositive();
+        reset(stubAi);
+        assertThat(data(post("/analysis/cases/" + caseId + "/run"), null, 200).path("status").asText()).isEqualTo("COMPLETED");
+
+        // 질문 생성: 3번(처음 + 다시 2번) 모두 시간 초과 → 실패, 질문 세트 없음, 티켓 그대로
+        doThrow(timeout).when(stubAi).generateQuestionsV2(anyString());
+        balance = balance();
+        assertThat(call(post("/question-sets/material"), Map.of("analysisCaseId", caseId), -1).path("success").asBoolean()).isFalse();
+        verify(stubAi, times(3)).generateQuestionsV2(anyString());
+        assertThat(balance()).isEqualTo(balance);
+        assertThat(data(get("/question-sets/prepared"), null, 200)).isEmpty();
+        assertThat(timeoutLogs(AiExecutionStage.QUESTION_GENERATION)).isEqualTo(1);
+        reset(stubAi);
+
+        // 답변 평가: 시간 초과 → 그 답변만 실패, 같은 답을 다시 내면 평가된다
+        JsonNode set = data(post("/question-sets/material"), Map.of("analysisCaseId", caseId), 201);
+        Long questionId = data(get("/question-sets/" + set.path("questionSetId").asLong() + "/questions"), null, 200).get(0).path("questionId").asLong();
+        Long sessionId = data(post("/interview-sessions"), Map.of("questionSetId", set.path("questionSetId").asLong(),
+                "selectedQuestionIds", List.of(questionId)), 201).path("sessionId").asLong();
+        data(post("/interview-sessions/" + sessionId + "/start"), null, 200);
+        JsonNode question = data(get("/interview-sessions/" + sessionId + "/questions/next"), null, 200);
+        Map<String, Object> answer = Map.of("messageText", LONG_ANSWER, "answerType", "ORIGINAL_ANSWER",
+                "parentQuestionMessageId", question.path("conversation").get(0).path("messageId").asLong());
+        String answerPath = "/interview-session-questions/" + question.path("sessionQuestionId").asLong() + "/answers";
+
+        doThrow(timeout).when(stubAi).evaluateAnswer(anyString());
+        JsonNode failed = data(post(answerPath), answer, 200);
+        assertThat(failed.path("evaluationFailed").asBoolean()).isTrue();
+        assertThat(failed.path("evaluationRetryRequired").asBoolean()).isTrue();
+        verify(stubAi, times(3)).evaluateAnswer(anyString());
+        assertThat(timeoutLogs(AiExecutionStage.ANSWER_EVALUATION)).isEqualTo(1);
+        reset(stubAi);
+
+        JsonNode evaluated = data(post(answerPath), answer, 200);
+        assertThat(evaluated.path("evaluationFailed").asBoolean()).isFalse();
+        assertThat(evaluated.path("score").isNumber()).isTrue();
+    }
+
+    private Long signUp(String loginId) throws Exception {
+        auth = null;
+        String email = loginId + "@example.test";
+        emailVerificationStore.save(email, 123456);
+        call(post("/user/join"), Map.of("loginId", loginId, "password", "flowpass123", "email", email,
+                "name", "흐름", "defaultJobCategoryId", backend.getJobCategoryId(), "code", 123456), 200);
+        MockHttpSession session = new MockHttpSession();
+        call(post("/user/login").session(session), Map.of("loginId", loginId, "password", "flowpass123"), 200);
+        auth = request -> { request.setSession(session); return request; };
+        Long userId = data(get("/user/me"), null, 200).path("userId").asLong();
+        assertThat(userId).isEqualTo(userRepository.findByLoginId(loginId).orElseThrow().getUserId());
+        ticketService.charge(userId, 100, loginId + "-order");
+        return userId;
+    }
+
+    private Long analyzedCase() throws Exception {
+        Long caseId = preparedCase();
+        assertThat(data(post("/analysis/cases/" + caseId + "/run"), null, 200).path("status").asText()).isEqualTo("COMPLETED");
+        return caseId;
+    }
+
+    /** 자료 등록(직접 입력 → 확정) → 분석 케이스 생성 → 자료 연결 → 확정 → 색인까지. run은 부르는 쪽이 한다. */
+    private Long preparedCase() throws Exception {
+        List<Long> extractionIds = new ArrayList<>();
+        extractionIds.add(document("JOB_POSTING", "Java와 Spring Boot 기반 백엔드 개발자를 찾습니다. RDB 설계 경험을 우대합니다."));
+        extractionIds.add(document("RESUME", "Java와 Spring Boot로 주문 REST API를 구현했고 MariaDB 인덱스로 조회 속도를 개선했습니다."));
+        extractionIds.add(document("COVER_LETTER", "사용자가 기다리지 않는 서비스를 만들고 싶어 성능 개선에 집중해 왔습니다."));
+        Long caseId = data(post("/analysis-cases"), Map.of("jobCategoryId", backend.getJobCategoryId()), 201).path("analysisCaseId").asLong();
+        for (Long id : extractionIds) data(post("/analysis-cases/" + caseId + "/sources"), Map.of("extractionId", id), 201);
+        data(post("/analysis-cases/" + caseId + "/confirm"), null, 201);
+        data(post("/analysis-cases/" + caseId + "/index"), null, 200);
+        return caseId;
+    }
+
+    private int balance() throws Exception {
+        return data(get("/tickets/me"), null, 200).path("balance").asInt();
+    }
+
+    private long timeoutLogs(AiExecutionStage stage) {
+        return aiCallLogRepository.findAll().stream()
+                .filter(log -> log.getExecutionStage() == stage && log.getErrorType() == AiCallLogErrorType.TIMEOUT).count();
+    }
+
     /** 질문 세트의 모든 질문으로 면접을 만들고 끝까지 답한다. */
     private Long interview(JsonNode questionSet) throws Exception {
         Long setId = questionSet.path("questionSetId").asLong();
@@ -210,7 +311,9 @@ class FullFlowTest {
         if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body));
         var response = mockMvc.perform(request).andReturn().getResponse();
         String text = response.getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(response.getStatus()).as(text).isEqualTo(status);
+        // status -1: 실패 응답이면 무엇이든 (오류 코드는 이 테스트가 확인할 대상이 아님)
+        if (status == -1) assertThat(response.getStatus()).as(text).isGreaterThanOrEqualTo(400);
+        else assertThat(response.getStatus()).as(text).isEqualTo(status);
         return text.isBlank() ? objectMapper.nullNode() : objectMapper.readTree(text);
     }
 
