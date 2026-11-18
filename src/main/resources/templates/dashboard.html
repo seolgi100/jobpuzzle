@@ -5,96 +5,108 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>대시보드 — JobPuzzle</title>
 <th:block th:replace="~{fragments/head :: dsCss}"></th:block>
-<link rel="stylesheet" href="/css/ds/dashboard.css" th:href="@{/css/ds/dashboard.css}">
-<link rel="stylesheet" href="/css/ds/action-plans.css" th:href="@{/css/ds/action-plans.css}">
+<link rel="stylesheet" href="/css/v2/dashboard.css" th:href="@{/css/v2/dashboard.css}">
 </head>
-<body class="app">
+<body class="app r2-body">
 
 <div th:replace="~{fragments/header :: appHeader('dashboard')}"></div>
 
-<main class="dash-wrap">
-  <!-- 상단: 준비 현황 + 퍼즐(완료한 단계만큼 맞춘 조각, 남은 단계는 빈 홈에 들어갈 조각으로 떠 있음) -->
-  <section class="dhead" aria-labelledby="dash-title">
-    <canvas class="dhead__puzzle" data-job-puzzle-scene aria-hidden="true"></canvas>
-    <div class="dhead__anchor" aria-hidden="true"></div>
-    <div class="dhead__copy">
-      <p class="dhead__eyebrow">MY PREPARATION</p>
-      <h1 class="dhead__title" id="dash-title">나의 준비 현황</h1>
-      <p class="dhead__sub">오늘도 면접 성공을 위해 한 조각씩 맞춰봐요.</p>
-      <div class="dhead__row">
-        <span class="job-chip"><b>희망 직무</b><span id="dash-job">불러오는 중</span><a href="/jobpuzzle/settings" th:href="@{/settings}">수정</a></span>
-        <a href="/jobpuzzle/my-data" th:href="@{/my-data}" class="dbtn dbtn--white"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>내 자료 확인하기</a>
+<!-- 공용 도형: 준비 단계 조각(왼쪽 홈·오른쪽 돌기), 작은 퍼즐 조각, 화살표, 체크 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="link" d="M0 0 H100 V32 A16 16 0 1 1 100 68 V100 H0 V68 A16 16 0 1 0 0 32 Z"/>
+    <symbol id="pc" viewBox="34 6 160 160">
+      <path d="M46,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H154 Q160,40 160,46 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V154 Q160,160 154,160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H46 Q40,160 40,154 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 V46 Q40,40 46,40 Z"/>
+    </symbol>
+    <symbol id="arrow" viewBox="0 0 16 16"><path d="M2 8h11.5M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="tick" viewBox="0 0 12 12"><path d="M2 6.2 4.8 9 10 3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  </defs>
+</svg>
+
+<main class="r2 page">
+  <div class="wrap">
+    <div class="head dash-head">
+      <div>
+        <h1 class="title" id="dash-title">나의 준비 현황</h1>
+        <p class="lead">오늘도 면접을 위해 한 조각씩 맞춰 갑니다.</p>
       </div>
+      <dl class="job">
+        <dt>희망 직무</dt>
+        <dd id="dash-job">불러오는 중</dd>
+        <div class="links"><a class="link" href="/jobpuzzle/settings" th:href="@{/settings}">수정</a><a class="link" href="/jobpuzzle/my-data" th:href="@{/my-data}">내 자료 확인하기</a></div>
+      </dl>
     </div>
-    <div class="dsteps">
-      <p class="dsteps__head">준비 단계 <b data-steps-count></b><span data-steps-next></span></p>
-      <ol class="dsteps__list" data-steps></ol>
+
+    <!-- 다음 할 일 + 준비 6단계 -->
+    <section class="now" aria-label="다음 할 일과 준비 단계">
+      <div class="paper next" id="dash-next"></div>
+      <div class="steps">
+        <p class="label">준비 단계 <b class="num" data-steps-count></b> / 6 완료</p>
+        <svg class="chain" viewBox="-2 -2 620 104" role="img" data-chain></svg>
+        <ol class="step-names" data-steps></ol>
+        <p class="step-mobile" data-step-mobile></p>
+      </div>
+    </section>
+
+    <!-- 요약 -->
+    <dl class="tally" aria-label="요약">
+      <div><dt>진행 중인 면접</dt><dd class="num"><span data-stat="active">0</span><small>건</small></dd></div>
+      <div><dt>해결하지 않은 약점</dt><dd class="num"><span data-stat="open">0</span><small>건</small></dd></div>
+      <div data-late><dt>마감 지난 과제</dt><dd class="num"><span data-stat="overdue">0</span><small>건</small></dd></div>
+      <div><dt>마감일 없는 과제</dt><dd class="num"><span data-stat="nodue">0</span><small>건</small></dd></div>
+    </dl>
+
+    <!-- 탭 -->
+    <div class="tabs" role="tablist" aria-label="준비 기록">
+      <button role="tab" id="tab-sessions" aria-controls="p-sessions" aria-selected="true" data-tab="sessions">면접 세션<small class="num" data-count="sessions"></small></button>
+      <button role="tab" id="tab-weakness" aria-controls="p-weakness" aria-selected="false" tabindex="-1" data-tab="weakness">약점 태그<small class="num" data-count="weakness"></small></button>
+      <button role="tab" id="tab-tasks" aria-controls="p-tasks" aria-selected="false" tabindex="-1" data-tab="tasks">과제<small class="num" data-count="tasks"></small></button>
     </div>
-  </section>
 
-  <section class="dstats" aria-label="요약">
-    <div class="dcard dstat"><span class="dstat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 4 19 12 6 20 6 4"/></svg></span><div><p class="dstat__label">진행 중 세션</p><p class="dstat__value"><span data-stat="active">0</span><small>건</small></p></div></div>
-    <div class="dcard dstat"><span class="dstat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><div><p class="dstat__label">약점 태그</p><p class="dstat__value"><span data-stat="open">0</span><small>건 미해결</small></p></div></div>
-    <div class="dcard dstat"><span class="dstat__icon dstat__icon--danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><p class="dstat__label">마감 기한 초과 과제</p><p class="dstat__value dstat__value--danger"><span data-stat="overdue">0</span><small>건</small></p></div></div>
-    <div class="dcard dstat"><span class="dstat__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><div><p class="dstat__label">마감일 미지정 과제</p><p class="dstat__value"><span data-stat="nodue">0</span><small>건</small></p></div></div>
-  </section>
+    <section class="panel" id="p-sessions" role="tabpanel" aria-labelledby="tab-sessions">
+      <div class="group">
+        <div class="group-head"><h2 class="h3">진행 중인 면접</h2></div>
+        <ul class="rows sessions" data-list="doing"></ul>
+      </div>
+      <div class="group">
+        <div class="group-head"><h2 class="h3">완료된 면접</h2><a class="link" href="/jobpuzzle/reports" th:href="@{/reports}">리포트 전체 보기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+        <ul class="rows sessions" data-list="done"></ul>
+      </div>
+    </section>
 
-  <section class="dcard dtodo" aria-labelledby="todo-title">
-    <h2 class="dcard__title" id="todo-title">다음 해야 할 일</h2>
-    <div id="todo-list"></div>
-  </section>
+    <section class="panel" id="p-weakness" role="tabpanel" aria-labelledby="tab-weakness" hidden>
+      <div class="group">
+        <div class="group-head"><h2 class="h3">해결하지 않은 약점</h2><p>항목별 점수와 최종 점수가 모두 70점을 넘어야 해결로 처리됩니다.</p></div>
+        <ul class="rows weak" data-list="open"></ul>
+      </div>
+      <div class="group">
+        <div class="group-head"><h2 class="h3">해결된 약점</h2><p>같은 약점이 다시 나오면 해결하지 않은 약점으로 돌아갑니다.</p></div>
+        <ul class="rows weak" data-list="solved"></ul>
+      </div>
+    </section>
 
-  <div class="dtabs" role="tablist" aria-label="상세 보기">
-    <button class="dtab" role="tab" aria-selected="true" aria-controls="p-sessions" data-tab="sessions">면접 세션</button>
-    <button class="dtab" role="tab" aria-selected="false" aria-controls="p-weakness" data-tab="weakness">약점 태그</button>
-    <button class="dtab" role="tab" aria-selected="false" aria-controls="p-tasks" data-tab="tasks">과제</button>
+    <section class="panel" id="p-tasks" role="tabpanel" aria-labelledby="tab-tasks" hidden>
+      <div class="group">
+        <div class="group-head">
+          <h2 class="h3">과제 목록</h2>
+          <div class="view" role="group" aria-label="보기 방식"><button type="button" aria-pressed="true" data-view="list">목록</button><button type="button" aria-pressed="false" data-view="cal">달력</button></div>
+        </div>
+        <ul class="rows tasks" data-view-panel="list" id="task-list"></ul>
+        <div class="cal" data-view-panel="cal" hidden>
+          <div class="cal-head"><b id="cal-title"></b></div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <p class="cal-note" id="cal-note"></p>
+        </div>
+      </div>
+    </section>
   </div>
-  <section class="dpanel" id="p-sessions" role="tabpanel">
-    <div class="dcols">
-      <div class="dcard dlist">
-        <h3 class="dcard__title">진행 중인 면접</h3>
-        <div class="dlist__body" data-list="doing"></div>
-        <nav class="pager dlist__pager" aria-label="진행 중인 면접 페이지"></nav>
-      </div>
-      <div class="dcard dlist">
-        <h3 class="dcard__title">완료된 면접</h3>
-        <div class="dlist__body" data-list="done"></div>
-        <nav class="pager dlist__pager" aria-label="완료된 면접 페이지"></nav>
-      </div>
-    </div>
-  </section>
-  <section class="dpanel" id="p-weakness" role="tabpanel" hidden>
-    <div class="dcols">
-      <div class="dcard dlist dlist--tags">
-        <h3 class="dcard__title dcard__title--warn">미해결 약점 태그</h3>
-        <p class="dcard__sub">항목별·최종 점수가 모두 70점을 넘어야 해결로 처리돼요</p>
-        <div class="dlist__body" data-list="open"></div>
-        <nav class="pager dlist__pager" aria-label="미해결 약점 태그 페이지"></nav>
-      </div>
-      <div class="dcard dlist dlist--tags">
-        <h3 class="dcard__title dcard__title--ok">해결된 약점 태그</h3>
-        <p class="dcard__sub">다시 반복되면 자동으로 미해결로 전환돼요</p>
-        <div class="dlist__body" data-list="solved"></div>
-        <nav class="pager dlist__pager" aria-label="해결된 약점 태그 페이지"></nav>
-      </div>
-    </div>
-  </section>
-  <section class="dpanel" id="p-tasks" role="tabpanel" hidden>
-    <div class="dcard">
-      <h3 class="dcard__title">과제 목록<span class="seg" role="group" aria-label="보기 방식"><button type="button" aria-pressed="true">목록형</button><a href="/jobpuzzle/action-plans?view=cal" th:href="@{/action-plans(view='cal')}" style="height:28px; padding:0 12px; display:inline-flex; align-items:center; border-radius:7px; font-size:13px; font-weight:600; color:var(--text-2); text-decoration:none">달력형</a></span></h3>
-      <div id="task-list"></div>
-    </div>
-  </section>
 </main>
 
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 
-<script>window.__jobPuzzleLoaderFinished = true;</script>
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
 <script src="/js/common.js" th:src="@{/js/common.js}"></script>
 <script src="/js/header.js" th:src="@{/js/header.js}"></script>
-<script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
-<script src="/js/logo-mask.js" th:src="@{/js/logo-mask.js}"></script>
 <script src="/js/ds-ui.js" th:src="@{/js/ds-ui.js}"></script>
 <script src="/js/dashboard.js" th:src="@{/js/dashboard.js}"></script>
 </body>

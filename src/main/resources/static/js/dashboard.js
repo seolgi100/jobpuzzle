@@ -1,14 +1,9 @@
-// dashboard.js — 준비 현황(6단계 + 퍼즐), 요약 카드, 다음 할 일, 면접·약점·과제 탭. 모두 기존 API 데이터로 판정한다.
+// dashboard.js — 준비 현황(다음 할 일 + 6단계 퍼즐판), 요약 표, 면접·약점·과제 탭. 모두 기존 API 데이터로 판정한다.
+// 화면 기준: design-test/dashboard.html (도록 컨셉)
 (function () {
   'use strict';
-  var U = window.JPUI, route = window.JobPuzzleRoutes.path;
-  var ICON = {
-    play: '<svg viewBox="0 0 24 24"><polygon points="6 4 19 12 6 20 6 4"/></svg>',
-    tag: '<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/></svg>',
-    list: '<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-    next: '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
-  };
-  // 준비 6단계: 순서와 상관없이 조건을 채우면 완료, '다음'은 첫 번째 미완료 단계
+  var U = window.JPUI, route = window.JobPuzzleRoutes.path, esc = U.esc;
+  // 준비 6단계: 순서와 상관없이 조건을 채우면 완료, '지금'은 첫 번째 미완료 단계
   var STEPS = [
     { name: '희망 직무 정하기', href: '/settings', test: function (d) { return !!(d.user && d.user.defaultJobCategoryId); } },
     { name: '내 자료 확정하기', href: '/my-data', test: function (d) { return d.docs.some(function (x) { return x.latestVersionStatus === 'CONFIRMED'; }); } },
@@ -17,168 +12,180 @@
     { name: '면접·답변 평가 받기', href: '/reports', test: function (d) { return d.history.length > 0; } },
     { name: '약점 보완하기', href: '/action-plans', test: function (d) { return d.solved.length > 0 || d.plans.some(function (p) { return p.status === 'DONE'; }); } }
   ];
-  var ORDER = [0, 3, 1, 4, 2, 5];   // 퍼즐 조각을 맞추는 순서(J가 있는 가운데 열부터)
-  var ROAM_SLOTS = [[.14, .1], [.26, .55], [.02, .45], [.3, -.12], [.12, .72], [-.04, .05]];
+  var DONE_ROWS = 5, TASK_ROWS = 8, MINI_MAX = 10;
   var data = { user: null, jobs: [], docs: [], analyses: [], active: [], history: [], open: [], solved: [], plans: [], scores: {} };
-  var pages = {};
   var today = new Date(); today.setHours(0, 0, 0, 0);
   var TODAY = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
   function get(p, fallback) { return U.api(route(p)).catch(function () { return fallback; }); }
-  function dateDot(v) { if (!v) return ''; var d = new Date(v); return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0'); }
+  function md(v) { if (!v) return ''; var d = new Date(v); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
   function pending(p) { return p.status !== 'DONE'; }
   function overdue(p) { return pending(p) && p.deadline && p.deadline < TODAY; }
   function careerLabel(v) { return { NEW: '신입', EXPERIENCED: '경력', ANY: '경력 무관' }[v] || ''; }
+  function arrow() { return '<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg>'; }
+  function caseOf(id) { return data.analyses.filter(function (c) { return c.analysisCaseId === id; })[0]; }
+  function caseTitle(id) { var c = id && caseOf(id); return c && c.postingName ? c.postingName.replace(/\.[a-z0-9]{2,5}$/i, '') : ''; }
+  function sessionName(s) { return caseTitle(s.analysisCaseId) || U.mode(s.mode)[0] + ' 면접'; }
+  function sessionSub(s, when) {
+    return [U.mode(s.mode)[0] + ' 면접', s.round > 1 ? s.round + '회차' : '', when].filter(Boolean).join(' · ');
+  }
+  function empty(text) { return '<li class="empty-note">' + text + '</li>'; }
 
-  // ── 상단: 이름 · 희망 직무 · 준비 단계 · 퍼즐 ──
-  var canvas = document.querySelector('.dhead__puzzle'), look = null, narrow = window.matchMedia('(max-width: 960px)');
+  // ── 머리말 · 다음 할 일 · 준비 단계 ──
   function renderHead() {
     var u = data.user;
-    if (u) document.getElementById('dash-title').textContent = (u.name || u.loginId) + '님의 준비 현황';
     var job = u && data.jobs.filter(function (j) { return j.jobCategoryId === u.defaultJobCategoryId; })[0];
     document.getElementById('dash-job').textContent = job
-      ? [job.mainCategory, job.subCategory].join(' › ') + (careerLabel(job.careerLevel) ? ' · ' + careerLabel(job.careerLevel) : '')
-      : '아직 정하지 않았어요';
+      ? job.subCategory + (careerLabel(job.careerLevel) ? ' · ' + careerLabel(job.careerLevel) : '')
+      : '아직 정하지 않았습니다';
+
     var done = STEPS.map(function (s) { return s.test(data); });
-    var count = done.filter(Boolean).length, next = done.indexOf(false);
-    document.querySelector('[data-steps-count]').textContent = count + ' / ' + STEPS.length;
-    document.querySelector('[data-steps-next]').textContent = next < 0 ? ' · 모든 단계를 마쳤어요' : ' · 다음: ' + STEPS[next].name;
-    document.querySelector('[data-steps]').innerHTML = STEPS.map(function (s, i) {
-      var st = done[i] ? 'done' : i === next ? 'next' : 'todo';
-      return '<li class="dstep dstep--' + st + '"' + (st === 'next' ? ' aria-current="step"' : '') + '><a href="' + route(s.href) + '">' +
-        '<span class="dstep__no">' + (done[i] ? '✓' : i + 1) + '</span>' + s.name + '</a></li>';
+    var now = done.indexOf(false);
+    document.querySelector('[data-steps-count]').textContent = done.filter(Boolean).length;
+    var chain = document.querySelector('[data-chain]');
+    chain.setAttribute('aria-label', '준비 6단계 중 ' + done.filter(Boolean).length + '단계 완료' + (now < 0 ? '' : ', 지금 ' + (now + 1) + '단계'));
+    chain.innerHTML = STEPS.map(function (s, i) {
+      var cls = done[i] ? 'done' : i === now ? 'now-piece' : 'todo';
+      return '<a href="' + route(s.href) + '" aria-label="' + (i + 1) + '. ' + s.name + '"><use href="#link" class="' + cls + '" x="' + i * 100 + '"/>' +
+        '<text x="' + (i * 100 + 50) + '" y="50">' + (i + 1) + '</text></a>';
     }).join('');
-    look = look || (canvas && canvas._puzzleLook);
-    if (!look) return;
-    var placed = ORDER.slice(0, count), slot = 0;
-    look.setRoam(ORDER.map(function (_, p) { return placed.indexOf(p) >= 0 ? [0, 0] : narrow.matches ? [0, 4] : ROAM_SLOTS[slot++]; }), .75, true);
-    look.setAssembled(placed);
+    document.querySelector('[data-steps]').innerHTML = STEPS.map(function (s, i) {
+      var cls = done[i] ? 'is-done' : i === now ? 'is-now' : '';
+      return '<li' + (cls ? ' class="' + cls + '"' : '') + (i === now ? ' aria-current="step"' : '') + '><a href="' + route(s.href) + '">' + s.name + '</a></li>';
+    }).join('');
+    document.querySelector('[data-step-mobile]').innerHTML = now < 0 ? '모든 단계를 마쳤습니다.' : '지금 단계: <b>' + (now + 1) + '. ' + STEPS[now].name + '</b>';
+
+    var a = data.active[0], left = data.plans.filter(pending).length, n;
+    if (a) n = { title: '진행 중인 면접 마무리하기', ctx: '<b>' + esc(sessionName(a)) + '</b> · ' + esc(sessionSub(a, '')) + ' · <span class="nowrap num">질문 ' + (a.currentQuestionOrder || a.completedQuestionCount + 1) + ' / ' + a.questionCount + '</span>',
+      cta: '<a class="btn btn-primary" href="' + route('/interview?resumeSessionId=' + a.sessionId) + '">이어서 하기' + arrow() + '</a>' };
+    else if (left) n = { title: '남은 과제 처리하기', ctx: '보완 과제 <b class="num">' + left + '</b>건이 남아 있습니다.',
+      cta: '<button type="button" class="btn btn-primary" data-goto="tasks">과제 목록 보기' + arrow() + '</button>' };
+    else if (now >= 0) n = { title: STEPS[now].name, ctx: '다음 준비 단계입니다.', cta: '<a class="btn btn-primary" href="' + route(STEPS[now].href) + '">시작하기' + arrow() + '</a>' };
+    else n = { title: '새 면접으로 연습 이어 가기', ctx: '모든 준비 단계를 마쳤습니다.', cta: '<a class="btn btn-primary" href="' + route('/interview') + '">면접 준비' + arrow() + '</a>' };
+    document.getElementById('dash-next').innerHTML = '<p class="label">다음 할 일</p><h2>' + n.title + '</h2><p class="ctx">' + n.ctx + '</p>' + n.cta;
   }
 
-  function initPuzzle() {
-    look = canvas && canvas._puzzleLook;
-    if (!look) return;
-    look.setAnchor(document.querySelector('.dhead__anchor'));
-    look.setGhost('grid');
-    look.setDragMode('tilt');
-    look.setClickable(false);
-    look.setFloatSpeed(.4);
-    if (window.JP_LOGO_MASK) {
-      var logo = new Image();
-      logo.onload = function () { look.setEmblem(logo, .8); };
-      logo.src = window.JP_LOGO_MASK;
-    }
-    narrow.addEventListener('change', renderHead);
-  }
-
-  // ── 요약 카드 ──
+  // ── 요약 표 · 탭 숫자 ──
   function renderStats() {
     var set = function (k, v) { document.querySelector('[data-stat="' + k + '"]').textContent = v; };
+    var late = data.plans.filter(overdue).length;
     set('active', data.active.length);
     set('open', data.open.length);
-    set('overdue', data.plans.filter(overdue).length);
+    set('overdue', late);
     set('nodue', data.plans.filter(function (p) { return pending(p) && !p.deadline; }).length);
+    document.querySelector('[data-late]').classList.toggle('is-late', late > 0);
+    var count = function (k, v) { document.querySelector('[data-count="' + k + '"]').textContent = v; };
+    count('sessions', data.active.length + data.history.length);
+    count('weakness', data.open.length + data.solved.length);
+    count('tasks', data.plans.length);
   }
 
-  // ── 다음 해야 할 일 ──
-  function renderTodos() {
-    var todos = [], a = data.active[0];
-    if (a) todos.push({ icon: 'play', title: '진행 중인 면접 마무리하기', desc: U.mode(a.mode)[0] + ' · 질문 ' + (a.questionCount || 0) + '개 중 ' + (a.completedQuestionCount || 0) + '개 답변 완료',
-      cta: '<a href="' + route('/interview?resumeSessionId=' + a.sessionId) + '" class="dbtn dbtn--sky">이어서 진행하기</a>' });
-    var left = data.plans.filter(pending).length;
-    if (left) todos.push({ icon: 'list', title: '미완료 과제 처리하기', desc: left + '건의 과제가 남아있어요',
-      cta: '<button type="button" class="dbtn dbtn--line" data-goto="tasks">과제 목록 보기</button>' });
-    if (!todos.length) {
-      var next = STEPS.filter(function (s) { return !s.test(data); })[0];
-      todos.push(next
-        ? { icon: 'next', title: next.name, desc: '다음 준비 단계예요.', cta: '<a href="' + route(next.href) + '" class="dbtn dbtn--sky">시작하기</a>' }
-        : { icon: 'next', title: '새 면접으로 연습 이어가기', desc: '모든 준비 단계를 마쳤어요.', cta: '<a href="' + route('/interview') + '" class="dbtn dbtn--sky">면접 준비</a>' });
+  // ── 면접 세션 ──
+  function mini(filled, now, total) {
+    var label = '질문 ' + total + '개 중 ' + filled + '개 답변', h = '';
+    for (var i = 0; i < Math.min(total, MINI_MAX); i++) {
+      h += '<svg class="piece' + (i < filled ? '' : i === now ? ' is-point' : ' is-todo') + '"><use href="#pc"/></svg>';
     }
-    document.getElementById('todo-list').innerHTML = todos.map(function (t) {
-      return '<div class="nx"><span class="nx__icon">' + ICON[t.icon] + '</span><div class="nx__body"><p class="nx__title">' + U.esc(t.title) +
-        '</p><p class="nx__desc">' + U.esc(t.desc) + '</p></div>' + t.cta + '</div>';
-    }).join('');
+    return '<div class="mini" role="img" aria-label="' + label + '">' + h + '</div>';
   }
-
-  // ── 탭 목록(페이지 나눔) ──
-  var LISTS = {
-    doing: { size: 2, empty: '진행 중인 면접이 없어요.', rows: function () { return data.active; }, row: function (s) {
-      var p = s.questionCount ? Math.round((s.completedQuestionCount || 0) / s.questionCount * 100) : 0;
-      return '<a href="' + route('/interview?resumeSessionId=' + s.sessionId) + '" class="srow srow--progress"><div style="flex:1"><p class="srow__title">' + U.mode(s.mode)[0] + ' 모의면접 #' + s.sessionId + '</p>' +
-        '<p class="srow__meta">' + dateDot(s.lastActivityAt || s.createdAt) + ' · 질문 ' + (s.questionCount || 0) + '개 중 ' + (s.completedQuestionCount || 0) + '개 답변 완료</p>' +
-        '<div class="progress"><i style="width:' + p + '%"></i></div></div><span class="dbtn dbtn--sky">이어하기</span></a>';
-    } },
-    done: { size: 4, empty: '완료된 면접이 없어요.', rows: function () { return data.history; }, row: function (s) {
+  function renderSessions() {
+    document.querySelector('[data-list="doing"]').innerHTML = data.active.length ? data.active.map(function (s) {
+      var at = s.currentQuestionOrder || s.completedQuestionCount + 1;
+      return '<li><div><div class="name">' + esc(sessionName(s)) + '</div><div class="sub">' + esc(sessionSub(s, md(s.startedAt || s.createdAt) + ' 시작')) + '</div></div>' +
+        mini(s.completedQuestionCount || 0, at - 1, s.questionCount || 0) +
+        '<div class="status is-live">면접 중 <span class="num">' + at + ' / ' + s.questionCount + '</span></div>' +
+        '<div class="act"><a class="btn btn-primary" href="' + route('/interview?resumeSessionId=' + s.sessionId) + '">이어서 하기</a></div></li>';
+    }).join('') : empty('진행 중인 면접이 없습니다.');
+    var done = data.history.slice(0, DONE_ROWS);
+    document.querySelector('[data-list="done"]').innerHTML = done.length ? done.map(function (s) {
       var sc = data.scores[s.sessionId];
-      return '<a href="' + route('/interview-results?sessionId=' + s.sessionId) + '" class="srow"><div><p class="srow__title">' + U.mode(s.mode)[0] + ' 모의면접 #' + s.sessionId + '</p>' +
-        '<p class="srow__meta">' + dateDot(s.completedAt) + ' · 질문 ' + (s.questionCount || 0) + '개</p></div>' +
-        '<span class="srow__score">' + (sc && sc.overallScore != null ? sc.overallScore + '점' : '-') + '</span></a>';
-    } },
-    open: { size: 3, empty: '미해결 약점 태그가 없어요.', rows: function () { return data.open; }, row: function (t) {
-      var last = (t.recentOccurrences || [])[0];
-      return '<div class="tag tag--warn"><span class="tag__name">#' + U.esc(t.displayName || U.weakLabel(t.tag)) + '</span><p class="tag__desc">' + U.esc(t.description || '') + '</p>' +
-        '<p class="tag__meta">' + (last && last.score != null ? '최근 시도 ' + last.score + '점 · ' : '') + '기준 70점</p></div>';
-    } },
-    solved: { size: 3, empty: '아직 해결된 약점 태그가 없어요.', rows: function () { return data.solved; }, row: function (t) {
-      return '<div class="tag tag--ok"><span class="tag__name">#' + U.esc(t.displayName || U.weakLabel(t.tag)) + ' ✓</span><p class="tag__desc">' + U.esc(t.description || '') + '</p><p class="tag__meta">해결 완료</p></div>';
-    } }
-  };
-  function pagerHtml(total, cur) {
-    if (total <= 1) return '';
-    var h = '<button type="button" data-page="' + (cur - 1) + '" aria-label="이전"' + (cur === 0 ? ' disabled' : '') + '>‹</button>';
-    for (var i = 0; i < total; i++) h += '<button type="button" data-page="' + i + '"' + (i === cur ? ' aria-current="page"' : '') + '>' + (i + 1) + '</button>';
-    return h + '<button type="button" data-page="' + (cur + 1) + '" aria-label="다음"' + (cur === total - 1 ? ' disabled' : '') + '>›</button>';
-  }
-  function renderList(k) {
-    var cfg = LISTS[k], rows = cfg.rows(), body = document.querySelector('[data-list="' + k + '"]');
-    var total = Math.ceil(rows.length / cfg.size), cur = Math.min(pages[k] || 0, Math.max(0, total - 1));
-    pages[k] = cur;
-    body.innerHTML = rows.length ? rows.slice(cur * cfg.size, (cur + 1) * cfg.size).map(cfg.row).join('') : '<p class="dlist__empty">' + cfg.empty + '</p>';
-    var pager = body.nextElementSibling;
-    pager.innerHTML = pagerHtml(total, cur);
-    pager.dataset.pagerFor = k;
+      return '<li><div><div class="name">' + esc(sessionName(s)) + '</div><div class="sub">' + esc(sessionSub(s, md(s.completedAt) + ' 완료')) + '</div></div>' +
+        mini(s.questionCount || 0, -1, s.questionCount || 0) +
+        '<div class="score num">' + (sc && sc.overallScore != null ? sc.overallScore + '<small>점</small>' : '') + '</div>' +
+        '<div class="act"><a class="btn btn-ghost" href="' + route('/interview-results?sessionId=' + s.sessionId) + '">리포트 보기</a></div></li>';
+    }).join('') : empty('완료된 면접이 없습니다.');
   }
 
-  // ── 과제 탭 ──
-  function taskRow(p) {
-    var status, due;
-    if (!pending(p)) { status = '<span class="pill pill--done">완료</span>'; due = (p.completedAt ? dateDot(p.completedAt) + ' 완료' : '완료'); }
-    else if (!p.deadline) { status = '<span class="pill pill--none">마감일 미지정</span>'; due = '마감일 없음'; }
-    else {
-      var days = Math.round((new Date(p.deadline + 'T00:00:00') - today) / 864e5);
-      status = days < 0 ? '<span class="pill pill--overdue">마감 초과</span>' : '<span class="pill pill--active">진행 중</span>';
-      due = '마감 ' + p.deadline.replace(/-/g, '.') + ' · ' + (days < 0 ? -days + '일 지남' : days === 0 ? '오늘' : 'D-' + days);
-    }
-    var id = p.actionPlanId;
-    return '<div class="task"><div><p class="task__title' + (pending(p) ? '' : ' task__title--done') + '">' + U.esc(p.suggestion || '보완 과제') + '</p><p class="task__due">' + due + '</p></div>' +
-      '<div class="task__actions">' + status +
-      (pending(p) ? '<button class="dbtn dbtn--line" type="button" data-due="' + id + '">' + (p.deadline ? '마감일 재지정' : '마감일 지정') + '</button>' +
-        '<input type="date" class="ap-due__input" data-due-input="' + id + '" value="' + (p.deadline || '') + '" aria-label="마감일" tabindex="-1">' : '') +
-      '<a class="dbtn dbtn--line" href="' + route('/action-plans?analysisCaseId=' + encodeURIComponent(p.analysisCaseId)) + '">상세보기</a>' +
-      (pending(p) ? '<button class="dbtn dbtn--sky" type="button" data-complete="' + id + '">완료</button>' : '') + '</div></div>';
+  // ── 약점 태그 ──
+  function weakRow(t, solved) {
+    var last = (t.recentOccurrences || [])[0];
+    var sub = solved ? '해결 완료' : [last && last.score != null ? '최근 시도 ' + last.score + '점' : '', '기준 70점'].filter(Boolean).join(' · ');
+    return '<li><svg class="piece' + (solved ? '' : ' is-empty') + '" aria-hidden="true"><use href="#pc"/></svg>' +
+      '<div><div class="name">' + esc(t.displayName || U.weakLabel(t.tag)) + '</div><div class="sub">' + esc(t.description ? t.description + ' · ' + sub : sub) + '</div></div>' +
+      '<div class="count">' + (solved ? '' : '보완 필요 <b class="num">' + (t.unresolvedCount || t.occurrenceCount || 0) + '</b>건') + '</div>' +
+      '<div class="act">' + (last && last.sessionId ? '<a class="btn btn-ghost" href="' + route('/interview-results?sessionId=' + last.sessionId) + '">최근 면접 보기</a>' : '') + '</div></li>';
   }
-  function renderTasks() {
-    var el = document.getElementById('task-list');
-    var list = data.plans.slice().sort(function (a, b) {
+  function renderWeakness() {
+    document.querySelector('[data-list="open"]').innerHTML = data.open.length ? data.open.map(function (t) { return weakRow(t, false); }).join('') : empty('해결하지 않은 약점이 없습니다.');
+    document.querySelector('[data-list="solved"]').innerHTML = data.solved.length ? data.solved.map(function (t) { return weakRow(t, true); }).join('') : empty('아직 해결된 약점이 없습니다.');
+  }
+
+  // ── 과제: 목록 + 달력 ──
+  function dueHtml(p) {
+    var id = p.actionPlanId;
+    if (!pending(p)) return '<div class="due">' + (p.completedAt ? md(p.completedAt) + ' 완료' : '완료') + '</div>';
+    var input = '<input type="date" data-due-input="' + id + '" value="' + (p.deadline || '') + '" aria-label="마감일" tabindex="-1">';
+    if (!p.deadline) return '<div class="due"><button type="button" data-due="' + id + '">마감일 정하기</button>' + input + '</div>';
+    var days = Math.round((new Date(p.deadline + 'T00:00:00') - today) / 864e5);
+    var text = (days < 0 ? -days + '일 지남 · ' : days === 0 ? '오늘 · ' : '') + md(p.deadline + 'T00:00:00');
+    return '<div class="due' + (days < 0 ? ' is-late' : '') + '"><button type="button" class="is-set" data-due="' + id + '" aria-label="마감일 바꾸기, 지금 ' + text + '">' + text + '</button>' + input + '</div>';
+  }
+  function sortedPlans() {
+    return data.plans.slice().sort(function (a, b) {
       return (pending(b) - pending(a)) || (overdue(b) - overdue(a)) || String(a.deadline || '9').localeCompare(String(b.deadline || '9'));
     });
-    el.innerHTML = list.length
-      ? list.slice(0, 8).map(taskRow).join('') + (list.length > 8 ? '<p style="margin:14px 0 0; text-align:center"><a class="dbtn dbtn--line" href="' + route('/action-plans') + '">전체 ' + list.length + '개 과제 보기</a></p>' : '')
-      : '<p class="dlist__empty">아직 과제가 없어요. 지원 분석을 마치면 보완 과제가 생겨요.</p>';
+  }
+  function renderTasks() {
+    var list = sortedPlans(), el = document.getElementById('task-list');
+    el.innerHTML = list.length ? list.slice(0, TASK_ROWS).map(function (p) {
+      var on = !pending(p), from = caseTitle(p.analysisCaseId);
+      return '<li' + (on ? ' class="is-done"' : '') + '><button class="check" type="button" role="checkbox" aria-checked="' + on + '" aria-label="' + (on ? '완료 취소' : '완료로 표시') + '" data-toggle="' + p.actionPlanId + '"><svg aria-hidden="true"><use href="#tick"/></svg></button>' +
+        '<div><div class="name">' + esc(p.suggestion || '보완 과제') + '</div><div class="sub">' + esc(from ? from + ' 지원 분석에서' : '지원 분석에서') + '</div></div>' +
+        dueHtml(p) +
+        '<div class="act"><a class="btn btn-ghost" href="' + route('/action-plans?analysisCaseId=' + encodeURIComponent(p.analysisCaseId)) + '">상세 보기</a></div></li>';
+    }).join('') : empty('아직 과제가 없습니다. 지원 분석을 마치면 보완 과제가 생깁니다.');
+    var more = document.querySelector('.tasks + .more');
+    if (more) more.remove();
+    if (list.length > TASK_ROWS) el.insertAdjacentHTML('afterend', '<p class="more" data-view-panel="list"' + (el.hidden ? ' hidden' : '') + '><a class="link" href="' + route('/action-plans') + '">전체 ' + list.length + '개 과제 보기' + arrow() + '</a></p>');
+    renderCalendar();
+  }
+  function renderCalendar() {
+    var y = today.getFullYear(), m = today.getMonth(), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    var prefix = y + '-' + String(m + 1).padStart(2, '0') + '-', byDay = {};
+    data.plans.filter(function (p) { return pending(p) && p.deadline && p.deadline.indexOf(prefix) === 0; }).forEach(function (p) {
+      var d = +p.deadline.slice(8); (byDay[d] = byDay[d] || []).push(p);
+    });
+    var cells = ['일', '월', '화', '수', '목', '금', '토'].map(function (d) { return '<div class="dow">' + d + '</div>'; });
+    for (var i = 0; i < first; i++) cells.push('<div class="day"></div>');
+    for (var d = 1; d <= days; d++) {
+      cells.push('<div class="day' + (d === today.getDate() ? ' is-today' : '') + '"><b class="num">' + d + '</b>' + (byDay[d] || []).map(function (p) {
+        return '<span class="task' + (overdue(p) ? ' is-late' : '') + '">' + esc(p.suggestion || '보완 과제') + '</span>';
+      }).join('') + '</div>');
+    }
+    while (cells.length % 7) cells.push('<div class="day"></div>');
+    document.getElementById('cal-title').textContent = y + '년 ' + (m + 1) + '월';
+    document.getElementById('cal-grid').innerHTML = cells.join('');
+    var nodue = data.plans.filter(function (p) { return pending(p) && !p.deadline; }).length;
+    document.getElementById('cal-note').textContent = nodue ? nodue + '개는 마감일이 없어 달력에 보이지 않습니다. 목록에서 마감일을 정해 주십시오.' : '';
   }
 
-  function renderAll() {
-    renderHead(); renderStats(); renderTodos(); renderTasks();
-    Object.keys(LISTS).forEach(renderList);
-  }
+  function renderAll() { renderHead(); renderStats(); renderSessions(); renderWeakness(); renderTasks(); }
 
+  // ── 탭 (누르거나 왼쪽·오른쪽 화살표) ──
+  var tabs = [].slice.call(document.querySelectorAll('[role="tab"]'));
   function showTab(name) {
-    document.querySelectorAll('.dtab').forEach(function (t) {
+    tabs.forEach(function (t) {
       var on = t.dataset.tab === name;
-      t.setAttribute('aria-selected', String(on));
+      t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
       document.getElementById('p-' + t.dataset.tab).hidden = !on;
     });
   }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { var n = tabs[(i + d + tabs.length) % tabs.length]; showTab(n.dataset.tab); n.focus(); }
+    });
+  });
 
   function findPlan(id) { return data.plans.filter(function (p) { return String(p.actionPlanId) === String(id); })[0]; }
   function patchPlan(id, url, body, apply) {
@@ -191,9 +198,15 @@
     var b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.tab) showTab(b.dataset.tab);
-    else if (b.dataset.goto) { showTab(b.dataset.goto); document.querySelector('.dtabs').scrollIntoView({ behavior: 'smooth' }); }
-    else if (b.dataset.page && b.parentNode.dataset.pagerFor && !b.disabled) { pages[b.parentNode.dataset.pagerFor] = +b.dataset.page; renderList(b.parentNode.dataset.pagerFor); }
-    else if (b.dataset.complete) patchPlan(b.dataset.complete, '/completion', { completed: true }, function (p, u) { p.status = u.status || 'DONE'; p.completedAt = u.completedAt; });
+    else if (b.dataset.goto) { showTab(b.dataset.goto); document.querySelector('.tabs').scrollIntoView({ behavior: 'smooth' }); }
+    else if (b.dataset.view) {
+      document.querySelectorAll('[data-view]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      document.querySelectorAll('[data-view-panel]').forEach(function (p) { p.hidden = p.dataset.viewPanel !== b.dataset.view; });
+    }
+    else if (b.dataset.toggle) {
+      var on = b.getAttribute('aria-checked') !== 'true';
+      patchPlan(b.dataset.toggle, '/completion', { completed: on }, function (p, u) { p.status = u.status || (on ? 'DONE' : 'PENDING'); p.completedAt = u.completedAt; });
+    }
     else if (b.dataset.due) {
       var input = document.querySelector('[data-due-input="' + b.dataset.due + '"]');
       try { input.showPicker(); } catch (err) { input.focus(); }
@@ -207,7 +220,6 @@
   document.addEventListener('app-user-loaded', function (e) { data.user = e.detail; renderAll(); });
 
   document.addEventListener('DOMContentLoaded', function () {
-    initPuzzle();
     renderAll();
     Promise.all([
       get('/job-category', []), get('/documents?size=100', { content: [] }), get('/analysis-cases/completed', []),
@@ -217,8 +229,8 @@
       data.jobs = r[0] || []; data.docs = (r[1] && r[1].content) || []; data.analyses = r[2] || [];
       data.active = r[3] || []; data.history = r[4] || []; data.open = r[5] || []; data.solved = r[6] || []; data.plans = r[7] || [];
       renderAll();
-      data.history.forEach(function (s) {
-        get('/interview-sessions/' + s.sessionId + '/score', null).then(function (sc) { data.scores[s.sessionId] = sc; renderList('done'); });
+      data.history.slice(0, DONE_ROWS).forEach(function (s) {
+        get('/interview-sessions/' + s.sessionId + '/score', null).then(function (sc) { data.scores[s.sessionId] = sc; renderSessions(); });
       });
     });
   });
