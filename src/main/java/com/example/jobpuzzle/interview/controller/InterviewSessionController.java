@@ -22,6 +22,7 @@ public class InterviewSessionController {
     private final InterviewSessionService interviewSessionService;
     private final com.example.jobpuzzle.interview.service.QuestionGenerationV2Service questionGenerationV2Service;
     private final com.example.jobpuzzle.interview.service.InterviewRoundService interviewRoundService;
+    private final com.example.jobpuzzle.evaluation.service.SessionReportV2Service sessionReportV2Service;
     private final SessionScoreAggregationService sessionScoreAggregationService;
 
     @GetMapping("/interview-modes/availability")
@@ -260,6 +261,15 @@ public class InterviewSessionController {
         return ResponseEntity.ok(ApiResponse.success(
                 interviewSessionService.getCompletedSessions(user.getUserId())
         ));
+    }
+
+    // 평가 명세 v2 6장 최종 보고서 (AI 호출 없음). 끝나기 전에도 중간 결과로 볼 수 있다
+    @GetMapping("/interview-sessions/{sessionId}/report")
+    public ResponseEntity<ApiResponse<com.example.jobpuzzle.evaluation.dto.SessionReportV2Response>> getReport(
+            @AuthenticationPrincipal(expression = "user") User user,
+            @PathVariable Long sessionId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(sessionReportV2Service.report(user.getUserId(), sessionId)));
     }
 
     // 면접 종료 직후 화면과 JSON-07 리포트 입력에서 함께 사용하는 확정 집계값

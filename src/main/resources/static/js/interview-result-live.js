@@ -201,31 +201,8 @@
         : '<span class="rs-sub" style="align-self:center">점수가 나온 질문이 1개 이상 있어야 리포트를 확정할 수 있어요.</span>') + '</div>';
   }
 
-  // ── 끝난 v2 면접의 다음 회차 (평가 명세 1장 티켓 표) ──
-  // ponytail: 최종 보고서 v2(4단계)에서 이 자리를 새 디자인으로 다시 그린다
+  // v2 면접(기초 지식·자료 기반·인성)은 새 보고서 화면에서 본다. 이 화면은 v1 기록용
   var V2_MODES = ['KNOWLEDGE', 'MATERIAL', 'PERSONALITY'];
-
-  function renderNextRound(tickets) {
-    var el = document.getElementById('interim');
-    if (!s.info || s.info.status !== 'COMPLETED' || V2_MODES.indexOf(s.info.mode) < 0) return;
-    var c = tickets ? tickets.costs : null;
-    var regenCost = s.info.mode === 'PERSONALITY' ? 0 : c && c.questionRegenerate;
-    var fare = function (n) { return n == null ? '' : n === 0 ? ' · 티켓 없이' : ' · 티켓 ' + n + '장'; };
-    el.hidden = false;
-    el.innerHTML = '<span class="interim__label">' + s.info.round + '회차</span><h2>같은 면접을 한 번 더 연습할 수 있습니다</h2>' +
-      '<p>같은 질문으로 다시 하면 질문마다 이번 답변과 비교해 나아진 점을 알려 드립니다.</p><div class="interim__actions">' +
-      '<button type="button" class="dbtn dbtn--navy" data-round="retry">같은 질문으로 다시 하기' + fare(c && c.sessionRetry) + '</button>' +
-      '<button type="button" class="dbtn dbtn--line" style="height:40px" data-round="regenerate">새 질문으로 다시 하기' + fare(regenCost) + '</button></div>';
-  }
-
-  function startRound(kind, button) {
-    var what = kind === 'retry' ? '같은 질문으로 다음 회차를 시작합니다.' : '새 질문을 만들어 다음 회차를 시작합니다.';
-    if (!window.confirm(what + '\n\n질문을 만들지 못하면 티켓은 돌려드립니다.')) return;
-    button.disabled = true;
-    get('/interview-sessions/' + sessionId + '/' + kind, { method: 'POST' }).then(function (next) {
-      window.location.href = route('/interview?resumeSessionId=' + encodeURIComponent(next.sessionId));
-    }).catch(function (err) { notify('error', err.message); button.disabled = false; });
-  }
 
   function openRemaining() {
     var m = document.getElementById('remaining');
@@ -253,7 +230,6 @@
     else if (t.dataset.q) { s.cur = +t.dataset.q; renderQuestions(); }
     else if (t.dataset.goq) { s.cur = +t.dataset.goq; renderQuestions(); show('questions'); window.scrollTo(0, 0); }
     else if (t.hasAttribute('data-open-remaining')) openRemaining();
-    else if (t.dataset.round) startRound(t.dataset.round, t);
     else if (t.hasAttribute('data-close')) t.closest('.modal').hidden = true;
     else if (t.hasAttribute('data-add-remaining')) {
       var ids = Array.prototype.map.call(document.querySelectorAll('#remaining-list input:checked'), function (i) { return Number(i.value); });
@@ -274,6 +250,16 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     if (!sessionId) { window.location.replace(route('/reports')); return; }
+    get('/interview-sessions/' + sessionId).then(function (info) {
+      if (V2_MODES.indexOf(info.mode) >= 0) {
+        window.location.replace(route('/interview-report?sessionId=' + encodeURIComponent(sessionId)));
+        return;
+      }
+      loadV1();
+    }).catch(function (err) { document.getElementById('result-meta').textContent = err.message; });
+  });
+
+  function loadV1() {
     Promise.all([
       get('/interview-sessions/' + sessionId), get('/interview-sessions/' + sessionId + '/score'),
       get('/interview-sessions/' + sessionId + '/questions'), get('/interview-sessions/' + sessionId + '/questions/remaining')
@@ -282,7 +268,7 @@
       s.pending = s.questions.filter(function (q) { return q.status === 'PENDING' || q.status === 'IN_PROGRESS'; });
       (s.score.questionScores || []).forEach(function (x) { s.byQuestion[x.sessionQuestionId] = x; });
       var sc = s.score;
-      document.getElementById('result-title').textContent = U.mode(sc.mode)[0] + (s.info.round > 1 ? ' ' + s.info.round + '회차' : '') + ' 결과';
+      document.getElementById('result-title').textContent = U.mode(sc.mode)[0] + ' 결과';
       document.getElementById('result-meta').textContent = '질문 ' + sc.totalQuestionCount + '개 · 답변 ' + sc.submittedQuestionCount + '개 · 평가 성공 ' + sc.evaluatedQuestionCount + '개' +
         (s.info.completedAt ? ' · ' + U.dateTime(s.info.completedAt) : '');
       renderQuestions();
@@ -295,7 +281,6 @@
       // 완료된 면접은 리포트 메뉴를 활성으로
       document.querySelectorAll('.site-header__nav a').forEach(function (a) { a.classList.toggle('is-active', a.getAttribute('href') === route('/reports')); });
       document.querySelector('.rs-banner__score b').textContent = sc.overallScore != null ? sc.overallScore : '-';
-      get('/tickets/me').then(renderNextRound).catch(function () { renderNextRound(null); });
       var timer = renderFinalLoading();
       get('/final-report/sessions/' + sessionId).then(function (report) { clearInterval(timer); renderFinal(report); })
         .catch(function (err) {
@@ -304,5 +289,5 @@
           notify('error', err.message);
         });
     }).catch(function (err) { document.getElementById('result-meta').textContent = err.message; });
-  });
+  }
 })();

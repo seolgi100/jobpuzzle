@@ -124,6 +124,8 @@ class AnalysisPipelineDatabaseIntegrationTest {
     @Autowired private TransactionTemplate transactionTemplate;
     @Autowired private com.example.jobpuzzle.interview.service.InterviewRoundService interviewRoundService;
     @Autowired private com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository answerEvaluationRepository;
+    @Autowired private com.example.jobpuzzle.evaluation.service.SessionReportV2Service sessionReportV2Service;
+    @Autowired private com.example.jobpuzzle.evaluation.service.SessionScoreAggregationService scoreAggregationService;
     @SpyBean private InMemoryVectorSearchAdapter vectorSearchAdapter;
     @SpyBean private MockAiClient mockAiClient;
 
@@ -415,6 +417,22 @@ class AnalysisPipelineDatabaseIntegrationTest {
                 .filter(e -> e.getSessionQuestion().getSession().getSessionId().equals(retry.getSessionId()))
                 .findFirst().orElseThrow().getComparison()).containsKeys("improved", "toImprove"));
         interviewSessionService.completeSession(userId, retry.getSessionId());
+
+        // 최종 보고서 v2 (AI 없음): 100점 척도, 6개 항목, 앞 회차 총점, 같은 질문 비교
+        var firstReport = sessionReportV2Service.report(userId, first);
+        var report = sessionReportV2Service.report(userId, retry.getSessionId());
+        assertThat(report.round()).isEqualTo(2);
+        assertThat(report.totalScore()).isBetween(20, 100);
+        assertThat(report.previousTotalScore()).isEqualTo(firstReport.totalScore());
+        assertThat(report.criteria()).hasSize(6).allSatisfy(c -> assertThat(c.score()).isBetween(20, 100));
+        assertThat(report.tally().answered()).isEqualTo(1);
+        assertThat(report.questions().get(0).status()).isEqualTo("EVALUATED");
+        assertThat(report.questions().get(0).items()).hasSize(6);
+        assertThat(report.questions().get(0).comparison()).isNotNull();
+        assertThat(report.questions().get(1).status()).isEqualTo("SKIPPED");
+        assertThat(firstReport.questions().get(0).comparison()).isNull();
+        // 홈·대시보드·리포트 목록이 쓰는 /score도 같은 계산
+        assertThat(scoreAggregationService.aggregate(userId, retry.getSessionId()).getOverallScore()).isEqualTo(report.totalScore());
 
         // 질문 다시 생성: 인성은 티켓 0장, 앞 회차와 다른 질문
         var regenerated = interviewRoundService.regenerate(userId, retry.getSessionId());
