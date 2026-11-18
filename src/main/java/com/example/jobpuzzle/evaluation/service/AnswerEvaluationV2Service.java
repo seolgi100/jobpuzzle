@@ -78,7 +78,11 @@ public class AnswerEvaluationV2Service {
         callLog.start();
         aiCallLogRepository.save(callLog);
 
-        String prompt = template.getTemplateText() + "\n\n[INPUT]\n" + toJson(input(answerMessage, question, session, criteria));
+        // 다회차 비교는 본 질문 답변만 (꼬리질문은 회차마다 달라 비교 대상이 없다)
+        Map<String, Object> previousRound = answerMessage.getMessageType() == InterviewMessageType.ORIGINAL_ANSWER
+                ? previousRound(session, question) : null;
+        String prompt = template.getTemplateText() + "\n\n[INPUT]\n"
+                + toJson(input(answerMessage, question, session, criteria, previousRound));
 
         AnswerEvaluationV2Result result = null;
         Map<EvaluationCriterion, Integer> scores = null;
@@ -87,7 +91,7 @@ public class AnswerEvaluationV2Service {
         for (int attempt = 1; attempt <= attempts && scores == null; attempt++) {
             try {
                 result = aiResponseProcessor.parseAnswerEvaluationV2(aiClientService.evaluateAnswer(selection, prompt));
-                scores = AnswerEvaluationV2Validator.validate(result, mode, false);
+                scores = AnswerEvaluationV2Validator.validate(result, mode, previousRound != null);
             } catch (RuntimeException exception) {
                 last = exception;
                 log.warn("ai_evaluation_v2_retry attempt={}/{} answerMessageId={} errorType={} cause={}", attempt, attempts,
@@ -148,9 +152,10 @@ public class AnswerEvaluationV2Service {
         return message;
     }
 
-    /** 명세 5장 "AI 평가 입력". 다회차 비교는 다회차 단계에서 채운다. */
+    /** 명세 5장 "AI 평가 입력". */
     private Map<String, Object> input(InterviewMessage answer, InterviewSessionQuestion question,
-                                      InterviewSession session, List<EvaluationCriterion> criteria) {
+                                      InterviewSession session, List<EvaluationCriterion> criteria,
+                                      Map<String, Object> previousRound) {
         Map<String, Object> input = new LinkedHashMap<>();
         input.put("mode", session.getMode().name());
         input.put("question", question.getQuestionTextSnapshot());
@@ -178,8 +183,40 @@ public class AnswerEvaluationV2Service {
             default -> throw new IllegalArgumentException("v2 평가 대상 모드가 아님: " + session.getMode());
         }
         input.put("context", context);
-        input.put("previousRound", null);
+        input.put("previousRound", previousRound);
         return input;
+    }
+
+    /**
+     * 명세 5장 "다회차: 같은 질문의 이전 회차 답변과 평가 결과". 바로 앞 회차에 같은 질문이 있고
+     * 그 본 답변이 v2로 평가됐을 때만. 질문을 다시 생성한 회차는 질문이 달라 null이다.
+     */
+    private Map<String, Object> previousRound(InterviewSession session, InterviewSessionQuestion question) {
+        InterviewSession previous = session.getPreviousSession();
+        if (previous == null) return null;
+        Long questionId = question.getQuestion().getQuestionId();
+        InterviewSessionQuestion previousQuestion = sessionQuestionRepository
+                .findBySession_SessionIdOrderByDisplayOrderAsc(previous.getSessionId()).stream()
+                .filter(q -> Objects.equals(q.getQuestion().getQuestionId(), questionId))
+                .findFirst().orElse(null);
+        if (previousQuestion == null) return null;
+        InterviewMessage previousAnswer = interviewMessageRepository.findBySessionQuestion_SessionQuestionIdAndMessageType(
+                previousQuestion.getSessionQuestionId(), InterviewMessageType.ORIGINAL_ANSWER).orElse(null);
+        if (previousAnswer == null) return null;
+        AnswerEvaluation evaluation = answerEvaluationRepository
+                .findBySessionQuestion_SessionQuestionIdOrderByEvaluationIdAsc(previousQuestion.getSessionQuestionId()).stream()
+                .filter(e -> Integer.valueOf(2).equals(e.getEvaluationVersion()))
+                .filter(e -> Objects.equals(e.getAnswerMessage().getMessageId(), previousAnswer.getMessageId()))
+                .findFirst().orElse(null);
+        if (evaluation == null) return null;
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        evaluation.getEvaluationDetail().forEach((code, detail) -> scores.put(code, detail.getScore()));
+        Map<String, Object> round = new LinkedHashMap<>();
+        round.put("answer", previousAnswer.getMessageText());
+        round.put("scores", scores);
+        round.put("strengths", evaluation.getSummary());
+        round.put("improvements", evaluation.getImprovementDirection().isEmpty() ? null : evaluation.getImprovementDirection().get(0));
+        return round;
     }
 
     /** 인성 면접 일관성 확인용: 같은 면접에서 이 질문보다 앞선 질문의 본 답변. */

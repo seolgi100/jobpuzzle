@@ -96,6 +96,12 @@ public class QuestionGenerationV2Service {
 
     /** 기초 지식(KNOWLEDGE)·자료 기반(MATERIAL). 분석이 끝난 분석 작업만 쓸 수 있다. */
     public QuestionSetResponse generate(Long userId, InterviewSessionMode mode, Long analysisCaseId) {
+        return generate(userId, mode, analysisCaseId, List.of());
+    }
+
+    /** avoidQuestions: 질문 다시 생성 때 앞 회차 질문. 같은 내용을 다시 묻지 않게 AI에 넘긴다. */
+    public QuestionSetResponse generate(Long userId, InterviewSessionMode mode, Long analysisCaseId,
+                                        List<String> avoidQuestions) {
         if (mode != InterviewSessionMode.KNOWLEDGE && mode != InterviewSessionMode.MATERIAL) {
             throw new IllegalArgumentException("AI 질문 생성 대상 모드가 아님: " + mode);
         }
@@ -120,6 +126,7 @@ public class QuestionGenerationV2Service {
         input.put("competencyTags", tags.entrySet().stream()
                 .map(tag -> Map.of("code", tag.getKey(), "name", tag.getValue())).toList());
         input.put("jobRequirements", AnalysisSummaries.requirements(posting));
+        if (!avoidQuestions.isEmpty()) input.put("avoidQuestions", avoidQuestions);
         Set<String> requirementIds = Set.of();
         if (mode == InterviewSessionMode.MATERIAL) {
             // 분석이 "자료 기반 면접을 만들 수 없음"으로 판단했으면 AI를 부르지 않는다 (수정사항 19번)
@@ -182,18 +189,25 @@ public class QuestionGenerationV2Service {
 
     /** 인성(PERSONALITY). AI 없이 회원 직무의 인성 질문 중 본인 경력 수준(+공통) 질문을 무작위로 고른다. */
     public QuestionSetResponse generatePersonality(Long userId) {
+        return generatePersonality(userId, Set.of());
+    }
+
+    /** avoidQuestionKeys: 질문 다시 생성 때 앞 회차 질문. 남은 질문이 모자랄 때만 다시 쓴다. */
+    public QuestionSetResponse generatePersonality(Long userId, Set<String> avoidQuestionKeys) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         JobCategory job = user.getDefaultJobCategory();
         if (job == null) throw new CustomException(ErrorCode.PERSONALITY_JOB_REQUIRED);
         List<PersonalityQuestion> pool = new ArrayList<>(personalityPool(job));
         if (pool.isEmpty()) throw new CustomException(ErrorCode.PERSONALITY_QUESTION_EMPTY);
         Collections.shuffle(pool);
+        // 섞은 뒤 앞 회차 질문을 뒤로 보낸다 (정렬은 안정적이라 나머지 순서는 무작위 그대로)
+        pool.sort(java.util.Comparator.comparing(q -> avoidQuestionKeys.contains(personalityKey(q))));
 
         QuestionSet set = questionSetRepository.save(QuestionSet.v2(user, InterviewSessionMode.PERSONALITY, job, null, null));
         List<InterviewQuestion> questions = new ArrayList<>();
         for (PersonalityQuestion picked : pool.subList(0, Math.min(properties.getPersonalityQuestionCount(), pool.size()))) {
             int order = questions.size() + 1;
-            questions.add(InterviewQuestion.v2(set, "personality-" + picked.getPersonalityQuestionId(),
+            questions.add(InterviewQuestion.v2(set, personalityKey(picked),
                     InterviewQuestionType.GENERAL, picked.getQuestion(), picked.getIntent(),
                     picked.getCompetencyTagCodes(), null, order));
         }
@@ -226,6 +240,10 @@ public class QuestionGenerationV2Service {
                                                                            String reason) {
         return InterviewModeAvailabilityResponse.ModeAvailability.builder()
                 .mode(mode).available(available).reason(available ? null : reason).build();
+    }
+
+    static String personalityKey(PersonalityQuestion question) {
+        return "personality-" + question.getPersonalityQuestionId();
     }
 
     // 회원 직무의 인성 질문 중 본인 경력 수준과 공통(ANY) 질문

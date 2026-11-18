@@ -33,6 +33,9 @@ public class SessionResponse {
     private LocalDateTime canceledAt;
     private LocalDateTime lastActivityAt;
     private LocalDateTime lastEvaluatedAt;
+    // v2 다회차
+    private int round;
+    private Long previousSessionId;
 
     public static SessionResponse from(InterviewSession session, int questionCount) {
         return from(session, questionCount, false);
@@ -77,6 +80,8 @@ public class SessionResponse {
                 .canceledAt(session.getCanceledAt())
                 .lastActivityAt(session.getLastActivityAt())
                 .lastEvaluatedAt(null)
+                .round(session.getRoundNumber())
+                .previousSessionId(session.getPreviousSession() == null ? null : session.getPreviousSession().getSessionId())
                 .build();
     }
 

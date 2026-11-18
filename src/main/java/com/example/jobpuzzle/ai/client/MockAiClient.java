@@ -565,7 +565,18 @@ public class MockAiClient implements AiClient {
     public String evaluateAnswer(String renderedPrompt) {
         JsonNode input = stubInput(renderedPrompt);
         String kind = input.path("answer").asText().strip().length() < 30 ? "low" : "normal";
-        return fixture("ai-fixtures/answer-evaluation-v2/" + input.path("mode").asText() + "-" + kind + ".json");
+        String response = fixture("ai-fixtures/answer-evaluation-v2/" + input.path("mode").asText() + "-" + kind + ".json");
+        if (!input.path("previousRound").isObject()) return response;
+        // 다회차 평가: 이전 회차가 있으면 비교 칸을 채운다 (명세 5장 comparison)
+        try {
+            com.fasterxml.jackson.databind.node.ObjectNode node = (com.fasterxml.jackson.databind.node.ObjectNode) objectMapper.readTree(response);
+            node.putObject("comparison")
+                    .put("improved", "이전 회차보다 결론을 먼저 말하고 근거를 순서대로 제시했습니다.")
+                    .put("toImprove", "결과를 수치나 이전과의 비교로 한 번 더 구체화하면 좋겠습니다.");
+            return objectMapper.writeValueAsString(node);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("stub 평가 응답을 고칠 수 없습니다", exception);
+        }
     }
 
     /** 평가 명세 9-2 stub: [INPUT]의 mode로 미리 쓴 질문 생성 응답을 고른다. 태그는 모든 직무에 있는 공통 역량만 쓴다. */

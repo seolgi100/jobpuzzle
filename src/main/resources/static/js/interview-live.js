@@ -504,7 +504,8 @@
       (hasAnyAnswer ? '<button type="button" id="view-current-result" class="lv-link">지금까지 결과</button>' : '') +
       (session.analysisCaseId ? '<a class="lv-link" href="' +
         window.JobPuzzleRoutes.path('/analysis-results/' + encodeURIComponent(session.analysisCaseId)) + '">분석 결과</a>' : '') +
-      '<span class="lv-mode ' + modeClass(session.mode) + '">' + esc(modeLabel(session.mode)) + '</span></span></div>' +
+      '<span class="lv-mode ' + modeClass(session.mode) + '">' + esc(modeLabel(session.mode) +
+        (session.round > 1 ? ' · ' + session.round + '회차' : '')) + '</span></span></div>' +
       '<div class="lv-progress"><span>질문 <b>' + (currentIndex + 1) + '</b> / ' + questions.length + '</span>' +
       '<div class="lv-progress__bar" role="progressbar" aria-label="답변을 마친 질문" aria-valuemin="0" aria-valuemax="' +
       questions.length + '" aria-valuenow="' + finished + '"><i style="width:' + percent + '%"></i></div>' +

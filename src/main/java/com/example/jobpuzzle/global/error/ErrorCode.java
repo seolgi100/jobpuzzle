@@ -112,6 +112,8 @@ public enum ErrorCode {
     MATERIAL_INTERVIEW_UNAVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_014", "이 분석 결과로는 자료 기반 면접을 만들 수 없습니다. 자료를 보완한 뒤 다시 분석해 주세요."),
     PERSONALITY_JOB_REQUIRED(HttpStatus.CONFLICT, "INTERVIEW_015", "인성 면접은 회원 정보에서 직무를 먼저 설정해야 합니다."),
     PERSONALITY_QUESTION_EMPTY(HttpStatus.CONFLICT, "INTERVIEW_016", "이 직무에 등록된 인성 질문이 없습니다."),
+    ROUND_NOT_ALLOWED(HttpStatus.CONFLICT, "INTERVIEW_017", "끝난 면접만 다시 진행할 수 있습니다."),
+    ROUND_ALREADY_EXISTS(HttpStatus.CONFLICT, "INTERVIEW_018", "이 면접은 이미 다음 회차가 있습니다. 가장 최근 회차에서 다시 진행해 주십시오."),
 
     // interview / report
     INTERVIEW_SESSION_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "REPORT_002", "완료되지 않은 세션은 최종 리포트를 생성할 수 없습니다."),

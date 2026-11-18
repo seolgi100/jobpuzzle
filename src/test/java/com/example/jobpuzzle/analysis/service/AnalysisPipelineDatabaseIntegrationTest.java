@@ -122,6 +122,8 @@ class AnalysisPipelineDatabaseIntegrationTest {
     @Autowired private InterviewSessionRepository interviewSessionRepository;
     @Autowired private PersonalityQuestionRepository personalityQuestionRepository;
     @Autowired private TransactionTemplate transactionTemplate;
+    @Autowired private com.example.jobpuzzle.interview.service.InterviewRoundService interviewRoundService;
+    @Autowired private com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository answerEvaluationRepository;
     @SpyBean private InMemoryVectorSearchAdapter vectorSearchAdapter;
     @SpyBean private MockAiClient mockAiClient;
 
@@ -312,6 +314,18 @@ class AnalysisPipelineDatabaseIntegrationTest {
             assertThat(session.getJobPostingAnalysis()).isNotNull();
             assertThat(session.getCandidateAnalysis()).isNotNull();
         });
+
+        // 자료 기반 면접을 끝내고 질문을 다시 생성하면 2장을 쓰고, 앞 회차 질문을 피하라고 AI에 넘긴다
+        answerFirstQuestion(userId, sessionId);
+        interviewSessionService.completeSession(userId, sessionId);
+        clearInvocations(mockAiClient);
+        var next = interviewRoundService.regenerate(userId, sessionId);
+        assertThat(next.getRound()).isEqualTo(2);
+        assertThat(next.getMode()).isEqualTo(InterviewSessionMode.MATERIAL);
+        assertThat(ticketService.getBalance(userId).balance()).isEqualTo(7);
+        var prompt = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(mockAiClient).generateQuestionsV2(prompt.capture());
+        assertThat(prompt.getValue()).contains("\"avoidQuestions\"").contains(material.getQuestions().get(0).getQuestion());
     }
 
     @Test
@@ -366,6 +380,71 @@ class AnalysisPipelineDatabaseIntegrationTest {
                 .filter(q -> q.getCareerLevel() == JobCategoryCareerLevel.EXPERIENCED)
                 .map(q -> q.getQuestion()).toList();
         assertThat(set.getQuestions()).noneMatch(q -> experiencedOnly.contains(q.getQuestion()));
+    }
+
+    @Test
+    void runsTheNextRoundWithTheSameOrNewQuestionsAndComparesSameQuestions() {
+        JobCategory backendNew = jobCategoryRepository.findAll().stream()
+                .filter(c -> c.getMainCategory().equals("IT·개발") && c.getSubCategory().equals("백엔드 개발")
+                        && c.getCareerLevel() == JobCategoryCareerLevel.NEW)
+                .findFirst().orElseThrow();
+        String suffix = java.util.UUID.randomUUID().toString();
+        User user = userRepository.save(User.createLocalUser("round-" + suffix, "encoded", suffix + "@example.test",
+                "Round", backendNew));
+        Long userId = user.getUserId();
+        ticketService.charge(userId, 10, "test-" + suffix);
+
+        // 1회차: 인성 면접 질문 1개에 답하고 끝낸다
+        var set = questionGenerationV2Service.generatePersonality(userId);
+        Long first = createSessionWithAll(userId, set);
+        answerFirstQuestion(userId, first);
+        interviewSessionService.completeSession(userId, first);
+
+        // 다시 진행: 같은 질문, 2회차, 티켓 1장
+        var retry = interviewRoundService.retry(userId, first);
+        assertThat(retry.getRound()).isEqualTo(2);
+        assertThat(retry.getPreviousSessionId()).isEqualTo(first);
+        assertThat(ticketService.getBalance(userId).balance()).isEqualTo(9);
+        assertThat(questionTexts(userId, retry.getSessionId())).isEqualTo(questionTexts(userId, first));
+        // 앞 회차에서는 다음 회차를 또 만들 수 없다 (회차는 한 줄)
+        assertThatThrownBy(() -> interviewRoundService.retry(userId, first))
+                .extracting(error -> ((CustomException) error).getErrorCode()).isEqualTo(ErrorCode.ROUND_ALREADY_EXISTS);
+        // 같은 질문에 다시 답하면 이전 회차와 비교한 결과가 저장된다
+        answerFirstQuestion(userId, retry.getSessionId());
+        transactionTemplate.executeWithoutResult(status -> assertThat(answerEvaluationRepository.findAll().stream()
+                .filter(e -> e.getSessionQuestion().getSession().getSessionId().equals(retry.getSessionId()))
+                .findFirst().orElseThrow().getComparison()).containsKeys("improved", "toImprove"));
+        interviewSessionService.completeSession(userId, retry.getSessionId());
+
+        // 질문 다시 생성: 인성은 티켓 0장, 앞 회차와 다른 질문
+        var regenerated = interviewRoundService.regenerate(userId, retry.getSessionId());
+        assertThat(regenerated.getRound()).isEqualTo(3);
+        assertThat(ticketService.getBalance(userId).balance()).isEqualTo(9);
+        assertThat(questionTexts(userId, regenerated.getSessionId()))
+                .doesNotContainAnyElementsOf(questionTexts(userId, retry.getSessionId()));
+        // 끝나지 않은 면접은 다음 회차를 만들 수 없다
+        assertThatThrownBy(() -> interviewRoundService.retry(userId, regenerated.getSessionId()))
+                .extracting(error -> ((CustomException) error).getErrorCode()).isEqualTo(ErrorCode.ROUND_NOT_ALLOWED);
+    }
+
+    private Long createSessionWithAll(Long userId, com.example.jobpuzzle.analysis.dto.QuestionSetResponse set) {
+        SessionCreateRequest request = new SessionCreateRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", set.getQuestionSetId());
+        ReflectionTestUtils.setField(request, "selectedQuestionIds", set.getQuestions().stream().map(q -> q.getQuestionId()).toList());
+        return interviewSessionService.createSession(userId, request).getSessionId();
+    }
+
+    private void answerFirstQuestion(Long userId, Long sessionId) {
+        var question = interviewSessionService.getSessionQuestions(userId, sessionId).get(0);
+        var answer = new com.example.jobpuzzle.interview.dto.AnswerSubmitRequest();
+        ReflectionTestUtils.setField(answer, "messageText",
+                "팀 프로젝트에서 익숙한 방식과 새 기술을 지연 시간과 부하 기준으로 비교해 골랐고, 시제품으로 측정해 근거를 남겼습니다.");
+        ReflectionTestUtils.setField(answer, "answerType", com.example.jobpuzzle.interview.entity.AnswerType.ORIGINAL_ANSWER);
+        assertThat(interviewSessionService.submitAnswer(userId, question.getSessionQuestionId(), answer).isEvaluationFailed()).isFalse();
+    }
+
+    private List<String> questionTexts(Long userId, Long sessionId) {
+        return interviewSessionService.getSessionQuestions(userId, sessionId).stream().map(q -> q.getQuestionText()).toList();
     }
 
     // 전체 실행에 필요한 확정 문서, 활성 가이드, 활성 JSON-01·02·05 템플릿을 실제 DB에 준비한다.

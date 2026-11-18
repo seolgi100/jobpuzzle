@@ -21,6 +21,7 @@ public class InterviewSessionController {
 
     private final InterviewSessionService interviewSessionService;
     private final com.example.jobpuzzle.interview.service.QuestionGenerationV2Service questionGenerationV2Service;
+    private final com.example.jobpuzzle.interview.service.InterviewRoundService interviewRoundService;
     private final SessionScoreAggregationService sessionScoreAggregationService;
 
     @GetMapping("/interview-modes/availability")
@@ -107,6 +108,26 @@ public class InterviewSessionController {
         return ResponseEntity.ok(ApiResponse.success(
                 interviewSessionService.completeSession(user.getUserId(), sessionId)
         ));
+    }
+
+    // 평가 명세 v2 다회차: 끝난 면접을 같은 질문으로 다시 진행 (티켓은 서비스에서 차감·반환)
+    @PostMapping("/interview-sessions/{sessionId}/retry")
+    public ResponseEntity<ApiResponse<SessionResponse>> retrySession(
+            @AuthenticationPrincipal(expression = "user") User user,
+            @PathVariable Long sessionId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                interviewRoundService.retry(user.getUserId(), sessionId)));
+    }
+
+    // 끝난 면접을 새 질문으로 다시 진행
+    @PostMapping("/interview-sessions/{sessionId}/regenerate")
+    public ResponseEntity<ApiResponse<SessionResponse>> regenerateSession(
+            @AuthenticationPrincipal(expression = "user") User user,
+            @PathVariable Long sessionId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                interviewRoundService.regenerate(user.getUserId(), sessionId)));
     }
 
     @PostMapping("/interview-sessions/{sessionId}/cancel")
