@@ -1,196 +1,308 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobPuzzle — 당신의 취업을 퍼즐처럼</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="/css/ds/preview.css" th:href="@{/css/ds/preview.css}">
-<link rel="stylesheet" href="/css/ds/landing.css" th:href="@{/css/ds/landing.css}">
-<link rel="stylesheet" href="/css/ds/header.css" th:href="@{/css/ds/header.css}">
-<link rel="stylesheet" href="/css/ds/landing-lower.css" th:href="@{/css/ds/landing-lower.css}">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>잡퍼즐 — AI 면접 준비</title>
+<meta name="description" content="잡퍼즐은 채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="/css/v2/landing.css" th:href="@{/css/v2/landing.css}">
+<script>document.documentElement.classList.add('js')</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 </head>
-<body class="landing lower-light">
+<body>
 
-<div th:replace="~{fragments/header :: landingHeader}"></div>
-<main>
-  <!-- HERO: 3D 퍼즐(드래그 회전·클릭 조립)은 그대로, 색만 남색 톤 -->
-  <section class="hero hero--interactive hero--content-stack hero--jigsaw">
-    <canvas id="jobPuzzleCanvas" class="hero-puzzle-canvas"></canvas>
-    <div class="hero__puzzle-anchor" id="heroPuzzleAnchor" aria-hidden="true"></div>
-    <div class="wrap hero__inner">
-      <div class="hero__copy">
-        <h1 class="hero__title">
-          <span class="hero__line"><span style="--i:0">당신의 취업,</span></span>
-          <span class="hero__line"><span style="--i:1">우리가 <strong>퍼즐처럼</strong> 맞춰드립니다</span></span>
-        </h1>
-        <p class="hero__desc" data-reveal data-hero style="--i:4">채용공고와 이력서를 분석해 나만의 면접 질문을 만들고,<br>부족한 점을 찾아 이력서까지 완성해 드립니다</p>
-        <div class="hero__cta" data-reveal data-hero style="--i:5">
-          <a href="/jobpuzzle/login" th:href="@{/login}" class="btn btn--light btn--lg" id="hero-cta">로그인하고 시작하기</a>
+<!-- 공용 도형: 로고 J 심볼, 퍼즐 조각 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- 로고의 퍼즐 조각: 좌우 돌기, 아래 홈 -->
+    <path id="piece" d="M30 20 H130 V55 A17 17 0 1 1 130 85 V120 H95 A15 15 0 0 0 65 120 H30 V85 A17 17 0 1 1 30 55 Z"/>
+    <!-- 줄로 이어지는 조각: 오른쪽 돌기, 왼쪽 홈 -->
+    <path id="link" d="M30 20 H130 V55 A17 17 0 1 1 130 85 V120 H30 V85 A17 17 0 1 0 30 55 Z"/>
+    <mask id="j-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="300">
+      <rect width="220" height="300" fill="#fff"/>
+      <use href="#piece" fill="#000" transform="translate(46 150) scale(.7)"/>
+      <rect x="96" y="140" width="10" height="34" fill="#000"/>
+    </mask>
+    <symbol id="j-symbol" viewBox="0 0 220 300">
+      <path mask="url(#j-cut)" fill="currentColor" d="M105 50 L214 0 V192 A107 107 0 0 1 0 192 V140 H106 Z"/>
+    </symbol>
+    <symbol id="arrow" viewBox="0 0 16 16">
+      <path d="M2 8h11.5M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav is-top" id="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="잡퍼즐 처음으로">
+      <span class="mark" aria-hidden="true"></span>
+      <span>JobPuzzle</span>
+    </a>
+    <nav class="menu" aria-label="주요 메뉴">
+      <a href="#how">이용 방법</a>
+      <a href="#modes">면접 모드</a>
+      <a href="#report">보고서 예시</a>
+      <a href="#tickets">티켓 안내</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="login" href="/jobpuzzle/login" th:href="@{/login}" data-guest-only>로그인</a>
+      <a class="btn btn-primary" href="/jobpuzzle/join" th:href="@{/join}" data-start="대시보드">회원가입</a>
+      <details class="nav-more">
+        <summary aria-label="메뉴 열기">
+          <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h16M3 15h16"/></svg>
+        </summary>
+        <div class="sheet">
+          <a href="#how">이용 방법</a>
+          <a href="#modes">면접 모드</a>
+          <a href="#report">보고서 예시</a>
+          <a href="#tickets">티켓 안내</a>
+          <a href="/jobpuzzle/login" th:href="@{/login}" data-guest-only>로그인</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- 2. 첫 화면: 어두운 전시실. 위에서 떨어지는 조명 속에 조각 하나가 떠서 천천히 돎 -->
+  <section class="hero dark ruled" id="hero">
+    <div class="stage" id="stage" aria-hidden="true"><canvas></canvas></div>
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1><span class="line">공고가 찾는 조각을,</span> <span class="line">당신의 경험에서 찾아냅니다.</span></h1>
+        <p>잡퍼즐은 채용공고와 이력서·자기소개서·포트폴리오를 함께 분석해, 공고가 요구하는 역량과 당신의 경험을 맞춥니다. 비어 있는 조각은 면접 전에 채웁니다.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="/jobpuzzle/join" th:href="@{/join}" data-start="대시보드로 가기">회원가입하고 시작하기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+          <a class="btn btn-ghost" href="#report">보고서 예시 보기</a>
+        </div>
+      </div>
+      <div class="exhibit" id="exhibit" aria-hidden="true">
+        <!-- 3D를 쓸 수 없는 환경에서만 보이는 평면 조각 -->
+        <svg viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="hero-rim-fade" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff"/>
+              <stop offset=".42" stop-color="#fff"/>
+              <stop offset=".56" stop-color="#000"/>
+            </linearGradient>
+            <mask id="hero-rim-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">
+              <rect width="200" height="200" fill="url(#hero-rim-fade)"/>
+            </mask>
+            <path id="hero-piece" d="M40,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H160 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H40 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 Z"/>
+          </defs>
+          <g transform="rotate(-8 100 100)">
+            <use href="#hero-piece" class="body"/>
+            <use href="#hero-piece" class="rim" mask="url(#hero-rim-mask)"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="floor"></div>
+  </section>
+
+  <!-- 3. 효과 상세: 맞물리는 조각 -->
+  <section class="section match ruled" id="how" aria-labelledby="match-title">
+    <div class="wrap">
+      <div class="match-head">
+        <div>
+          <h2 class="display" id="match-title">내 경험이 공고의 어느 자리에 맞는지 보여 드립니다.</h2>
+          <p class="lead">공고의 요구 역량 하나하나에 지원자의 경험을 연결합니다. 맞는 경험이 없는 자리는 비어 있는 조각으로 표시해, 면접 전에 무엇을 준비해야 하는지 알려 드립니다.</p>
         </div>
       </div>
 
-      <div class="hero__card-wrap" data-reveal data-hero style="--i:6">
-        <section class="hero-hologram" id="heroCard">
-          <header class="hologram-chrome"><span>JOBPUZZLE · PREVIEW</span><div class="hologram-arrows"><button type="button" id="holoPrev" aria-label="이전 단계"><svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg></button><b id="hologram-stage-number">01</b><button type="button" id="holoNext" aria-label="다음 단계"><svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg></button></div></header>
-          <div class="hologram-screen">
-            <article class="hologram-panel is-active" data-hologram-state="active">
-              <div class="holo-heading"><span>01 · DATA</span><h2>등록 자료 확정</h2><span class="badge badge--success">추출 확인</span></div>
-              <div class="holo-row"><p>이력서_백엔드.pdf<small>텍스트 추출 완료 · 8페이지</small></p><span class="badge">확정</span></div>
-              <div class="holo-row"><p>자기소개서.docx<small>문단 구조 확인 완료</small></p><span class="badge">확정</span></div>
-              <div class="holo-bar"><span>추출 품질</span><b>98%</b><i><em style="width:98%"></em></i></div>
-              <footer>직접 확인한 자료만 분석에 사용합니다</footer>
-            </article>
-            <article class="hologram-panel" data-hologram-state="hidden">
-              <div class="holo-heading"><span>02 · ANALYSIS</span><h2>공고·경험 분석</h2><span class="badge badge--primary">분석 완료</span></div>
-              <p style="font-size:13px;color:var(--text-3)">채용공고 핵심</p>
-              <div class="holo-chips"><span class="badge">Spring Boot</span><span class="badge">REST API</span><span class="badge">협업 경험</span></div>
-              <p style="font-size:13px;color:var(--text-3)">지원자 경험</p>
-              <div class="holo-chips"><span class="badge badge--primary">팀 프로젝트 3건</span><span class="badge badge--primary">JPA · MySQL</span><span class="badge badge--primary">WebSocket</span></div>
-              <div class="holo-note">백엔드 경험은 충분하고 장애 대응 근거를 더 확인해야 합니다.</div>
-            </article>
-            <article class="hologram-panel" data-hologram-state="hidden">
-              <div class="holo-heading"><span>03 · MATCH</span><h2>요구사항 연결 진단</h2></div>
-              <p class="holo-big">82<small>% 종합 적합도</small></p>
-              <div class="holo-bar"><span>기술 역량</span><b>90%</b><i><em style="width:90%"></em></i></div>
-              <div class="holo-bar"><span>프로젝트 근거</span><b>84%</b><i><em style="width:84%"></em></i></div>
-              <div class="holo-bar"><span>문제 해결</span><b>68%</b><i><em style="width:68%"></em></i></div>
-            </article>
-            <article class="hologram-panel" data-hologram-state="hidden">
-              <div class="holo-heading"><span>04 · QUESTIONS</span><h2>맞춤 질문·과제</h2><span class="badge badge--primary">12개 생성</span></div>
-              <div class="holo-q"><b>Q1</b><p>WebSocket 중계의 데이터 정합성을 어떻게 관리했습니까?</p></div>
-              <div class="holo-q"><b>Q2</b><p>팀 프로젝트의 기술 갈등을 해결한 과정을 설명해 주십시오.</p></div>
-              <div class="holo-q"><b>Q3</b><p>JPA를 선택한 이유와 성능 문제를 줄인 방법은?</p></div>
-              <footer>부족한 근거를 질문으로 확인합니다</footer>
-            </article>
-            <article class="hologram-panel" data-hologram-state="hidden">
-              <div class="holo-heading"><span>05 · REVIEW</span><h2>답변 관점 평가</h2></div>
-              <p class="holo-big">76<small>점 · 지난 답변보다 +8</small></p>
-              <div class="holo-chips"><span class="badge badge--success">구체성 88</span><span class="badge badge--success">직무 연결 84</span><span class="badge">논리성 77</span><span class="badge badge--warning">결과 수치 61</span><span class="badge badge--warning">회고 58</span></div>
-              <div class="holo-note">해결 과정 뒤에 개선 수치와 배운 점을 한 문장씩 추가해 보십시오.</div>
-            </article>
-            <article class="hologram-panel" data-hologram-state="hidden">
-              <div class="holo-heading"><span>06 · REPORT</span><h2>다음 연습 리포트</h2><span class="badge badge--success">준비 완료</span></div>
-              <p class="holo-big">84<small>% 준비도</small></p>
-              <div class="holo-row"><p>강점</p><b>기술 경험의 직무 연결</b></div>
-              <div class="holo-row"><p>보완</p><b>성과 수치와 회고</b></div>
-              <div class="holo-row"><p>다음</p><b>약점 질문 5개 재연습</b></div>
-            </article>
+      <div class="board-caption">
+        <span><strong>가온테크(가상)</strong> 백엔드 개발자 신입</span>
+        <span class="chip">예시</span>
+      </div>
+      <div class="board-cols" aria-hidden="true">
+        <span>공고 요구 역량</span><span>연결된 경험</span><span>상태</span>
+      </div>
+      <ul class="board" id="board" aria-label="공고 요구 역량과 연결된 경험 예시">
+        <li class="row" style="--i:0"><div class="req">Java·Spring Boot 개발</div><div class="exp"><span class="what">팀 프로젝트 API 개발</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row" style="--i:1"><div class="req">SQL·데이터베이스</div><div class="exp"><span class="what">조회 쿼리 성능 개선</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row" style="--i:2"><div class="req">REST API 설계</div><div class="exp"><span class="what">회원·결제 API 설계</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row" style="--i:3"><div class="req">협업·코드 리뷰</div><div class="exp"><span class="what">4인 팀 프로젝트 PR 리뷰</span></div><div class="status"><i></i>맞물림</div></li>
+        <li class="row partial" style="--i:4"><div class="req">클라우드 배포</div><div class="exp"><span class="what">AWS EC2 배포 1회</span></div><div class="status"><i></i>일부 맞물림</div></li>
+        <li class="row empty" style="--i:5"><div class="req">테스트 코드 작성</div><div class="exp"><span class="what">없음</span><p class="note">테스트 코드 작성 경험이 자료에 드러나지 않습니다. 관련 질문에 대비해 경험을 정리해 두십시오.</p></div><div class="status"><i></i>빈 조각</div></li>
+      </ul>
+      <p class="sample-note">표시된 내용은 이해를 돕기 위한 예시입니다.</p>
+    </div>
+  </section>
+
+  <!-- 4. 보고서 예시 (v2 자료 기반 면접의 평가 항목) -->
+  <section class="section ruled" id="report" aria-labelledby="report-title" style="padding-top:0">
+    <div class="wrap report">
+      <div class="report-intro">
+        <h2 class="display" id="report-title">점수보다 중요한 것은 다음 답변입니다.</h2>
+        <p class="lead">질문마다 출제 의도와 평가 근거를 함께 보여 드립니다. 같은 면접을 다시 보면 이전 답변과 비교해 나아진 점을 알려 드립니다.</p>
+      </div>
+
+      <article class="sheet-doc" aria-label="면접 보고서 예시">
+        <div class="doc-meta">
+          <span>가온테크(가상) 백엔드 개발자 신입 · 자료 기반 면접 · 2회차</span>
+          <span class="chip">예시</span>
+        </div>
+
+        <div class="score">
+          <div class="total">
+            <div class="label">총점</div>
+            <div class="big num">77<small>/ 100</small></div>
+            <div class="delta"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10.5V2M2 6l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>1회차보다 9점 상승</div>
           </div>
-          <footer class="hologram-nav"><span class="hologram-step-dot is-active"></span><span class="hologram-step-dot"></span><span class="hologram-step-dot"></span><span class="hologram-step-dot"></span><span class="hologram-step-dot"></span><span class="hologram-step-dot"></span></footer>
-        </section>
-      </div>
-    </div>
-    <div class="hero-puzzle-caption"><span id="puzzle-stage-label">빈 공간을 눌러 시작</span><i><b id="puzzle-stage-progress"></b></i></div>
-  </section>
-
-  <!-- WHY: 3D 뒤집기 → 남색 패널이 아래에서 올라오는 방식 -->
-  <section class="section" id="why">
-    <div class="wrap">
-      <p class="eyebrow" data-reveal>WHY JOBPUZZLE</p>
-      <h2 class="section__title" data-reveal style="--i:1">왜 반드시, JobPuzzle이어야 하시겠습니까?</h2>
-      <p class="section__sub" data-reveal style="--i:2">공고를 읽는 데서 끝나지 않고, 경험을 연결하고 답변을 다듬는 과정까지 하나의 흐름으로 이어집니다.</p>
-      <div class="why-grid">
-        <article class="why-card" tabindex="0" data-reveal style="--i:0">
-          <span class="why-card__num">01 · TARGET</span><h3>공고에 맞춘<br>정밀 진단</h3><span class="why-card__icon">◎</span>
-          <div class="why-card__back"><span class="why-card__num" style="color:#8FB4F5">01</span><h3>지원 공고에 필요한 근거부터 확인합니다</h3><p>채용공고와 이력서를 비교해 부족한 경험과 역량을 구체적으로 짚어 드립니다.</p><b>공고 분석 · 경험 연결 · 보완 포인트</b></div>
-        </article>
-        <article class="why-card" tabindex="0" data-reveal style="--i:1">
-          <span class="why-card__num">02 · QUESTION</span><h3>그 공고만의<br>면접 질문</h3><span class="why-card__icon">Q</span>
-          <div class="why-card__back"><span class="why-card__num" style="color:#8FB4F5">02</span><h3>내 경험에 맞는 질문으로 실전처럼 연습합니다</h3><p>실제로 나올 법한 질문을 만들어 실전처럼 훈련할 수 있습니다.</p><b>직무 질문 · 경험 질문 · 기술 질문</b></div>
-        </article>
-        <article class="why-card" tabindex="0" data-reveal style="--i:2">
-          <span class="why-card__num">03 · LOOP</span><h3>훈련할수록<br>정교해지는 분석</h3><span class="why-card__icon">↻</span>
-          <div class="why-card__back"><span class="why-card__num" style="color:#8FB4F5">03</span><h3>답변할 때마다 약점을 다시 계산합니다</h3><p>답변을 분석해서 약점을 계속 업데이트하고 다음 질문에 반영합니다.</p><b>답변 평가 · 약점 추적 · 반복 훈련</b></div>
-        </article>
-        <article class="why-card" tabindex="0" data-reveal style="--i:3">
-          <span class="why-card__num">04 · COMPLETE</span><h3>이력서 보완까지<br>한 번에</h3><span class="why-card__icon">✓</span>
-          <div class="why-card__back"><span class="why-card__num" style="color:#8FB4F5">04</span><h3>면접에서 찾은 약점을 서류까지 연결합니다</h3><p>면접에서 드러난 약점을 이력서·자기소개서 수정 제안으로 이어 드립니다.</p><b>면접 피드백 · 수정 제안 · 다음 준비</b></div>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- 서비스 흐름: 스크롤 위치에 따라 현재 단계 강조 -->
-  <section class="section section--dark" id="flow">
-    <div class="wrap story">
-      <div class="story__intro" data-reveal>
-        <p class="eyebrow">JOBPUZZLE FLOW</p>
-        <h2 class="section__title">흩어진 자료가<br>면접의 근거가 되는 과정</h2>
-        <p class="section__sub">각 화면에서 확인한 결과는 다음 단계의 기준이 됩니다.</p>
-        <div class="story__active" id="storyActive">
-          <span id="storyIndex">01 / 04</span>
-          <strong id="storyTitle">자료를 확인합니다</strong>
-          <div class="story__progress"><b id="storyBar"></b></div>
+          <div class="criteria" aria-label="평가 항목별 점수">
+            <div class="crit"><span>질문 의도 이해</span><span class="bar"><b style="--v:84%"></b></span><span class="v num">84</span></div>
+            <div class="crit"><span>논리적 구성</span><span class="bar"><b style="--v:78%"></b></span><span class="v num">78</span></div>
+            <div class="crit"><span>표현 명확성</span><span class="bar"><b style="--v:80%"></b></span><span class="v num">80</span></div>
+            <div class="crit"><span>경험 구체성</span><span class="bar"><b style="--v:71%"></b></span><span class="v num">71</span></div>
+            <div class="crit"><span>성과 및 결과</span><span class="bar"><b style="--v:62%"></b></span><span class="v num">62</span></div>
+            <div class="crit is-high"><span>공고 요구사항 연결</span><span class="bar"><b style="--v:86%"></b></span><span class="v num">86</span></div>
+          </div>
         </div>
-        <a href="/jobpuzzle/my-data" th:href="@{/my-data}" class="story__link">내 자료에서 시작하기 →</a>
-      </div>
-      <div class="story__rail">
-        <article class="stage is-current" data-title="자료를 확인합니다">
-          <div><p class="stage__label">01 · MY MATERIALS</p><h3>자료를 한곳에 모읍니다.</h3><p>이력서, 경험, 공고를 등록하고 추출 결과를 확인합니다.</p></div>
-          <div class="stage__mock"><div class="holo-row"><span>이력서_김지원.pdf</span><span class="badge badge--success">추출 완료</span></div><div class="holo-row"><span>LUME_채용공고.pdf</span><span class="badge badge--success">추출 완료</span></div><div class="holo-row"><span>프로젝트_경험정리</span><span class="badge badge--warning">확인 필요</span></div></div>
-        </article>
-        <article class="stage" data-title="공고와 경험을 연결합니다">
-          <div><p class="stage__label">02 · ANALYSIS</p><h3>공고와 경험을 연결합니다.</h3><p>추출된 근거를 검토하고, 수정한 분석 결과를 확정합니다.</p></div>
-          <div class="stage__mock"><div class="holo-bar"><span>문제 해결 경험</span><b>높음</b><i><em style="width:86%"></em></i></div><div class="holo-bar"><span>협업 경험</span><b>보통</b><i><em style="width:58%"></em></i></div><p style="color:var(--text-3)">근거 문장 8개를 확인했습니다</p></div>
-        </article>
-        <article class="stage" data-title="맞춤 질문을 준비합니다">
-          <div><p class="stage__label">03 · INTERVIEW</p><h3>맞춤 질문을 준비합니다.</h3><p>확정한 자료와 직무 가이드를 바탕으로 질문 세션을 구성합니다.</p></div>
-          <div class="stage__mock"><div class="holo-q"><b>Q1</b><p>주문 조회 API의 응답 속도를 개선한 경험을 설명해 주십시오.</p></div><div class="holo-q" style="opacity:.5"><b>Q2</b><p>협업 과정에서 의견을 조율한 경험이 있습니까?</p></div></div>
-        </article>
-        <article class="stage" data-title="다음 연습을 설계합니다">
-          <div><p class="stage__label">04 · REPORT</p><h3>다음 연습 방향을 확인합니다.</h3><p>답변의 근거와 표현을 평가하고 약점 보완 연습으로 이어갑니다.</p></div>
-          <div class="stage__mock"><p class="holo-big" style="font-size:32px">73<small> 준비도</small></p><div class="holo-chips"><span class="badge">구체성</span><span class="badge">문제 해결</span><span class="badge">역할 구분</span></div></div>
-        </article>
-      </div>
+
+        <div class="question">
+          <div class="qn num">질문 3 / 6</div>
+          <p class="qt">팀 프로젝트에서 API 응답 속도를 개선했다고 적으셨습니다. 원인을 어떻게 찾았는지 설명해 주십시오.</p>
+          <dl class="notes">
+            <dt>출제 의도</dt><dd>문제의 원인을 분석한 과정과 본인이 맡은 역할을 확인합니다.</dd>
+            <dt>잘한 점</dt><dd>쿼리 실행 계획을 확인한 과정을 순서대로 설명해 원인을 찾은 흐름이 분명합니다.</dd>
+            <dt>보완할 점</dt><dd>개선 전후 응답 시간을 수치로 제시하지 않아 성과가 약하게 전달됩니다.</dd>
+            <dt>추천 답변 방향</dt><dd>원인 분석 과정은 유지하고, "평균 응답 시간을 얼마에서 얼마로 줄였다"처럼 결과를 수치로 마무리해 보세요.</dd>
+            <dt>1회차보다 나아진 점</dt><dd>1회차보다 본인이 맡은 역할을 구체적으로 설명했습니다.</dd>
+          </dl>
+        </div>
+
+        <div class="doc-foot">
+          <span class="ai-mark">
+            <svg viewBox="0 0 110 100" fill="currentColor" aria-hidden="true">
+              <path d="M30 18 H58 L84 96 H64 L58 76 H32 L26 96 H6 Z M36 60 H54 L45 32 Z"/>
+              <use href="#piece" transform="translate(78 0) scale(.26)"/>
+              <rect x="86" y="42" width="18" height="54"/>
+            </svg>
+            AI가 평가 항목 기준에 따라 평가합니다.
+          </span>
+          <span>표시된 내용은 이해를 돕기 위한 예시입니다.</span>
+        </div>
+      </article>
     </div>
   </section>
 
-  <!-- 리포트: 보이는 순간 막대가 차오름 -->
-  <section class="section section--tint" id="report">
-    <div class="wrap center">
-      <p class="eyebrow" data-reveal>JOB REPORT</p>
-      <h2 class="section__title" data-reveal style="--i:1">직무별 요구역량 리포트</h2>
-      <p class="section__sub" data-reveal style="--i:2">누적된 채용 데이터로 직무 트렌드와 내 위치를 확인합니다</p>
-      <div class="card report" data-reveal data-report style="--i:3; text-align:left">
-        <div class="report__head"><p>백엔드 개발자 · 신입</p><span class="badge badge--primary">AI 매칭</span></div>
-        <div class="holo-bar"><span>문제해결력</span><b>82%</b><i><em style="width:82%"></em></i></div>
-        <div class="holo-bar"><span>협업 경험</span><b>64%</b><i><em style="width:64%"></em></i></div>
-        <div class="holo-bar"><span>기술 이해도</span><b>90%</b><i><em style="width:90%"></em></i></div>
-        <p class="report__note">이 공고라면 이런 질문이 나올 수 있습니다: “협업 중 갈등을 해결한 경험이 있습니까?”</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 이용 단계: 연결선이 그려진 뒤 단계가 순서대로 -->
-  <section class="section section--dark">
-    <div class="wrap center">
-      <p class="eyebrow" data-reveal>HOW IT WORKS</p>
-      <h2 class="section__title" data-reveal style="--i:1">이렇게 준비합니다</h2>
-      <div class="steps" data-steps>
-        <div class="step" data-reveal style="--i:2"><div class="step__num">1</div><p class="step__title">자료 등록</p><p class="step__desc">이력서·자소서·포트폴리오와 채용공고를 등록합니다</p></div>
-        <div class="step" data-reveal style="--i:4"><div class="step__num">2</div><p class="step__title">AI 분석</p><p class="step__desc">공고와 자료를 비교해 강점과 부족한 점을 찾습니다</p></div>
-        <div class="step" data-reveal style="--i:6"><div class="step__num">3</div><p class="step__title">모의면접</p><p class="step__desc">맞춤 질문으로 실전처럼 답변을 연습합니다</p></div>
-        <div class="step" data-reveal style="--i:8"><div class="step__num">4</div><p class="step__title">리포트 확인</p><p class="step__desc">평가 결과와 약점 보완 방향을 리포트로 받습니다</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="cta">
+  <!-- 5. 기능 설명 -->
+  <section class="section ruled" id="modes" aria-labelledby="modes-title" style="padding-top:0">
     <div class="wrap">
-      <h2 class="section__title" data-reveal>지금 첫 번째 조각을 맞춰 보십시오</h2>
-      <a href="/jobpuzzle/join" th:href="@{/join}" class="btn btn--primary btn--lg" data-reveal style="--i:1" id="bottom-cta">무료로 시작하기</a>
+      <h2 class="display modes-head" id="modes-title">준비할 영역에 맞춰 세&nbsp;가지 면접을 고릅니다.</h2>
+      <div class="modes">
+        <div class="mode">
+          <h3>기초 지식 면접</h3>
+          <p>공고에 적힌 기술과 요구사항에 대한 기초 지식을 확인합니다.</p>
+          <p class="need"><b class="num">티켓 1장</b>분석 결과 필요</p>
+        </div>
+        <div class="mode">
+          <h3>자료 기반 면접</h3>
+          <p>이력서·자기소개서·포트폴리오의 경험을 공고와 연결해 묻습니다. 지원 동기 질문이 포함됩니다.</p>
+          <p class="need"><b class="num">티켓 3장</b>분석 결과 필요</p>
+        </div>
+        <div class="mode">
+          <h3>인성 면접</h3>
+          <p>설정한 직무에서 중요하게 보는 태도와 협업 역량을 질문합니다.</p>
+          <p class="need"><b class="num">티켓 1장</b>분석 없이 가능</p>
+        </div>
+      </div>
+
+      <div class="extras">
+        <div><h3>꼬리질문</h3><p>답변에 따라 이어지는 질문으로 실제 면접처럼 진행합니다.</p></div>
+        <div><h3>출제 의도 보기</h3><p>필요할 때만 질문의 의도를 열어 볼 수 있습니다.</p></div>
+        <div><h3>이어서 진행</h3><p>면접 도중 나가도 마지막 지점부터 이어서 진행합니다.</p></div>
+        <div><h3>종합 평가</h3><p>보고서가 5개 이상 쌓이면 선호 직무와 답변의 강점, 아쉬운 점을 정리해 드립니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 신뢰 요소 -->
+  <section class="trust dark ruled" aria-label="자료와 티켓 처리 원칙">
+    <div class="wrap">
+      <article>
+        <h3>올린 원본 파일은 보관하지 않습니다.</h3>
+        <p>파일에서 글자를 뽑아낸 뒤 원본은 바로 지웁니다. 원본 보관을 직접 고른 경우에만 남겨 둡니다.</p>
+      </article>
+      <article>
+        <h3>실패한 요청은 티켓을 돌려드립니다.</h3>
+        <p>AI 응답에 실패하면 사용한 티켓을 반환하고 실패 사유를 안내합니다.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- 7. 티켓 안내 -->
+  <section class="section ruled" id="tickets" aria-labelledby="tickets-title">
+    <div class="wrap tickets">
+      <div>
+        <h2 class="display" id="tickets-title">필요한 만큼만 티켓으로 이용합니다.</h2>
+        <div class="price">
+          <div class="unit">티켓 1장</div>
+          <div class="amount num">1,000<small>원</small></div>
+          <div class="temp">임시 가격, 추후 변경</div>
+          <p class="pay">결제는 시연용 테스트 결제로 진행됩니다.</p>
+        </div>
+      </div>
+      <div class="tickets-right">
+        <table class="ticket-table">
+          <caption>이용 항목별 티켓</caption>
+          <thead><tr><th scope="col">이용 항목</th><th scope="col" class="n">필요 티켓</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">공고·지원자 분석</th><td class="n num">1장</td></tr>
+            <tr><th scope="row">기초 지식 면접 · 인성 면접</th><td class="n num">1장</td></tr>
+            <tr><th scope="row">자료 기반 면접 (첫 생성)</th><td class="n num">3장</td></tr>
+            <tr><th scope="row">종료된 면접 다시 진행</th><td class="n num">1장</td></tr>
+            <tr><th scope="row">종료된 면접 질문 다시 생성</th><td class="n num">2장</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. 하단 회원가입 유도 -->
+  <section class="section closing ruled" id="signup" aria-labelledby="closing-title">
+    <div class="wrap">
+      <div>
+        <h2 id="closing-title">지원할 공고가 있다면,<br>지금 맞춰 보세요.</h2>
+        <a class="btn btn-primary" href="/jobpuzzle/join" th:href="@{/join}" data-start="이어서 준비하기">회원가입하고 시작하기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </div>
+      <!-- 맞물린 조각 묶음: 6-3의 다섯 자리는 채워지고, 마지막 하나는 빈 조각으로 남음 -->
+      <svg class="set" viewBox="0 0 360 240" aria-hidden="true">
+        <g class="on">
+          <use href="#link" transform="translate(-30 0)"/>
+          <use href="#link" transform="translate(70 0)"/>
+          <use href="#link" transform="translate(170 0)"/>
+          <use href="#link" transform="translate(-30 100)"/>
+          <use href="#link" transform="translate(70 100)"/>
+        </g>
+        <use class="off" href="#link" transform="translate(170 100)"/>
+      </svg>
     </div>
   </section>
 </main>
 
-<footer class="footer"><div class="wrap"><span>© 2026 JobPuzzle</span><span>이용약관 · 개인정보처리방침</span></div></footer>
+<footer class="footer">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="잡퍼즐 처음으로"><svg aria-hidden="true"><use href="#j-symbol"/></svg><span>잡퍼즐</span></a>
+    <span>© 잡퍼즐</span>
+    <span>이용약관</span>
+    <span>개인정보처리방침</span>
+  </div>
+</footer>
 
-<script>window.__jobPuzzleLoaderFinished = true;</script>
 <script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
-<script src="/js/header.js" th:src="@{/js/header.js}"></script>
-<script src="/js/puzzle-scene.js" th:src="@{/js/puzzle-scene.js}"></script>
-<script src="/js/logo-mask.js" th:src="@{/js/logo-mask.js}"></script>
 <script src="/js/landing.js" th:src="@{/js/landing.js}"></script>
+<!-- 첫 화면 3D 무대. 불러오지 못하면 위의 평면 SVG 조각이 그대로 남음 -->
+<script type="module" src="/js/landing-stage.js" th:src="@{/js/landing-stage.js}"></script>
 </body>
 </html>

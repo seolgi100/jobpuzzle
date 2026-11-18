@@ -132,8 +132,7 @@
         });
     }
 
-    // landingHeader (guest/user 전환): 랜딩 페이지는 landing.js가 이미 처리하므로
-    // 여기서는 auth-guest가 있고 landing.js가 없는 페이지(로그인, 회원가입, 아이디/비번 찾기 등)만 다룬다.
+    // landingHeader (guest/user 전환): 로그인·회원가입·아이디/비밀번호 찾기 화면의 머리줄.
     function applyGuestHeaderState(user) {
         var authGuest = document.getElementById('auth-guest');
         var authUser = document.getElementById('auth-user');
@@ -156,7 +155,6 @@
     }
 
     function loadGuestHeaderAuthState() {
-        if (window.__jobPuzzleLandingHandlesAuthHeader) return;
         if (!document.getElementById('auth-guest')) return;
         fetch(window.JobPuzzleRoutes.path('/user/me'), { credentials: 'same-origin' })
             .then(function (response) { return response.json().then(function (body) { return { ok: response.ok, body: body }; }); })
