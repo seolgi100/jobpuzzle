@@ -2,15 +2,15 @@
 
 /*  01. 전역 디자인 토큰: 색상, 배경, 테두리, 기본 글꼴 */
 :root {
-    --color-primary: #185FA5;
+    --color-primary: #3A62A8;
     --color-primary-dark: #124A86;
-    --color-primary-tint: #EAF2FB;
+    --color-primary-tint: #EDF2FA;
     --color-text: #14181F;
-    --color-text-muted: #5B6370;
-    --color-text-faint: #8A93A3;
-    --color-border: #E3E7ED;
+    --color-text-muted: #4F5764;
+    --color-text-faint: #9BA3B0;
+    --color-border: #D6DBE3;
     --color-surface: #FFFFFF;
-    --color-surface-tint: #F6F8FB;
+    --color-surface-tint: #F5F7FA;
     --color-bg-tint: #F3F8FD;
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -75,7 +75,7 @@ button {
     justify-content: center;
     gap: 10px;
     padding: 9px 24px;
-    background: #F3F5F8;
+    background: #EEF1F5;
     border-bottom: 1px dashed var(--color-border);
     font-size: 12px;
     color: var(--color-text-faint);
@@ -86,7 +86,7 @@ button {
 }
 .preview-bar__btn {
     padding: 6px 14px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 12px;
     font-weight: 500;
     background: transparent;
@@ -110,7 +110,7 @@ button {
     font-weight: 600;
     padding: 8px 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 2px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -132,7 +132,7 @@ button {
 .btn--lg {
     font-size: 15.5px;
     padding: 14px 30px;
-    border-radius: 10px;
+    border-radius: 2px;
 }
 
 /* =========================================================
@@ -214,7 +214,7 @@ button {
 .site-header.header--dark .site-header__name,
 .site-header.header--dark .site-header__nav a,
 .site-header.header--dark .user-chip__name {
-    color: #f5f9ff;
+    color: #EDF2FA;
 }
 
 .site-header.header--dark .site-header__nav a:hover,
@@ -223,7 +223,7 @@ button {
 }
 
 .site-header.header--dark .auth-guest .btn--ghost {
-    color: #f5f9ff;
+    color: #EDF2FA;
 }
 
 .site-header.header--dark .auth-guest .btn--ghost:hover,
@@ -233,7 +233,7 @@ button {
 }
 
 .site-header.header--dark .user-chip {
-    color: #f5f9ff;
+    color: #EDF2FA;
     background: rgba(255, 255, 255, .07);
     border-color: rgba(255, 255, 255, .15);
 }
@@ -256,7 +256,7 @@ button {
 .site-header__logo {
     width: 40px;
     height: 40px;
-    border-radius: 11px;
+    border-radius: 2px;
     object-fit: contain;
 }
 
@@ -369,7 +369,7 @@ button {
     gap: 8px;
     background: var(--color-surface-tint);
     border: 1px solid var(--color-border);
-    border-radius: 999px;
+    border-radius: 2px;
     padding: 5px 12px 5px 6px;
     cursor: pointer;
     color: inherit;
@@ -401,7 +401,7 @@ button {
     width: 180px;
     background: #fff;
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 2px;
     box-shadow: 0 16px 36px -12px rgba(20, 50, 90, 0.22);
     padding: 6px;
     z-index: 10020;
@@ -416,7 +416,7 @@ button {
     align-items: center;
     gap: 10px;
     padding: 9px 10px;
-    border-radius: 8px;
+    border-radius: 2px;
     text-decoration: none;
     color: var(--color-text);
     font-size: 13.5px;
@@ -426,10 +426,10 @@ button {
     background: var(--color-surface-tint);
 }
 .user-menu__item--danger {
-    color: #B5433D;
+    color: #8A4B14;
 }
 .user-menu__item--danger:hover {
-    background: #FBEEEC;
+    background: #F6EFE8;
 }
 .user-menu__divider {
     height: 1px;
@@ -494,7 +494,7 @@ button {
     width: 100%;
     padding: 14px 13px 14px 14px;
     border: 2px solid var(--toast-border);
-    border-radius: 12px;
+    border-radius: 2px;
     color: #17283A;
     background: var(--toast-bg);
     box-shadow: 4px 5px 0 color-mix(in srgb, var(--toast-accent) 30%, transparent);
@@ -522,7 +522,7 @@ button {
 
 .jp-toast--error {
     --toast-accent: #8E332D;
-    --toast-border: #B5433D;
+    --toast-border: #8A4B14;
     --toast-bg: #F0E2DE;
 }
 
@@ -544,7 +544,7 @@ button {
     height: 30px;
     place-items: center;
     border: 2px solid var(--toast-accent);
-    border-radius: 8px;
+    border-radius: 2px;
     color: #FFFFFF;
     background: var(--toast-accent);
     box-shadow: 2px 3px 0 color-mix(in srgb, var(--toast-accent) 28%, transparent);
@@ -587,7 +587,7 @@ button {
     padding: 0;
     place-items: center;
     border: 0;
-    border-radius: 7px;
+    border-radius: 2px;
     color: var(--toast-accent);
     background: transparent;
     cursor: pointer;

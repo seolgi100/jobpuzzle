@@ -40,4 +40,19 @@ body.jp-app-theme .btn--primary:hover { background: #3A62A8; border-color: #3A62
 /* 시안에 없는 예전 장식(청록 퍼즐 조각)은 숨긴다 */
 body.jp-app-theme canvas[data-puzzle-piece] { display: none !important; }
 body.jp-app-theme .site-footer { background: transparent; border-top: 1px solid #D6DBE3; }
+
+/* 관리자 화면: 그림자 없는 1px 선 세계 (관리자에는 떠 있는 창이 없다) */
+body.jp-admin-page .app-shell * { box-shadow: none !important; }
+body.jp-admin-page .page-subtitle { font-size: 16px; color: #4F5764; }
+/* 탭: 회색 상자 대신 서비스 화면과 같은 밑줄 탭 */
+body.jp-admin-page .tabbar { gap: 28px; width: auto; padding: 0; border: 0; border-bottom: 1px solid #D6DBE3; border-radius: 0; background: none; }
+body.jp-admin-page .tabbar__btn { position: relative; padding: 0 0 14px; border-radius: 0; background: none; font-size: 16px; font-weight: 500; color: #4F5764; text-decoration: none; }
+body.jp-admin-page .tabbar__btn:hover { color: #12151B; }
+body.jp-admin-page .tabbar__btn.is-active { background: none; color: #12151B; font-weight: 600; }
+body.jp-admin-page .tabbar__btn.is-active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #3A62A8; }
+/* 표: 먹색 첫 줄 + 회색 구분선 */
+body.jp-admin-page .table-wrap { border: 0; border-top: 1px solid #12151B; border-radius: 0; background: #fff; }
+body.jp-admin-page .table-head { background: #F5F7FA; font-size: 14px; color: #4F5764; }
+body.jp-admin-page .table-row { border-top-color: #D6DBE3; }
+body.jp-admin-page .badge, body.jp-admin-page .badge-pill { border: 0; font-size: 13px; font-weight: 600; }
 @media (max-width: 760px) { body.jp-app-theme .page-title { font-size: 28px; } }

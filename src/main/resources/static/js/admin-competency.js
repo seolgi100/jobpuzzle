@@ -77,7 +77,7 @@
     $('cp-question-rows').innerHTML = d.personalityQuestions.map(function (q) {
       return '<div class="table-row" style="grid-template-columns:2.6fr 1.2fr 0.6fr 0.9fr;">' +
         '<span style="font-size:13px;">' + esc(q.question) +
-          '<br><span style="font-size:12px; color:var(--text-3, #6b7280);">' + esc(q.intent) + '</span></span>' +
+          '<br><span style="font-size:12px; color:var(--text-3, #4F5764);">' + esc(q.intent) + '</span></span>' +
         '<span style="display:flex; gap:4px; flex-wrap:wrap;">' + q.competencyTags.map(function (c) {
           return '<span class="badge">' + esc(tagLabel(c)) + '</span>';
         }).join('') + '</span>' +
@@ -125,7 +125,7 @@
       name: $('cp-tag-name').value.trim(),
       description: $('cp-tag-desc').value.trim()
     };
-    if (!body.code || !body.name || !body.description) { alert('코드, 이름, 설명을 모두 입력해주세요.'); return; }
+    if (!body.code || !body.name || !body.description) { alert('코드, 이름, 설명을 모두 입력해 주십시오.'); return; }
     var call = state.editingTagId
       ? api('/tags/' + state.editingTagId, { method: 'PUT', json: body })
       : api('/tags', { method: 'POST', json: body });
@@ -133,7 +133,7 @@
   }
 
   function removeTag(tagId) {
-    if (!confirm('이 역량 태그를 삭제할까요?')) return;
+    if (!confirm('이 역량 태그를 삭제하시겠습니까?')) return;
     api('/tags/' + tagId, { method: 'DELETE' }).then(reload).catch(function (e) { alert(e.message); });
   }
 
@@ -175,8 +175,8 @@
       competencyTags: tags,
       careerLevel: $('cp-question-career').value
     };
-    if (!body.question || !body.intent) { alert('질문과 출제 의도를 입력해주세요.'); return; }
-    if (tags.length < 1 || tags.length > 2) { alert('역량 태그를 1~2개 선택해주세요.'); return; }
+    if (!body.question || !body.intent) { alert('질문과 출제 의도를 입력해 주십시오.'); return; }
+    if (tags.length < 1 || tags.length > 2) { alert('역량 태그를 1~2개 선택해 주십시오.'); return; }
     var call = state.editingQuestionId
       ? api('/questions/' + state.editingQuestionId, { method: 'PUT', json: body })
       : api('/questions', { method: 'POST', json: body });
@@ -184,7 +184,7 @@
   }
 
   function removeQuestion(questionId) {
-    if (!confirm('이 인성 질문을 삭제할까요?')) return;
+    if (!confirm('이 인성 질문을 삭제하시겠습니까?')) return;
     api('/questions/' + questionId, { method: 'DELETE' }).then(reload).catch(function (e) { alert(e.message); });
   }
 

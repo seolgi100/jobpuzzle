@@ -57,7 +57,7 @@
         '</td><td class="' + (h.amount > 0 ? 'plus' : h.amount < 0 ? 'minus' : '') + '">' + esc(change) +
         '</td><td>' + esc(h.balanceAfter) + '장</td></tr>';
     }).join('');
-    document.getElementById('ticket-history').innerHTML = rows || '<tr><td colspan="4">이용 내역이 없어요.</td></tr>';
+    document.getElementById('ticket-history').innerHTML = rows || '<tr><td colspan="4">이용 내역이 없습니다.</td></tr>';
   }
 
   function loadBalance() {
@@ -78,7 +78,7 @@
   // 서버가 금액을 정한 주문을 만들고 토스 결제창을 연다. 결과는 successUrl/failUrl로 이 화면에 돌아온다.
   function buy(productCode, button) {
     if (typeof window.TossPayments !== 'function') {
-      showResult(false, '결제 모듈을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.');
+      showResult(false, '결제 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주십시오.');
       return;
     }
     button.disabled = true;
@@ -95,7 +95,7 @@
       });
     }).catch(function (error) {
       // 사용자가 결제창을 닫은 경우(USER_CANCEL)는 조용히 넘긴다.
-      if (!error || error.code !== 'USER_CANCEL') showResult(false, (error && error.message) || '결제를 시작하지 못했어요.');
+      if (!error || error.code !== 'USER_CANCEL') showResult(false, (error && error.message) || '결제를 시작하지 못했습니다.');
     }).then(function () { button.disabled = false; });
   }
 
@@ -106,14 +106,14 @@
     if (!result) return Promise.resolve();
     window.history.replaceState(null, '', window.location.pathname);
     if (result === 'fail') {
-      showResult(false, '결제가 완료되지 않았어요. ' + (q.get('message') || ''));
+      showResult(false, '결제가 완료되지 않았습니다. ' + (q.get('message') || ''));
       return Promise.resolve();
     }
-    showResult(true, '결제를 확인하고 있어요…');
+    showResult(true, '결제를 확인하고 있습니다…');
     return api('/payments/confirm', {
       json: { paymentKey: q.get('paymentKey'), orderId: q.get('orderId'), amount: Number(q.get('amount')) }
     }).then(function (data) {
-      showResult(true, '티켓 ' + data.chargedTickets + '장이 충전됐어요. 보유 티켓 ' + data.balance + '장');
+      showResult(true, '티켓 ' + data.chargedTickets + '장이 충전되었습니다. 보유 티켓 ' + data.balance + '장');
     }).catch(function (error) { showResult(false, error.message); });
   }
 

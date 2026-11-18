@@ -16,7 +16,7 @@
     <div>
       <p class="phead__eyebrow">MY ACCOUNT</p>
       <h1 class="phead__title">설정</h1>
-      <p class="phead__sub">계정 정보와 희망 직무를 관리해요.</p>
+      <p class="phead__sub">계정 정보와 희망 직무를 관리합니다.</p>
     </div>
   </div>
 
@@ -26,7 +26,7 @@
     </h2>
     <div class="auth-error" id="profile-error" role="alert"></div>
     <dl class="set-rows">
-      <div class="set-row" id="settings-id-row"><dt>아이디</dt><dd><input class="input" id="settings-id" disabled style="width:auto"> <small>바꿀 수 없어요</small></dd></div>
+      <div class="set-row" id="settings-id-row"><dt>아이디</dt><dd><input class="input" id="settings-id" disabled style="width:auto"> <small>바꿀 수 없습니다</small></dd></div>
       <div class="set-row"><dt>이메일</dt><dd><input class="input" type="email" id="settings-email" disabled></dd></div>
       <div class="set-row"><dt>이름</dt><dd><input class="input" type="text" id="settings-name" disabled></dd></div>
       <div class="set-row"><dt>로그인 방식</dt><dd><span class="set-social" id="settings-login-method">아이디·비밀번호</span> <a href="/jobpuzzle/passwd-reset" th:href="@{/passwd-reset}" id="settings-passwd-link" style="margin-left:8px; font-size:13px; color:var(--sky-strong)">비밀번호 바꾸기</a></dd></div>
@@ -38,28 +38,28 @@
     <h2 class="dcard__title" id="job-title"><span><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>희망 직무</span></h2>
     <div class="auth-error" id="job-category-error" role="alert"></div>
     <div class="set-job">
-      <label>대분류<select class="input" id="job-major"><option value="">선택해주세요</option></select></label>
-      <label>중분류<select class="input" id="job-minor" disabled><option value="">대분류를 먼저 골라주세요</option></select></label>
-      <label>경력<select class="input" id="job-career" disabled><option value="">중분류를 먼저 골라주세요</option></select></label>
+      <label>대분류<select class="input" id="job-major"><option value="">선택해 주십시오</option></select></label>
+      <label>중분류<select class="input" id="job-minor" disabled><option value="">대분류를 먼저 골라 주십시오</option></select></label>
+      <label>경력<select class="input" id="job-career" disabled><option value="">중분류를 먼저 골라 주십시오</option></select></label>
     </div>
-    <p class="set-note">바꾸면 이후 새로 만드는 면접 질문과 리포트부터 적용돼요. 이미 끝난 면접 결과는 그대로예요.</p>
+    <p class="set-note">바꾸면 이후 새로 만드는 면접 질문과 리포트부터 적용됩니다. 이미 끝난 면접 결과는 그대로입니다.</p>
     <div class="set-foot"><button type="button" class="dbtn dbtn--navy" id="save-job-category-btn">저장</button></div>
   </section>
 
   <div class="set-danger">
-    <div><b>회원 탈퇴</b><p>탈퇴하면 모든 자료와 면접 기록이 지워지고 되돌릴 수 없어요.</p></div>
+    <div><b>회원 탈퇴</b><p>탈퇴하면 모든 자료와 면접 기록이 지워지고 되돌릴 수 없습니다.</p></div>
     <button type="button" class="dbtn dbtn--danger" id="withdraw-btn">회원 탈퇴하기</button>
   </div>
 </main>
 
-<div class="toast" role="status" id="save-success-modal" hidden><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>저장했어요</div>
+<div class="toast" role="status" id="save-success-modal" hidden><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>저장했습니다</div>
 
 <div class="modal" id="withdraw-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="wd-title" hidden>
   <div class="modal__box" style="max-width:440px">
-    <div class="modal__head"><h2 class="modal__title" id="wd-title">정말 탈퇴할까요?</h2><button type="button" class="modal__x" aria-label="닫기" id="withdraw-cancel-x" onclick="document.getElementById('withdraw-cancel-btn').click()">×</button></div>
-    <p style="margin:0; font-size:14px; color:var(--text-2)">아래 내용이 모두 지워지고 복구할 수 없어요.</p>
+    <div class="modal__head"><h2 class="modal__title" id="wd-title">정말 탈퇴하시겠습니까?</h2><button type="button" class="modal__x" aria-label="닫기" id="withdraw-cancel-x" onclick="document.getElementById('withdraw-cancel-btn').click()">×</button></div>
+    <p style="margin:0; font-size:14px; color:var(--text-2)">아래 내용이 모두 지워지고 복구할 수 없습니다.</p>
     <ul class="wd-list"><li>등록한 자료와 분석 기록</li><li>면접 기록과 리포트</li><li>약점 태그와 액션플랜 과제</li></ul>
-    <label class="wd-check"><input type="checkbox" id="withdraw-agree">위 내용을 확인했어요</label>
+    <label class="wd-check"><input type="checkbox" id="withdraw-agree">위 내용을 확인했습니다</label>
     <div class="auth-error" id="withdraw-error" role="alert"></div>
     <div class="modal__foot"><button type="button" class="dbtn dbtn--ghost" id="withdraw-cancel-btn">취소</button><button type="button" class="dbtn dbtn--danger-solid" id="withdraw-confirm-btn" disabled>탈퇴하기</button></div>
   </div>
@@ -67,7 +67,7 @@
 
 <div class="modal" id="withdraw-done-modal" role="dialog" aria-modal="true" hidden>
   <div class="modal__box" style="max-width:400px; text-align:center">
-    <p style="margin:0 0 20px; font-size:16px; font-weight:700">탈퇴했어요. 그동안 이용해 주셔서 고마워요.</p>
+    <p style="margin:0 0 20px; font-size:16px; font-weight:700">탈퇴했습니다. 그동안 이용해 주셔서 고맙습니다.</p>
     <button type="button" class="dbtn dbtn--navy" id="withdraw-done-confirm">확인</button>
   </div>
 </div>

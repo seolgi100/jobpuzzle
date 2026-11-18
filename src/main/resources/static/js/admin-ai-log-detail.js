@@ -14,10 +14,10 @@
   }
 
   var STATUS_BADGE = {
-    PENDING: { bg: '#F6F8FB', color: '#5B6370', label: '대기' },
-    RUNNING: { bg: '#EAF2FB', color: '#185FA5', label: '실행중' },
-    SUCCEEDED: { bg: '#EAF7EF', color: '#1E8E5A', label: '성공' },
-    FAILED: { bg: '#FBEEEC', color: '#B5433D', label: '실패' }
+    PENDING: { bg: '#F5F7FA', color: '#4F5764', label: '대기' },
+    RUNNING: { bg: '#EDF2FA', color: '#3A62A8', label: '실행중' },
+    SUCCEEDED: { bg: '#EEF1F5', color: '#12151B', label: '성공' },
+    FAILED: { bg: '#F6EFE8', color: '#8A4B14', label: '실패' }
   };
 
   function pill(label, bg, color) {
@@ -26,7 +26,7 @@
 
   function detailField(label, valueHtml) {
     return '<div><p class="field-label" style="margin-bottom:4px;">' + esc(label) + '</p>' +
-      '<div style="font-size:13.5px;">' + (valueHtml || '<span style="color:#8A93A3;">-</span>') + '</div></div>';
+      '<div style="font-size:13.5px;">' + (valueHtml || '<span style="color:#9BA3B0;">-</span>') + '</div></div>';
   }
 
   function section(title, innerHtml) {
@@ -66,7 +66,7 @@
   var aiCallLogId = idFromUrl();
 
   function render(d) {
-    var status = STATUS_BADGE[d.status] || { bg: '#F6F8FB', color: '#5B6370', label: d.status };
+    var status = STATUS_BADGE[d.status] || { bg: '#F5F7FA', color: '#4F5764', label: d.status };
     document.getElementById('ai-log-detail-title').innerHTML =
       'AI 호출 로그 #' + d.aiCallLogId + ' ' + pill(status.label, status.bg, status.color);
 
@@ -104,7 +104,7 @@
     var metadataSection = section('provider 완료 메타데이터',
       metadata
         ? '<textarea class="textarea-input" readonly style="width:100%; height:180px; font-family:monospace; font-size:12px; box-sizing:border-box;">' + esc(metadata) + '</textarea>'
-        : '<p style="font-size:13.5px; color:#8A93A3; margin:0;">저장된 메타데이터가 없어요</p>'
+        : '<p style="font-size:13.5px; color:#9BA3B0; margin:0;">저장된 메타데이터가 없습니다</p>'
     );
 
     document.getElementById('ai-log-detail-body').innerHTML =
@@ -113,8 +113,8 @@
 
   function load() {
     return api('/admin/ai-call-logs/' + aiCallLogId).then(render).catch(function (e) {
-      document.getElementById('ai-log-detail-title').textContent = '로그를 불러올 수 없어요';
-      document.getElementById('ai-log-detail-body').innerHTML = '<p style="color:#B5433D;">' + esc(e.message) + '</p>';
+      document.getElementById('ai-log-detail-title').textContent = '로그를 불러올 수 없습니다';
+      document.getElementById('ai-log-detail-body').innerHTML = '<p style="color:#8A4B14;">' + esc(e.message) + '</p>';
     });
   }
 

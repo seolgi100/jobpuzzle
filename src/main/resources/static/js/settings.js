@@ -77,7 +77,7 @@
       );
       fillOptions(minorSelect, subCategories.map(function (s) {
         return { value: s, label: s };
-      }), '선택해주세요');
+      }), '선택해 주십시오');
       minorSelect.disabled = subCategories.length === 0;
       if (selectedSubCategory) {
         minorSelect.value = selectedSubCategory;
@@ -90,7 +90,7 @@
       });
       fillOptions(careerSelect, matches.map(function (c) {
         return { value: c.jobCategoryId, label: CAREER_LEVEL_LABEL[c.careerLevel] || c.careerLevel };
-      }), '선택해주세요');
+      }), '선택해 주십시오');
       careerSelect.disabled = matches.length === 0;
       if (selectedCareerJobCategoryId) {
         careerSelect.value = String(selectedCareerJobCategoryId);
@@ -139,11 +139,11 @@
         var mainCategories = uniqueInOrder(jobCategories.map(function (c) { return c.mainCategory; }));
         fillOptions(majorSelect, mainCategories.map(function (m) {
           return { value: m, label: m };
-        }), '선택해주세요');
+        }), '선택해 주십시오');
         applyCurrentJobCategory();
       })
       .catch(function () {
-        showError(jobCategoryError, '직무 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        showError(jobCategoryError, '직무 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주십시오.');
       });
 
     majorSelect.addEventListener('change', function () {
@@ -153,14 +153,14 @@
       if (!mainCategory) {
         minorSelect.disabled = true;
         careerSelect.disabled = true;
-        fillOptions(minorSelect, [], '대분류를 먼저 선택해주세요');
-        fillOptions(careerSelect, [], '중분류를 먼저 선택해주세요');
+        fillOptions(minorSelect, [], '대분류를 먼저 선택해 주십시오');
+        fillOptions(careerSelect, [], '중분류를 먼저 선택해 주십시오');
         return;
       }
 
       renderMinorOptions(mainCategory);
       careerSelect.disabled = true;
-      fillOptions(careerSelect, [], '중분류를 먼저 선택해주세요');
+      fillOptions(careerSelect, [], '중분류를 먼저 선택해 주십시오');
     });
 
     minorSelect.addEventListener('change', function () {
@@ -190,7 +190,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         });
     }
 
@@ -205,7 +205,7 @@
 
       var name = nameInput.value.trim();
       if (!name) {
-        showError(profileError, '이름을 입력해주세요.');
+        showError(profileError, '이름을 입력해 주십시오.');
         return;
       }
 
@@ -233,7 +233,7 @@
       if (!currentUser) return;
 
       if (!selectedJobCategoryId) {
-        showError(jobCategoryError, '희망 직무를 선택해주세요.');
+        showError(jobCategoryError, '희망 직무를 선택해 주십시오.');
         return;
       }
 
@@ -288,7 +288,7 @@
           }
         })
         .catch(function () {
-          showError(withdrawError, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(withdrawError, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         });
     });
 

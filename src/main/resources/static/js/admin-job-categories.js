@@ -82,7 +82,7 @@
         '</span>' +
       '</div>';
     }).join('');
-    document.getElementById('job-category-rows').innerHTML = rows || '<div class="table-empty">등록된 직무 분류가 없어요</div>';
+    document.getElementById('job-category-rows').innerHTML = rows || '<div class="table-empty">등록된 직무 분류가 없습니다</div>';
 
     document.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () { openForm(parseInt(b.dataset.edit, 10)); });
@@ -131,7 +131,7 @@
       careerLevel: document.getElementById('job-category-career').value
     };
     if (!request.mainCategory || !request.subCategory) {
-      alert('대분류와 중분류를 입력해주세요.');
+      alert('대분류와 중분류를 입력해 주십시오.');
       return;
     }
 
@@ -146,7 +146,7 @@
   }
 
   function removeCategory(jobCategoryId) {
-    if (!confirm('이 직무 분류를 삭제할까요?')) return;
+    if (!confirm('이 직무 분류를 삭제하시겠습니까?')) return;
     api('/admin/job-categories/' + jobCategoryId, { method: 'DELETE' })
       .then(loadCategories)
       .catch(function (e) { alert(e.message); });

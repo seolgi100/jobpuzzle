@@ -47,9 +47,9 @@
   }
 
   var STATUS_BADGE = {
-    DRAFT: { bg: '#F6F8FB', color: '#5B6370', label: '임시저장' },
-    ACTIVE: { bg: '#EAF7EF', color: '#1E8E5A', label: '사용중' },
-    INACTIVE: { bg: '#FBEEEC', color: '#B5433D', label: '비활성' }
+    DRAFT: { bg: '#F5F7FA', color: '#4F5764', label: '임시저장' },
+    ACTIVE: { bg: '#EEF1F5', color: '#12151B', label: '사용중' },
+    INACTIVE: { bg: '#F6EFE8', color: '#8A4B14', label: '비활성' }
   };
   var SCOPE_LABEL = {
     CATEGORY: '특정 직무분류',
@@ -62,13 +62,13 @@
 
   function detailField(label, value) {
     return '<div><p class="field-label" style="margin-bottom:4px;">' + esc(label) + '</p>' +
-      '<p style="font-size:13.5px; margin:0; white-space:pre-line;">' + (value || '<span style="color:#8A93A3;">-</span>') + '</p></div>';
+      '<p style="font-size:13.5px; margin:0; white-space:pre-line;">' + (value || '<span style="color:#9BA3B0;">-</span>') + '</p></div>';
   }
 
   function detailListField(label, items) {
     var content = (items && items.length)
       ? '<ul style="margin:0; padding-left:18px;">' + items.map(function (i) { return '<li style="font-size:13.5px;">' + esc(i) + '</li>'; }).join('') + '</ul>'
-      : '<p style="font-size:13.5px; margin:0; color:#8A93A3;">-</p>';
+      : '<p style="font-size:13.5px; margin:0; color:#9BA3B0;">-</p>';
     return '<div><p class="field-label" style="margin-bottom:4px;">' + esc(label) + '</p>' + content + '</div>';
   }
 
@@ -101,14 +101,14 @@
         notice('error', e.message);
       });
     }).catch(function (e) {
-      document.getElementById('guide-detail-title').textContent = '가이드를 불러올 수 없어요';
-      document.getElementById('guide-detail-body').innerHTML = '<p style="color:#B5433D;">' + esc(e.message) + '</p>';
+      document.getElementById('guide-detail-title').textContent = '가이드를 불러올 수 없습니다';
+      document.getElementById('guide-detail-body').innerHTML = '<p style="color:#8A4B14;">' + esc(e.message) + '</p>';
       document.getElementById('guide-detail-actions').innerHTML = '';
     });
   }
 
   function render(g) {
-    var status = STATUS_BADGE[g.status] || { bg: '#F6F8FB', color: '#5B6370', label: g.status };
+    var status = STATUS_BADGE[g.status] || { bg: '#F5F7FA', color: '#4F5764', label: g.status };
     var scope = SCOPE_LABEL[g.scopeType] || g.scopeType;
     var scopeDetail = g.scopeType === 'CATEGORY'
       ? (g.mainCategory ? ' (' + esc(g.mainCategory) + ' · ' + esc(g.subCategory) + ' · ' + esc(g.careerLevel || '') + ')' : '')
@@ -176,8 +176,8 @@
     if (g.status === 'ACTIVE') return '현재 실제 분석에서 사용 중인 가이드입니다.';
     if (g.status === 'INACTIVE') return '비활성 버전입니다. 최신 버전을 생성해 수정할 수 있습니다.';
     if (g.indexingStatus === 'INDEXING') return '검수 청크를 벡터 저장소에 반영하고 있습니다.';
-    if (g.indexingStatus === 'FAILED') return '오류 내용을 확인한 뒤 벡터 색인을 다시 실행해 주세요.';
-    if (g.indexingStatus !== 'INDEXED') return '청크를 확인·저장한 뒤 벡터 색인을 실행해 주세요.';
+    if (g.indexingStatus === 'FAILED') return '오류 내용을 확인한 뒤 벡터 색인을 다시 실행해 주십시오.';
+    if (g.indexingStatus !== 'INDEXED') return '청크를 확인·저장한 뒤 벡터 색인을 실행해 주십시오.';
     return '검수와 색인이 끝났습니다. 최신 버전 활성화를 진행할 수 있습니다.';
   }
 
@@ -185,7 +185,7 @@
     var button = document.getElementById('guide-index-btn');
     if (!button || button.disabled) return;
     if (state.currentGuide && state.currentGuide.indexingStatus === 'INDEXED'
-        && !confirm('현재 검수 내용으로 벡터를 다시 색인할까요?')) {
+        && !confirm('현재 검수 내용으로 벡터를 다시 색인하시겠습니까?')) {
       return;
     }
     button.disabled = true;
@@ -193,7 +193,7 @@
     notice('info', '검수한 청크의 벡터 색인을 시작했습니다.');
     guideApi('/guides/' + guideId + '/index', { method: 'POST' })
       .then(function () {
-        notice('success', '벡터 색인이 완료됐습니다. 이제 최신 버전을 활성화할 수 있어요.');
+        notice('success', '벡터 색인이 완료됐습니다. 이제 최신 버전을 활성화할 수 있습니다.');
         return loadAndRender();
       })
       .catch(function (e) {
@@ -256,11 +256,11 @@
       };
     });
     if (!chunks.length || chunks.some(function (chunk) { return !chunk.content; })) {
-      notice('error', '모든 청크의 검색 원문을 입력해 주세요.');
+      notice('error', '모든 청크의 검색 원문을 입력해 주십시오.');
       return;
     }
     if (state.currentGuide.indexingStatus === 'INDEXED'
-        && !confirm('청크를 저장하면 현재 벡터 색인이 해제됩니다. 저장 후 다시 색인할까요?')) {
+        && !confirm('청크를 저장하면 현재 벡터 색인이 해제됩니다. 저장 후 다시 색인하시겠습니까?')) {
       return;
     }
     var button = document.getElementById('guide-chunks-save-btn');
@@ -282,13 +282,13 @@
   function renderActions(g) {
     var html = '';
     if (g.status === 'ACTIVE') {
-      html += '<button class="btn btn--ghost" style="border:1px solid #E3E7ED;" id="guide-deactivate-btn">비활성화</button>';
+      html += '<button class="btn btn--ghost" style="border:1px solid #D6DBE3;" id="guide-deactivate-btn">비활성화</button>';
     } else if (g.status === 'DRAFT') {
       html += '<button class="btn btn--primary" id="guide-activate-btn"' +
-        (g.indexingStatus !== 'INDEXED' ? ' disabled title="검수와 벡터 색인을 먼저 완료해 주세요."' : '') +
+        (g.indexingStatus !== 'INDEXED' ? ' disabled title="검수와 벡터 색인을 먼저 완료해 주십시오."' : '') +
         '>최신 버전 활성화</button>';
     }
-    html += '<button class="btn btn--ghost" style="border:1px solid #E3E7ED;" id="guide-version-btn">새 버전 만들기</button>';
+    html += '<button class="btn btn--ghost" style="border:1px solid #D6DBE3;" id="guide-version-btn">새 버전 만들기</button>';
     document.getElementById('guide-detail-actions').innerHTML = html;
 
     var activateBtn = document.getElementById('guide-activate-btn');
@@ -302,7 +302,7 @@
   function activateGuide() {
     var button = document.getElementById('guide-activate-btn');
     if (!button || button.disabled) return;
-    if (!confirm('검수와 색인을 완료한 이 버전을 실제 분석 가이드로 활성화할까요?')) return;
+    if (!confirm('검수와 색인을 완료한 이 버전을 실제 분석 가이드로 활성화하시겠습니까?')) return;
     button.disabled = true;
     guideApi('/guides/' + guideId + '/activate', { method: 'POST' })
       .then(function () {
@@ -403,16 +403,16 @@
     };
 
     if (!request.title) {
-      notice('error', '제목은 필수예요.');
+      notice('error', '제목은 필수입니다.');
       return;
     }
     var fileInput = document.getElementById('gv-file');
     if (request.sourceType === 'PDF' && !fileInput.files[0]) {
-      notice('error', '새 버전의 PDF 파일을 선택해 주세요.');
+      notice('error', '새 버전의 PDF 파일을 선택해 주십시오.');
       return;
     }
     if (request.sourceType === 'DIRECT_INPUT' && !request.sourceText) {
-      notice('error', '새 버전의 가이드 원문을 입력해 주세요.');
+      notice('error', '새 버전의 가이드 원문을 입력해 주십시오.');
       return;
     }
 

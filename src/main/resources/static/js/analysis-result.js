@@ -41,7 +41,7 @@
         '<div class="ev ev--wide"><small>사용된 자료' + (related.length ? ' · 관련 질문 ' + related.join(', ') : '') + '</small><div class="ev__src">' +
         (refs.length ? refs.map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') : '<span>연결된 자료 없음</span>') + '</div></div>' +
         '</div></details>';
-    }).join('') || '<p class="rs-sub">해당하는 요구사항이 없어요.</p>';
+    }).join('') || '<p class="rs-sub">해당하는 요구사항이 없습니다.</p>';
   }
 
   function render(result, analysisCase, plans) {
@@ -66,50 +66,50 @@
       : sid ? (completed ? ['완료한 면접 결과 보기', route('/interview-results?sessionId=' + encodeURIComponent(sid))]
         : ['진행 중인 면접으로 돌아가기', route('/interview?resumeSessionId=' + encodeURIComponent(sid))])
         : ['면접 준비로 이동', route('/interview')];
-    var ctaSub = canStart ? (v2 ? '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있어요.'
-        : '부족한 근거를 중심으로 만든 질문으로 바로 면접을 볼 수 있어요.')
-      : sid ? (completed ? '이 분석으로 본 면접 결과를 다시 확인할 수 있어요.' : '이 분석으로 진행 중인 면접이 있어요.')
-        : '자료를 보완한 뒤 새 분석을 진행해 보세요.';
+    var ctaSub = canStart ? (v2 ? '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있습니다.'
+        : '부족한 근거를 중심으로 만든 질문으로 바로 면접을 볼 수 있습니다.')
+      : sid ? (completed ? '이 분석으로 본 면접 결과를 다시 확인할 수 있습니다.' : '이 분석으로 진행 중인 면접이 있습니다.')
+        : '자료를 보완한 뒤 새 분석을 진행해 보십시오.';
 
     var limits = result.readiness && result.readiness.limitations || [];
     root.innerHTML =
       '<div class="rs-links"><a href="' + route('/interview') + '">← 면접 준비</a><a href="' + route('/action-plans?analysisCaseId=' + encodeURIComponent(caseId)) + '">액션플랜 →</a></div>' +
-      '<section class="rs-banner"><div><p class="rs-banner__label">JOB FIT REPORT</p>' +
-      '<p class="rs-banner__title">' + esc([cat.mainCategory, cat.subCategory].filter(Boolean).join(' · ') || '맞춤') + ' 지원 분석</p>' +
+      '<section class="rs-banner"><div>' +
+      '<h1 class="rs-banner__title">' + esc([cat.mainCategory, cat.subCategory].filter(Boolean).join(' · ') || '맞춤') + ' 지원 분석</h1>' +
       '<p class="rs-banner__meta">' + esc(['분석 #' + result.analysisCaseId, analysisCase && analysisCase.createdAt ? dateDot(analysisCase.createdAt) + ' 분석' : '', career].filter(Boolean).join(' · ')) +
       (sources.length ? ' · 사용 자료: ' + sources.map(function (s) { return esc(s.displayName || SRC[s.documentType]); }).join(' · ') : '') + '</p></div>' +
       '<div class="rs-banner__score"><b>' + score(matches) + '</b><small>요구사항 연결도 / 100</small></div></section>' +
       (limits.length ? '<p class="rs-sub" style="margin:12px 0 0; color:var(--warn)">' + limits.map(esc).join(' · ') + '</p>' : '') +
       '<div class="ar-top"><section class="dcard"><h2 class="rs-h">요구사항 연결 분포</h2>' +
-      '<p class="rs-sub" style="margin-bottom:0">공고 요구사항 ' + matches.length + '개 중 ' + linked + '개에서 근거를 찾았고, ' + (matches.length - linked) + '개는 근거를 더 채우면 좋아요.</p>' +
+      '<p class="rs-sub" style="margin-bottom:0">공고 요구사항 ' + matches.length + '개 중 ' + linked + '개에서 근거를 찾았고, ' + (matches.length - linked) + '개는 근거를 더 채우면 좋습니다.</p>' +
       '<div class="ar-dist">' + Object.keys(counts).map(function (k) { return counts[k] ? '<i class="lv--' + k + '" style="flex:' + counts[k] + '"></i>' : ''; }).join('') + '</div>' +
       '<div class="ar-legend">' + ['high', 'medium', 'low', 'none'].map(function (k) { return '<span><i class="lv--' + k + '"></i>' + { high: '충족', medium: '일부 충족', low: '낮은 연결', none: '근거 부족' }[k] + ' <b>' + counts[k] + '</b></span>'; }).join('') + '</div>' +
       '<div class="ar-kind"><div>필수 요구사항<b>' + req.length + '개 중 ' + req.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div>' +
       '<div>우대 요구사항<b>' + pref.length + '개 중 ' + pref.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div></div></section>' +
-      '<section class="dcard ar-next"><h2 class="rs-h">분석을 연습으로 이어가요</h2><p class="rs-sub" style="margin-bottom:0">' + ctaSub + '</p>' +
+      '<section class="dcard ar-next"><h2 class="rs-h">분석을 연습으로 이어 갑니다</h2><p class="rs-sub" style="margin-bottom:0">' + ctaSub + '</p>' +
       // v2 분석은 질문을 만들지 않는다(면접을 고를 때 만든다). v1 기록만 질문 수·목록을 보여 준다.
       (v2 ? '' : '<div class="ar-next__row"><span>예상 면접 질문</span><b>' + questions.length + '개</b></div>') +
       '<div class="ar-next__row"><span>보완 과제</span><b>' + plans.length + '개</b></div>' +
-      '<a href="' + cta[1] + '" class="dbtn dbtn--white" style="margin-top:16px">' + cta[0] + '</a></section></div>' +
+      '<a href="' + cta[1] + '" class="dbtn dbtn--navy" style="margin-top:16px">' + cta[0] + '</a></section></div>' +
       '<section class="ar-sec" aria-labelledby="req-title"><div class="ar-sec__head"><div><h2 id="req-title">요구사항 연결 분석<small>' + matches.length + '개</small></h2>' +
-      '<p>공고의 조건과 내 자료에서 찾은 근거를 나란히 비교해요. 눌러서 자세히 볼 수 있어요.</p></div>' +
+      '<p>공고의 조건과 내 자료에서 찾은 근거를 나란히 비교합니다. 눌러서 자세히 볼 수 있습니다.</p></div>' +
       '<div class="chips" role="group" aria-label="연결 정도">' + [['ALL', '전체'], ['high', '충족'], ['part', '일부 충족'], ['none', '근거 부족']].map(function (c) {
         return '<button type="button" class="chip" data-lv="' + c[0] + '" aria-pressed="' + (filter === c[0]) + '">' + c[1] + '</button>';
       }).join('') + '</div></div><div data-reqs></div></section>' +
       '<div class="' + (v2 ? 'ar-sec' : 'dcols ar-sec') + '" style="align-items:start">' + (v2 ? '' :
       '<section class="dcard" aria-labelledby="q-title"><h2 class="rs-h" id="q-title">예상 면접 질문</h2>' +
-      '<p class="rs-sub">분석 근거를 바탕으로 실제 면접에서 나올 가능성이 높은 질문이에요.</p>' +
+      '<p class="rs-sub">분석 근거를 바탕으로 실제 면접에서 나올 가능성이 높은 질문입니다.</p>' +
       (questions.length ? questions.slice(0, QUESTION_PREVIEW).map(function (q, i) {
         return '<div class="aq"><span class="aq__n">' + (i + 1) + '</span><div><span class="mbadge mbadge--basic">' + (TYPE[q.questionType] || '일반') + '</span>' +
           '<p class="aq__q">' + esc(q.question) + '</p>' + (q.intent ? '<p class="aq__why"><b>확인하는 것</b> · ' + esc(q.intent) + '</p>' : '') + '</div></div>';
-      }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접에서 차례로 나와요.</p>' : '')
-        : '<p class="rs-sub">만들어진 질문이 없어요.</p>') + '</section>') +
-      '<section class="dcard" aria-labelledby="p-title"><h2 class="rs-h" id="p-title">보완 과제</h2><p class="rs-sub">마감일과 완료는 액션플랜에서 관리해요.</p>' +
+      }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접에서 차례로 나옵니다.</p>' : '')
+        : '<p class="rs-sub">만들어진 질문이 없습니다.</p>') + '</section>') +
+      '<section class="dcard" aria-labelledby="p-title"><h2 class="rs-h" id="p-title">보완 과제</h2><p class="rs-sub">마감일과 완료는 액션플랜에서 관리합니다.</p>' +
       (plans.length ? plans.map(function (p) {
         var done = p.status === 'DONE';
         return '<div class="ap-row"><div><p>' + esc(p.suggestion || '보완 과제') + '</p><small>' + esc([p.requirement ? '#' + p.requirement : '', p.missingPoint].filter(Boolean).join(' · ')) + '</small></div>' +
           '<span class="pill ' + (done ? 'pill--done">완료' : 'pill--active">할 일') + '</span></div>';
-      }).join('') : '<p class="rs-sub">보완 과제가 없어요.</p>') +
+      }).join('') : '<p class="rs-sub">보완 과제가 없습니다.</p>') +
       '<a href="' + route('/action-plans?analysisCaseId=' + encodeURIComponent(caseId)) + '" class="dbtn dbtn--line" style="margin-top:12px; width:100%; height:40px">액션플랜에서 일정 관리하기 →</a></section></div>';
     root.setAttribute('aria-busy', 'false');
     renderReqs();
@@ -117,12 +117,12 @@
 
   function renderUnavailable(message, href, label) {
     root.setAttribute('aria-busy', 'false');
-    root.innerHTML = '<section class="dcard" style="margin-top:24px; text-align:center; padding:48px 24px"><h1 class="rs-h" style="font-size:20px">분석 결과를 아직 열 수 없어요</h1>' +
+    root.innerHTML = '<section class="dcard" style="margin-top:24px; text-align:center; padding:48px 24px"><h1 class="rs-h" style="font-size:20px">분석 결과를 아직 열 수 없습니다</h1>' +
       '<p class="rs-sub">' + esc(message) + '</p><a class="dbtn dbtn--navy" href="' + href + '">' + esc(label) + '</a></section>';
   }
 
   if (!root || !caseId || !/^\d+$/.test(caseId) || Number(caseId) <= 0) {
-    if (root) renderUnavailable('잘못된 분석 결과 주소예요.', route('/interview'), '면접 준비로 이동');
+    if (root) renderUnavailable('잘못된 분석 결과 주소입니다.', route('/interview'), '면접 준비로 이동');
     return;
   }
 
@@ -137,7 +137,7 @@
   U.api(route('/analysis/cases/' + caseId + '/status'))
     .then(function (status) {
       if (status.analysisCaseStatus !== 'COMPLETED') {
-        renderUnavailable('분석이 진행 중이거나 결과가 아직 준비되지 않았어요.', route('/analysis/' + encodeURIComponent(caseId)), '분석 상태 확인');
+        renderUnavailable('분석이 진행 중이거나 결과가 아직 준비되지 않았습니다.', route('/analysis/' + encodeURIComponent(caseId)), '분석 상태 확인');
         return null;
       }
       return Promise.all([
@@ -153,6 +153,6 @@
       render(v[0], v[1], plans);
     })
     .catch(function (error) {
-      renderUnavailable(error.status === 403 ? '이 분석 결과를 볼 권한이 없어요.' : '잠시 후 다시 시도해 주세요.', route('/interview'), '면접 준비로 이동');
+      renderUnavailable(error.status === 403 ? '이 분석 결과를 볼 권한이 없습니다.' : '잠시 후 다시 시도해 주십시오.', route('/interview'), '면접 준비로 이동');
     });
 })();

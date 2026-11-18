@@ -14,11 +14,11 @@
   }
 
   var MATCH_TYPE_BADGE = {
-    EXACT: { bg: '#EAF7EF', color: '#1E8E5A', label: '정확매칭' },
-    FALLBACK_SAME_SUBCATEGORY: { bg: '#FFF6E5', color: '#8A5A22', label: '동일중분류 폴백' },
-    FALLBACK_PARENT_CATEGORY: { bg: '#FFF6E5', color: '#8A5A22', label: '상위분류 폴백' },
-    FALLBACK_COMMON: { bg: '#FFF6E5', color: '#8A5A22', label: '공통가이드 폴백' },
-    NONE: { bg: '#FBEEEC', color: '#B5433D', label: '매칭없음' }
+    EXACT: { bg: '#EEF1F5', color: '#12151B', label: '정확매칭' },
+    FALLBACK_SAME_SUBCATEGORY: { bg: '#F6EFE8', color: '#8A4B14', label: '동일중분류 폴백' },
+    FALLBACK_PARENT_CATEGORY: { bg: '#F6EFE8', color: '#8A4B14', label: '상위분류 폴백' },
+    FALLBACK_COMMON: { bg: '#F6EFE8', color: '#8A4B14', label: '공통가이드 폴백' },
+    NONE: { bg: '#F6EFE8', color: '#8A4B14', label: '매칭없음' }
   };
 
   function pill(label, bg, color) {
@@ -37,18 +37,18 @@
 
   function renderRows() {
     var rows = (state.pageData && state.pageData.content || []).map(function (r) {
-      var match = MATCH_TYPE_BADGE[r.matchType] || { bg: '#F6F8FB', color: '#5B6370', label: r.matchType };
+      var match = MATCH_TYPE_BADGE[r.matchType] || { bg: '#F5F7FA', color: '#4F5764', label: r.matchType };
       return '<div class="table-row" style="grid-template-columns:0.9fr 1.4fr 0.9fr 0.7fr 0.9fr 0.9fr 1.1fr;">' +
         '<span style="font-size:13px; font-weight:600;">' + esc(r.loginId) + '</span>' +
-        '<span style="font-size:12.5px; color:#5B6370;">' + esc(r.mainCategory) + ' · ' + esc(r.subCategory) + '</span>' +
+        '<span style="font-size:12.5px; color:#4F5764;">' + esc(r.mainCategory) + ' · ' + esc(r.subCategory) + '</span>' +
         '<span>' + pill(match.label, match.bg, match.color) + '</span>' +
-        '<span style="font-size:12.5px; color:' + (r.fallbackApplied ? '#8A5A22' : '#8A93A3') + ';">' + (r.fallbackApplied ? '적용' : '-') + '</span>' +
-        '<span style="font-size:12.5px; color:' + (r.insufficient ? '#B5433D' : '#8A93A3') + ';">' + (r.insufficient ? '불충분' : '-') + '</span>' +
-        '<span style="font-size:12.5px; color:#5B6370;">' + (r.guideId ? ('#' + r.guideId + (r.guideVersion ? ' v' + esc(r.guideVersion) : '')) : '-') + '</span>' +
-        '<span style="font-size:12.5px; color:#8A93A3;">' + (r.createdAt || '').replace('T', ' ').slice(0, 16) + '</span>' +
+        '<span style="font-size:12.5px; color:' + (r.fallbackApplied ? '#8A4B14' : '#9BA3B0') + ';">' + (r.fallbackApplied ? '적용' : '-') + '</span>' +
+        '<span style="font-size:12.5px; color:' + (r.insufficient ? '#8A4B14' : '#9BA3B0') + ';">' + (r.insufficient ? '불충분' : '-') + '</span>' +
+        '<span style="font-size:12.5px; color:#4F5764;">' + (r.guideId ? ('#' + r.guideId + (r.guideVersion ? ' v' + esc(r.guideVersion) : '')) : '-') + '</span>' +
+        '<span style="font-size:12.5px; color:#9BA3B0;">' + (r.createdAt || '').replace('T', ' ').slice(0, 16) + '</span>' +
       '</div>';
     }).join('');
-    document.getElementById('guide-usage-rows').innerHTML = rows || '<div class="table-empty">가이드 사용 이력이 없어요</div>';
+    document.getElementById('guide-usage-rows').innerHTML = rows || '<div class="table-empty">가이드 사용 이력이 없습니다</div>';
   }
 
   function renderPagination() {

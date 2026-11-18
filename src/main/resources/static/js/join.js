@@ -99,10 +99,10 @@
         var mainCategories = uniqueInOrder(jobCategories.map(function (c) { return c.mainCategory; }));
         fillOptions(mainCategorySelect, mainCategories.map(function (m) {
           return { value: m, label: m };
-        }), '선택해주세요');
+        }), '선택해 주십시오');
       })
       .catch(function () {
-        jobCategoryHint.textContent = '직무 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.';
+        jobCategoryHint.textContent = '직무 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주십시오.';
         jobCategoryHint.classList.add('field-hint--error');
       });
 
@@ -113,8 +113,8 @@
       if (!mainCategory) {
         subCategorySelect.disabled = true;
         careerLevelSelect.disabled = true;
-        fillOptions(subCategorySelect, [], '대분류를 먼저 선택해주세요');
-        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해주세요');
+        fillOptions(subCategorySelect, [], '대분류를 먼저 선택해 주십시오');
+        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해 주십시오');
         return;
       }
 
@@ -124,11 +124,11 @@
       );
       fillOptions(subCategorySelect, subCategories.map(function (s) {
         return { value: s, label: s };
-      }), '선택해주세요');
+      }), '선택해 주십시오');
       subCategorySelect.disabled = false;
 
       careerLevelSelect.disabled = true;
-      fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해주세요');
+      fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해 주십시오');
     });
 
     subCategorySelect.addEventListener('change', function () {
@@ -138,7 +138,7 @@
 
       if (!subCategory) {
         careerLevelSelect.disabled = true;
-        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해주세요');
+        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해 주십시오');
         return;
       }
 
@@ -147,7 +147,7 @@
       });
       fillOptions(careerLevelSelect, matches.map(function (c) {
         return { value: c.jobCategoryId, label: CAREER_LEVEL_LABEL[c.careerLevel] || c.careerLevel };
-      }), '선택해주세요');
+      }), '선택해 주십시오');
       careerLevelSelect.disabled = false;
     });
 
@@ -190,7 +190,7 @@
         remaining -= 1;
         if (remaining <= 0) {
           stopEmailCodeCountdown();
-          setHint(emailCodeHint, '인증 시간이 만료되었습니다. 인증코드를 다시 발송해주세요.', false);
+          setHint(emailCodeHint, '인증 시간이 만료되었습니다. 인증코드를 다시 발송해 주십시오.', false);
           verifyEmailCodeBtn.disabled = true;
           return;
         }
@@ -211,7 +211,7 @@
     sendEmailCodeBtn.addEventListener('click', function () {
       var email = emailInput.value.trim();
       if (!email) {
-        setHint(emailHint, '이메일을 입력해주세요.', false);
+        setHint(emailHint, '이메일을 입력해 주십시오.', false);
         return;
       }
       if (!EMAIL_PATTERN.test(email)) {
@@ -236,7 +236,7 @@
         })
         .then(function (result) {
           if (result.ok && result.body.success) {
-            setHint(emailHint, '인증 코드를 보냈습니다. 이메일을 확인해주세요.', true);
+            setHint(emailHint, '인증 코드를 보냈습니다. 이메일을 확인해 주십시오.', true);
             emailCodeStep.hidden = false;
             startEmailCodeCountdown();
           } else {
@@ -244,7 +244,7 @@
           }
         })
         .catch(function () {
-          setHint(emailHint, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', false);
+          setHint(emailHint, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.', false);
         })
         .then(function () {
           sendEmailCodeBtn.disabled = false;
@@ -256,7 +256,7 @@
       var email = emailInput.value.trim();
       var code = emailCodeInput.value.trim();
       if (!code) {
-        emailCodeHint.textContent = '인증 코드를 입력해주세요.';
+        emailCodeHint.textContent = '인증 코드를 입력해 주십시오.';
         emailCodeHint.classList.add('field-hint--error');
         return;
       }
@@ -285,7 +285,7 @@
         })
         .catch(function () {
           emailVerified = false;
-          setHint(emailCodeHint, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', false);
+          setHint(emailCodeHint, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.', false);
           verifyEmailCodeBtn.disabled = false;
         });
     });
@@ -295,15 +295,15 @@
     function validateLoginId() {
       var value = loginIdInput.value.trim();
       if (!value) {
-        setHint(loginIdHint, '아이디를 입력해주세요.', false);
+        setHint(loginIdHint, '아이디를 입력해 주십시오.', false);
         return false;
       }
       if (value.length < 4 || value.length > 50) {
-        setHint(loginIdHint, '아이디는 4~50자로 입력해주세요.', false);
+        setHint(loginIdHint, '아이디는 4~50자로 입력해 주십시오.', false);
         return false;
       }
       if (!loginIdChecked) {
-        setHint(loginIdHint, '아이디 중복확인을 먼저 진행해주세요.', false);
+        setHint(loginIdHint, '아이디 중복확인을 먼저 진행해 주십시오.', false);
         return false;
       }
       return true;
@@ -312,7 +312,7 @@
     function validateEmail() {
       var value = emailInput.value.trim();
       if (!value) {
-        setHint(emailHint, '이메일을 입력해주세요.', false);
+        setHint(emailHint, '이메일을 입력해 주십시오.', false);
         return false;
       }
       if (!EMAIL_PATTERN.test(value)) {
@@ -320,7 +320,7 @@
         return false;
       }
       if (!emailVerified) {
-        setHint(emailHint, '이메일 인증을 먼저 완료해주세요.', false);
+        setHint(emailHint, '이메일 인증을 먼저 완료해 주십시오.', false);
         return false;
       }
       return true;
@@ -329,7 +329,7 @@
     function validateName() {
       var value = nameInput.value.trim();
       if (!value) {
-        setHint(nameHint, '이름을 입력해주세요.', false);
+        setHint(nameHint, '이름을 입력해 주십시오.', false);
         return false;
       }
       nameHint.textContent = '';
@@ -339,11 +339,11 @@
     function validatePassword() {
       var value = passwordInput.value;
       if (!value) {
-        setHint(passwordHint, '비밀번호를 입력해주세요.', false);
+        setHint(passwordHint, '비밀번호를 입력해 주십시오.', false);
         return false;
       }
       if (!PASSWORD_PATTERN.test(value)) {
-        setHint(passwordHint, '비밀번호는 영문, 숫자를 포함해 8~20자로 입력해주세요.', false);
+        setHint(passwordHint, '비밀번호는 영문, 숫자를 포함해 8~20자로 입력해 주십시오.', false);
         return false;
       }
       setHint(passwordHint, '사용 가능한 비밀번호입니다.', true);
@@ -359,7 +359,7 @@
     function validatePasswordCheck() {
       var value = passwordCheckInput.value;
       if (!value) {
-        setHint(passwordCheckHint, '비밀번호 확인을 입력해주세요.', false);
+        setHint(passwordCheckHint, '비밀번호 확인을 입력해 주십시오.', false);
         return false;
       }
       var match = value === passwordInput.value;
@@ -369,7 +369,7 @@
 
     function validateJobCategory() {
       if (!selectedJobCategoryId) {
-        setHint(jobCategoryHint, '관심 직무를 선택해주세요.', false);
+        setHint(jobCategoryHint, '관심 직무를 선택해 주십시오.', false);
         return false;
       }
       jobCategoryHint.textContent = '';
@@ -386,11 +386,11 @@
     document.getElementById('check-id-btn').addEventListener('click', function () {
       var loginId = loginIdInput.value.trim();
       if (!loginId) {
-        setHint(loginIdHint, '아이디를 입력해주세요.', false);
+        setHint(loginIdHint, '아이디를 입력해 주십시오.', false);
         return;
       }
       if (loginId.length < 4 || loginId.length > 50) {
-        setHint(loginIdHint, '아이디는 4~50자로 입력해주세요.', false);
+        setHint(loginIdHint, '아이디는 4~50자로 입력해 주십시오.', false);
         return;
       }
       fetch(window.JobPuzzleRoutes.path('/user/check-id?loginId=' + encodeURIComponent(loginId)))
@@ -423,7 +423,7 @@
       if (firstInvalid) {
         firstInvalid.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         firstInvalid.el.focus();
-        showError(errorEl, firstInvalid.hint.textContent || '입력한 내용을 다시 확인해주세요.');
+        showError(errorEl, firstInvalid.hint.textContent || '입력한 내용을 다시 확인해 주십시오.');
         return;
       }
 
@@ -454,7 +454,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         });
     });
   });

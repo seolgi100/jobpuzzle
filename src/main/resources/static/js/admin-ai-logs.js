@@ -14,10 +14,10 @@
   }
 
   var STATUS_BADGE = {
-    PENDING: { bg: '#F6F8FB', color: '#5B6370', label: '대기' },
-    RUNNING: { bg: '#EAF2FB', color: '#185FA5', label: '실행중' },
-    SUCCEEDED: { bg: '#EAF7EF', color: '#1E8E5A', label: '성공' },
-    FAILED: { bg: '#FBEEEC', color: '#B5433D', label: '실패' }
+    PENDING: { bg: '#F5F7FA', color: '#4F5764', label: '대기' },
+    RUNNING: { bg: '#EDF2FA', color: '#3A62A8', label: '실행중' },
+    SUCCEEDED: { bg: '#EEF1F5', color: '#12151B', label: '성공' },
+    FAILED: { bg: '#F6EFE8', color: '#8A4B14', label: '실패' }
   };
 
   function pill(label, bg, color) {
@@ -39,21 +39,21 @@
 
   function renderRows() {
     var rows = (state.pageData && state.pageData.content || []).map(function (r) {
-      var status = STATUS_BADGE[r.status] || { bg: '#F6F8FB', color: '#5B6370', label: r.status };
+      var status = STATUS_BADGE[r.status] || { bg: '#F5F7FA', color: '#4F5764', label: r.status };
       var errorText = r.errorType && r.errorType !== 'NONE'
         ? esc(r.errorType) + (r.errorMessage ? ' · ' + esc(r.errorMessage) : '')
         : '-';
       return '<div class="table-row" style="grid-template-columns:0.9fr 1.2fr 1fr 1fr 1.6fr 0.9fr 1.1fr; cursor:pointer;" data-log="' + r.aiCallLogId + '">' +
         '<span>' + pill(status.label, status.bg, status.color) + '</span>' +
-        '<span style="font-size:12.5px; color:#5B6370;">' + esc(r.executionStage) + '</span>' +
-        '<span style="font-size:12.5px; color:#5B6370;">' + esc(r.provider) + ' / ' + esc(r.model) + '</span>' +
-        '<span style="font-size:12px; color:#8A93A3;">' + esc(r.inputReferenceType) + ' #' + esc(r.inputReferenceId) + '</span>' +
-        '<span style="font-size:12px; color:' + (r.errorType && r.errorType !== 'NONE' ? '#B5433D' : '#8A93A3') + ';" title="' + errorText + '">' + errorText + '</span>' +
-        '<span style="font-size:12.5px; color:#8A93A3;">' + r.retryCount + (r.reused ? ' · 재사용' : '') + '</span>' +
-        '<span style="font-size:12.5px; color:#8A93A3;">' + (r.startedAt || '').replace('T', ' ').slice(0, 16) + '</span>' +
+        '<span style="font-size:12.5px; color:#4F5764;">' + esc(r.executionStage) + '</span>' +
+        '<span style="font-size:12.5px; color:#4F5764;">' + esc(r.provider) + ' / ' + esc(r.model) + '</span>' +
+        '<span style="font-size:12px; color:#9BA3B0;">' + esc(r.inputReferenceType) + ' #' + esc(r.inputReferenceId) + '</span>' +
+        '<span style="font-size:12px; color:' + (r.errorType && r.errorType !== 'NONE' ? '#8A4B14' : '#9BA3B0') + ';" title="' + errorText + '">' + errorText + '</span>' +
+        '<span style="font-size:12.5px; color:#9BA3B0;">' + r.retryCount + (r.reused ? ' · 재사용' : '') + '</span>' +
+        '<span style="font-size:12.5px; color:#9BA3B0;">' + (r.startedAt || '').replace('T', ' ').slice(0, 16) + '</span>' +
       '</div>';
     }).join('');
-    document.getElementById('ai-log-rows').innerHTML = rows || '<div class="table-empty">조회된 로그가 없어요</div>';
+    document.getElementById('ai-log-rows').innerHTML = rows || '<div class="table-empty">조회된 로그가 없습니다</div>';
 
     document.querySelectorAll('[data-log]').forEach(function (row) {
       row.addEventListener('click', function () {

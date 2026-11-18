@@ -30,11 +30,11 @@
 
   function renderList() {
     var el = document.getElementById('report-list');
-    if (!state.loaded) { el.innerHTML = empty('면접 기록을 불러오고 있어요.', '잠시만 기다려 주세요.'); return; }
-    if (state.error) { el.innerHTML = empty('면접 기록을 불러오지 못했어요.', state.error); return; }
+    if (!state.loaded) { el.innerHTML = empty('면접 기록을 불러오고 있습니다.', '잠시만 기다려 주십시오.'); return; }
+    if (state.error) { el.innerHTML = empty('면접 기록을 불러오지 못했습니다.', state.error); return; }
     var list = visible();
     if (!list.length) {
-      el.innerHTML = empty(state.sessions.length ? '이 모드로 완료한 면접이 없어요.' : '아직 완료한 면접이 없어요.', '면접을 마치면 이곳에 기록이 쌓여요.');
+      el.innerHTML = empty(state.sessions.length ? '이 모드로 완료한 면접이 없습니다.' : '아직 완료한 면접이 없습니다.', '면접을 마치면 이곳에 기록이 쌓입니다.');
       return;
     }
     el.innerHTML = list.map(function (s, k) {
@@ -54,7 +54,7 @@
   function renderDetail() {
     var el = document.getElementById('report-detail');
     var s = visible().filter(function (x) { return x.sessionId === state.selectedId; })[0];
-    if (!s) { el.innerHTML = empty('확인할 리포트가 없어요.', '면접을 마치면 점수와 보완 방향을 볼 수 있어요.'); return; }
+    if (!s) { el.innerHTML = empty('확인할 리포트가 없습니다.', '면접을 마치면 점수와 보완 방향을 볼 수 있습니다.'); return; }
     var sc = state.scores[s.sessionId];
     var link = path('/interview-results?sessionId=' + encodeURIComponent(s.sessionId));
     var html = '<div class="rp-detail__top"><div><p class="rp-detail__eyebrow">' + U.mode(s.mode)[0] + '</p>' +
@@ -62,7 +62,7 @@
       '<p class="rp-detail__meta">' + U.esc(U.dateTime(s.completedAt)) + ' · 질문 ' + (s.questionCount || 0) + '개</p></div>' +
       '<a href="' + link + '" class="dbtn dbtn--navy">리포트 자세히 보기</a></div>';
     if (!sc) {
-      html += '<div class="rp-preview"><p style="margin:0; color:var(--text-3)">점수를 불러오고 있어요.</p></div>';
+      html += '<div class="rp-preview"><p style="margin:0; color:var(--text-3)">점수를 불러오고 있습니다.</p></div>';
     } else {
       var dims = Object.keys(sc.categoryScores || {}).map(function (k) { return { d: U.DIM_LABELS[k] || k, v: sc.categoryScores[k] }; })
         .filter(function (x) { return x.v != null && x.v > 0; }).sort(function (a, b) { return b.v - a.v; });
@@ -74,13 +74,13 @@
         (dims.length
           ? '<h4>잘한 관점</h4><div class="mini-bars">' + dims.slice(0, 3).map(bar).join('') + '</div>' +
             (dims.length > 3 ? '<h4 style="margin-top:16px">보완할 관점</h4><div class="mini-bars">' + dims.slice(-2).reverse().map(bar).join('') + '</div>' : '')
-          : '<p style="margin:0; color:var(--text-3)">평가된 관점이 아직 없어요.</p>') +
+          : '<p style="margin:0; color:var(--text-3)">평가된 관점이 아직 없습니다.</p>') +
         '</div></div>' +
         '<div class="rp-block"><h4>반복된 약점</h4>' + (weak.length
           ? '<div class="tags">' + weak.map(function (w) { return '<span class="wtag">' + U.esc(U.weakLabel(w)) + '</span>'; }).join('') + '</div>'
-          : '<p style="margin:0; font-size:13.5px; color:var(--text-3)">이 면접에서 확인된 약점이 없어요.</p>') + '</div>';
+          : '<p style="margin:0; font-size:13.5px; color:var(--text-3)">이 면접에서 확인된 약점이 없습니다.</p>') + '</div>';
     }
-    html += '<p class="rp-note">리포트에서 관점별 근거, 다음 연습 질문, 서류 보완 제안까지 볼 수 있어요. 처음 여는 리포트는 정리하는 데 몇 초 걸릴 수 있어요.</p>';
+    html += '<p class="rp-note">리포트에서 관점별 근거, 다음 연습 질문, 서류 보완 제안까지 볼 수 있습니다. 처음 여는 리포트는 정리하는 데 몇 초 걸릴 수 있습니다.</p>';
     el.innerHTML = html;
   }
 
