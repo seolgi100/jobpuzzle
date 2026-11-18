@@ -1,4 +1,6 @@
 /* 메인(랜딩) 화면 — 기준: jobpuzzle-impeccable/design-test/index.html, DESIGN-SYSTEM.md. 메인만 따로 쓰고 서비스 공통 CSS는 불러오지 않는다. */
+/* 제목 글꼴: 빛의 계승자체 Regular (굵은 체는 쓰지 않음). 한 굵기만 있으므로 가짜 굵게를 막는다 */
+@font-face { font-family: "HeirofLight"; src: url(../fonts/HeirofLightRegular.ttf) format("truetype"); font-weight: 400; font-display: swap; }
 :root {
   --room: #0B0D11;          /* 전시실 어둠 */
   --ink: #12151B;           /* 먹 */
@@ -14,7 +16,7 @@
   --on-point: #FFFFFF;      /* 포인트 색 위의 글자 */
   --accent: #3A62A8;        /* 포인트 색의 글자용 톤 (밝은 바탕에서 4.5:1 이상) */
 
-  --serif: "Noto Serif KR", serif;
+  --serif: "HeirofLight", "Noto Serif KR", serif;
   --sans: "Pretendard Variable", Pretendard, sans-serif;
 
   --wrap: min(1200px, calc(100% - 48px));
@@ -31,6 +33,7 @@
 html { scroll-behavior: smooth; scroll-padding-top: 72px; scrollbar-color: #9BA3B0 var(--wall); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
+  font-synthesis: none;
   margin: 0;
   background: var(--wall);
   color: var(--text);

@@ -2,6 +2,9 @@
    푸른 기 도는 흰 벽 + 흰 종이, 먹색 글자, 명조 제목, 1px 선, 강조는 델프트 블루 하나, 모서리 2px.
    예전 공통 스타일(preview.css, ds/app.css, 화면별 css) 뒤에 불러와 토큰과 공통 부품을 덮어쓴다. 화면 구조·JS는 그대로. */
 
+/* 제목 글꼴: 빛의 계승자체 Regular (2026-11-18 사용자 결정, 명조 Noto Serif KR 대신). 굵은 체는 쓰지 않으므로 가짜 굵게를 막는다 */
+@font-face { font-family: "HeirofLight"; src: url(../fonts/HeirofLightRegular.ttf) format("truetype"); font-weight: 400; font-display: swap; }
+
 :root {
   /* 새 기준 토큰 */
   --ink: #12151B;
@@ -12,7 +15,7 @@
   --accent: #3A62A8;
   --caution: #8A4B14;
   --caution-soft: #F6EFE8;
-  --serif: "Noto Serif KR", serif;
+  --serif: "HeirofLight", "Noto Serif KR", serif;
   --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
   --ease: cubic-bezier(.16, 1, .3, 1);
   --float: 0 1px 2px rgba(18, 24, 38, .04), 0 28px 56px -28px rgba(18, 24, 38, .2), 0 72px 96px -72px rgba(18, 24, 38, .3);
@@ -53,6 +56,7 @@
 /* ── 브라우저가 그리는 부분까지 같은 세계로 */
 html { scrollbar-color: #9BA3B0 var(--wall); }
 body, body.app {
+  font-synthesis: none;
   background: var(--wall);
   color: var(--text);
   font-family: var(--sans);
@@ -151,7 +155,7 @@ body, body.app {
   --point-soft: #EDF2FA;
   --accent: #3A62A8;
   --caution: #8A4B14;
-  --serif: "Noto Serif KR", serif;
+  --serif: "HeirofLight", "Noto Serif KR", serif;
   --sans: "Pretendard Variable", Pretendard, sans-serif;
   --wrap: min(1200px, calc(100% - 48px));
   --ease: cubic-bezier(.16, 1, .3, 1);

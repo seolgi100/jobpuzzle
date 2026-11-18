@@ -209,9 +209,9 @@ body.ih-modal-open { overflow: hidden; }
 
 /* ── 새 디자인(DESIGN-SYSTEM.md) 맞춤: 명조 제목, 머리말 아래 먹색 1px 선, 델프트 블루 밑줄 탭, 맞춘 조각 = 먹색 ── */
 .ih-head { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--iv-text); }
-.ih-title { font-family: "Noto Serif KR", serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.35; }
-.ih-fit__title { font-family: "Noto Serif KR", serif; font-size: 28px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.4; }
-.ih-quick__title, .ih-h2 { font-family: "Noto Serif KR", serif; font-size: 23px; font-weight: 600; letter-spacing: -0.01em; }
+.ih-title { font-family: "HeirofLight", "Noto Serif KR", serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.35; }
+.ih-fit__title { font-family: "HeirofLight", "Noto Serif KR", serif; font-size: 28px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.4; }
+.ih-quick__title, .ih-h2 { font-family: "HeirofLight", "Noto Serif KR", serif; font-size: 23px; font-weight: 600; letter-spacing: -0.01em; }
 .ih-quick__text h3, .ih-row__title { font-weight: 600; }
 .ih-balance b, .ih-fare b { font-weight: 600; }
 .ih-fit { border-top: 2px solid var(--iv-text); }

@@ -58,7 +58,7 @@
 /* 다음 단계: 종이 한 장(윗변 먹색 2px) */
 .ar-next { display: flex; flex-direction: column; border-top: 2px solid #12151B; }
 .ar-next__row { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; border-bottom: 1px solid #D6DBE3; font-size: 15px; }
-.ar-next__row b { font-family: "Noto Serif KR", serif; font-size: 24px; font-weight: 600; }
+.ar-next__row b { font-family: "HeirofLight", "Noto Serif KR", serif; font-size: 24px; font-weight: 600; }
 .ar-next .dbtn--white { margin-top: auto; }
 .ar-next__row + .dbtn { margin-top: 16px; }
 

@@ -32,7 +32,7 @@ body.jp-app-theme, body.jp-app-theme.jp-interview-page {
   --color-text: #12151B; --color-border: #D6DBE3;
   background: #F5F7FA !important; background-attachment: initial !important;
 }
-body.jp-app-theme .page-title { font-family: "Noto Serif KR", serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.35; }
+body.jp-app-theme .page-title { font-family: "HeirofLight", "Noto Serif KR", serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.35; }
 /* 영문·작은 눈썹 문구는 쓰지 않는다 (DESIGN-SYSTEM.md 3장) */
 body.jp-app-theme .eyebrow-label { display: none; }
 body.jp-app-theme .btn--primary { background: #12151B; border-color: #12151B; color: #fff; box-shadow: none; border-radius: 2px; }
