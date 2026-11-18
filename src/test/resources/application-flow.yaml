@@ -1,0 +1,14 @@
+# 전체 흐름 테스트 전용: Docker·로컬 DB 없이 메모리 DB(H2, MariaDB 호환 모드)로 앱을 띄운다
+spring:
+  datasource:
+    url: jdbc:h2:mem:flow;MODE=MariaDB;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=USER,VALUE,YEAR,MONTH,DAY,KEY;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop
+  sql:
+    init:
+      mode: never
