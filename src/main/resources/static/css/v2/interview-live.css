@@ -1,0 +1,127 @@
+/* 면접 진행 — 기준: jobpuzzle-impeccable/design-test/interview-live.html.
+   메뉴를 걷어 낸 면접실: 질문 하나와 답 쓰는 종이 한 장에 시선을 모은다. 공통 부품은 v2/base.css (.r2) */
+
+/* 면접 중에는 서비스 메뉴·푸터를 숨기고 면접실 머리줄만 (interview-live.js가 body에 is-room을 붙임) */
+body.is-room .site-header, body.is-room .site-footer { display: none; }
+body.is-room main.dash-wrap { max-width: none; padding: 0; }
+
+.room-bar { position: sticky; top: 0; z-index: 50; height: 72px; background: var(--wall); border-bottom: 1px solid var(--line); }
+.room-bar .wrap { display: flex; align-items: center; height: 100%; gap: 28px; }
+.room-bar .site-header__brand { color: var(--ink); }
+.room-bar .session { font-size: 16px; color: var(--text-2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-bar .session b { color: var(--text); font-weight: 600; }
+.room-bar .end { margin-left: auto; flex: none; min-height: 40px; padding: 0 16px; font-size: 15px; }
+
+/* 진행: 질문 하나가 조각 하나. 끝낸 것 채움, 지금 것 델프트 블루, 건너뛴 것 점선, 남은 것 선만 */
+.room .progress { display: flex; align-items: center; gap: 28px; padding-top: 36px; }
+.room .progress .pieces { display: flex; flex-wrap: wrap; gap: 8px; }
+.room .progress .piece { width: 30px; height: 30px; }
+.room .progress .piece.is-todo { fill: none; stroke: #A9B1BD; stroke-width: 5; }
+.room .progress .count { font-size: 16px; color: var(--text-2); }
+.room .progress .count b { font-family: var(--serif); font-weight: 600; font-size: 22px; color: var(--text); margin-right: 2px; }
+.room .progress .exit { margin-left: auto; border: 0; background: none; padding: 0; font: inherit; font-size: 16px; cursor: pointer; }
+
+.room .stage { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 64px; margin-top: 40px; padding-bottom: 120px; align-items: start; }
+
+/* 질문 */
+.room .question .no { font-size: 16px; color: var(--text-2); }
+.room .question h1 { margin-top: 10px; font-family: var(--serif); font-weight: 600; font-size: 32px; line-height: 1.5; letter-spacing: -0.015em; text-wrap: pretty; }
+.room .follow { margin-top: 32px; padding: 4px 0 4px 24px; border-left: 2px solid var(--point); }
+.room .follow .who { font-size: 15px; font-weight: 600; color: var(--accent); }
+.room .follow p { margin-top: 6px; font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.6; }
+.room .follow small { display: block; margin-top: 10px; font-size: 16px; color: var(--text-2); }
+
+/* 답 쓰는 종이 */
+.room .answer { margin-top: 40px; }
+.room .answer > label { display: block; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.room .notice { margin-bottom: 16px; padding: 14px 20px; background: var(--point-soft); font-size: 16px; }
+.room .sheet textarea {
+  display: block; width: 100%; min-height: 260px; padding: 28px 32px; border: 0; resize: vertical;
+  background: transparent; font: inherit; font-size: 18px; line-height: 1.8; color: var(--text);
+}
+.room .sheet textarea::placeholder { color: #7C8492; }
+.room .sheet textarea:focus { outline: none; }
+.room .sheet:focus-within { border-color: var(--point); border-top-color: var(--ink); }
+.room .sheet .tools { display: flex; align-items: center; gap: 20px; padding: 14px 16px 14px 24px; border-top: 1px solid var(--line); }
+.room .voice { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px 0 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: border-color .3s; }
+.room .voice:hover:not(:disabled) { border-color: var(--ink); }
+.room .voice:disabled { color: var(--text-2); cursor: not-allowed; }
+.room .voice svg { width: 18px; height: 18px; }
+.room .voice[aria-pressed="true"] { border-color: var(--point); color: var(--accent); }
+.room .state { font-size: 15px; color: var(--text-2); }
+.room .state b { color: var(--text); font-weight: 600; }
+.room .state b + .saved:not(:empty)::before { content: "·"; margin: 0 8px; }
+.room .sheet .submit { margin-left: auto; }
+.room .voice-status:not(:empty), .room .error:not(:empty) { margin-top: 12px; font-size: 16px; color: var(--text-2); }
+.room .error:not(:empty) { color: var(--caution); font-weight: 600; }
+
+/* 평가하는 중 */
+.room .sheet.is-busy textarea { opacity: .45; }
+.room .busy { display: none; align-items: center; gap: 14px; padding: 16px 24px; border-top: 1px solid var(--line); background: var(--point-soft); font-size: 16px; }
+.room .sheet.is-busy .busy { display: flex; }
+.room .sheet.is-busy .tools { display: none; }
+.room .busy .dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--point); animation: room-breathe 1.6s ease-in-out infinite; }
+@keyframes room-breathe { 50% { opacity: .25; } }
+
+.room .quiet { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 6px 28px; font-size: 16px; }
+.room .quiet button, .room .quiet a { border: 0; background: none; padding: 6px 0; font: inherit; color: var(--text-2); cursor: pointer; text-decoration: none; }
+.room .quiet button:hover, .room .quiet a:hover { color: var(--text); text-decoration: underline; }
+
+/* 오른쪽: 이 질문의 답변 과정과 힌트 */
+.room .side { position: sticky; top: 104px; display: grid; gap: 40px; }
+.room .side .h3 + * { margin-top: 16px; }
+.room .talk { border-left: 1px solid var(--line); padding-left: 24px; display: grid; gap: 20px; }
+.room .talk li { position: relative; font-size: 16px; line-height: 1.7; }
+.room .talk li::before { content: ""; position: absolute; left: -28px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); }
+.room .talk li.is-ai::before { background: var(--point); border-color: var(--point); }
+.room .talk li.is-now::before { background: var(--ink); }
+.room .talk li.is-retry::before { border-style: dashed; }
+.room .talk .who { font-size: 15px; font-weight: 600; color: var(--text-2); }
+.room .talk .who small { margin-left: 8px; font-weight: 500; }
+.room .talk li.is-ai .who { color: var(--accent); }
+.room .talk p { margin-top: 2px; white-space: pre-wrap; }
+.room .talk li.is-now p, .room .talk li.is-retry p { color: var(--text-2); }
+
+.room .hint { border-top: 1px solid var(--ink); }
+.room .hint summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 0; font-weight: 600; }
+.room .hint summary::-webkit-details-marker { display: none; }
+.room .hint summary svg { width: 14px; height: 14px; color: var(--text-2); transition: transform .4s var(--ease); }
+.room .hint[open] summary svg { transform: rotate(180deg); }
+.room .hint dl { padding-bottom: 8px; }
+.room .hint dt { font-size: 15px; font-weight: 600; color: var(--text-2); padding-top: 14px; border-top: 1px solid var(--line); }
+.room .hint dd { margin-top: 4px; padding-bottom: 14px; font-size: 16px; line-height: 1.7; }
+
+/* 확인 창 (면접 준비 홈과 함께 씀, interview-home.js Layer): 윗변 먹색 2px 종이, 명조 제목, 2px 버튼 */
+.tk-scrim { background: rgba(11, 13, 17, .45); }
+.tk-box { max-width: 520px; padding: 32px 32px 24px; border: 1px solid #D6DBE3; border-top: 2px solid #12151B; border-radius: 0;
+  box-shadow: 0 1px 2px rgba(18, 24, 38, .04), 0 28px 56px -28px rgba(18, 24, 38, .2), 0 72px 96px -72px rgba(18, 24, 38, .3); }
+.tk-title { font-family: "Noto Serif KR", serif; font-weight: 600; font-size: 23px; line-height: 1.45; letter-spacing: -0.01em; }
+.tk-what { margin-top: 12px; font-size: 16px; line-height: 1.7; color: #4F5764; }
+.tk-foot { margin-top: 28px; gap: 10px; }
+.tk-foot .ih-btn { min-height: 48px; padding: 0 22px; border-radius: 2px; font-size: 16px; font-weight: 600; }
+.tk-foot .ih-btn--ghost { border: 1px solid #D6DBE3; background: #fff; color: #12151B; }
+.tk-foot .ih-btn--ghost:hover { border-color: #12151B; background: #fff; }
+.tk-foot .ih-btn--ink:hover { background: #3A62A8; }
+@media (max-width: 760px) {
+  .tk-foot { flex-direction: column-reverse; }
+  .tk-foot .ih-btn { width: 100%; }
+}
+
+@media (max-width: 1100px) {
+  .room .stage { grid-template-columns: 1fr; gap: 48px; }
+  .room .side { position: static; }
+}
+@media (max-width: 760px) {
+  .room-bar { height: 60px; }
+  .room-bar .session { display: none; }
+  .room .progress { padding-top: 24px; gap: 16px; flex-wrap: wrap; }
+  .room .progress .piece { width: 24px; height: 24px; }
+  .room .progress .exit { margin-left: 0; width: 100%; }
+  .room .stage { margin-top: 28px; padding-bottom: 140px; }
+  .room .question h1 { font-size: 24px; }
+  .room .follow p { font-size: 19px; }
+  .room .sheet textarea { min-height: 220px; padding: 20px; font-size: 17px; }
+  .room .sheet .tools { flex-wrap: wrap; padding: 12px 16px; }
+  /* 휴대폰: 제출 버튼은 화면 아래에 붙어 있음 */
+  .room .sheet .submit { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 40; min-height: 54px; box-shadow: var(--float); }
+}
