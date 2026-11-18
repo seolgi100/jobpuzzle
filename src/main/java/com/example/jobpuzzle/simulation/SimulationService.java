@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -61,12 +63,37 @@ public class SimulationService {
         return !properties.getLoginIds().isEmpty() && userRepository.findById(userId).map(this::isSimulation).orElse(false);
     }
 
+    // 분석 대기 중인 분석 번호 → {시작 시각, 대기 시간(ms)}. 상태 조회가 이걸로 4단계를 차례로 넘긴다
+    private final Map<Long, long[]> analysisWaits = new ConcurrentHashMap<>();
+
     /** 로딩 흉내. 설정한 범위에서 무작위로 기다린다. */
     public void pause() {
+        sleep(randomDelay());
+    }
+
+    /** 분석 로딩 흉내. 기다리는 동안 상태 조회(analysisProgress)가 진행 정도를 알 수 있게 남겨 둔다 (takeOver에서 지움). */
+    public void pauseAnalysis(Long analysisCaseId) {
+        long delay = randomDelay();
+        analysisWaits.put(analysisCaseId, new long[]{System.currentTimeMillis(), delay});
+        sleep(delay);
+    }
+
+    /** 시뮬레이션으로 기다리는 중인 분석이면 0~1 진행 정도. */
+    public OptionalDouble analysisProgress(Long analysisCaseId) {
+        long[] wait = analysisWaits.get(analysisCaseId);
+        if (wait == null) return OptionalDouble.empty();
+        return OptionalDouble.of(Math.min(1.0, (System.currentTimeMillis() - wait[0]) / (double) Math.max(1, wait[1])));
+    }
+
+    private long randomDelay() {
         long min = properties.getMinDelay().toMillis();
         long max = Math.max(min, properties.getMaxDelay().toMillis());
+        return ThreadLocalRandom.current().nextLong(min, max + 1);
+    }
+
+    private static void sleep(long millis) {
         try {
-            Thread.sleep(ThreadLocalRandom.current().nextLong(min, max + 1));
+            Thread.sleep(millis);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
         }
@@ -93,6 +120,7 @@ public class SimulationService {
     /** 새로 만든 빈 분석은 숨기고, 저장된 결과를 다시 보이게 한다. 결과가 있는 분석 번호를 돌려준다. */
     @Transactional
     public Long takeOver(Long userId, Long newCaseId, Long storedCaseId) {
+        analysisWaits.remove(newCaseId);
         analysisCaseRepository.findByAnalysisCaseIdAndUser_UserId(newCaseId, userId).ifPresent(AnalysisCase::hide);
         analysisCaseRepository.findByAnalysisCaseIdAndUser_UserId(storedCaseId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ANALYSIS_CASE_NOT_FOUND)).show();

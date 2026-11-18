@@ -20,4 +20,6 @@ import lombok.Builder; import lombok.Getter;
     private Integer maxAttempts;
     private Integer retryAfterSeconds;
     private String traceId;
+    // 시뮬레이션 계정이 저장된 결과를 기다리는 중 (화면은 더 자주 조회해 단계를 차례로 보여 줌)
+    private boolean simulated;
 }

@@ -11,9 +11,12 @@ import com.example.jobpuzzle.guide.entity.GuideContextPurpose;
 import com.example.jobpuzzle.guide.repository.GuideContextResultRepository;
 import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
 import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
+import com.example.jobpuzzle.simulation.SimulationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.OptionalDouble;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +30,14 @@ public class AnalysisStatusQueryService {
     private final ReadinessResultRepository readiness;
     private final QuestionSetRepository sets;
     private final AiCallLogRepository logs;
+    private final SimulationService simulationService;
 
     @Transactional(readOnly = true)
     public AnalysisStatusResponse getStatus(Long userId, Long caseId) {
         AnalysisCase analysisCase = cases.findByAnalysisCaseIdAndUser_UserId(caseId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ANALYSIS_CASE_NOT_FOUND));
+        OptionalDouble simulated = simulationService.analysisProgress(caseId);
+        if (simulated.isPresent()) return simulatedStatus(caseId, simulated.getAsDouble());
         AnalysisInputSnapshot snapshot = snapshots
                 .findByAnalysisCase_AnalysisCaseIdAndUser_UserId(caseId, userId).orElse(null);
         if (snapshot == null) return emptyStatus(caseId, analysisCase);
@@ -90,6 +96,25 @@ public class AnalysisStatusQueryService {
                 .candidateMaterialAnalysisStatus(AnalysisStageStatus.NOT_STARTED)
                 .guideContextStatus(AnalysisStageStatus.NOT_STARTED)
                 .customizedAnalysisStatus(AnalysisStageStatus.NOT_STARTED)
+                .build();
+    }
+
+    // 시뮬레이션 대기 중: 지난 시간만큼 4단계를 차례로 완료로 넘기고, 다음 단계를 진행 중으로 보여 준다
+    static AnalysisStatusResponse simulatedStatus(Long caseId, double progress) {
+        int done = Math.min(3, (int) (progress * 4));
+        AnalysisStageStatus[] stages = new AnalysisStageStatus[4];
+        for (int i = 0; i < 4; i++) {
+            stages[i] = i < done ? AnalysisStageStatus.SUCCEEDED
+                    : i == done ? AnalysisStageStatus.RUNNING : AnalysisStageStatus.NOT_STARTED;
+        }
+        return AnalysisStatusResponse.builder()
+                .analysisCaseId(caseId)
+                .analysisCaseStatus(AnalysisCaseStatus.ANALYZING.name())
+                .jobPostingAnalysisStatus(stages[0])
+                .candidateMaterialAnalysisStatus(stages[1])
+                .guideContextStatus(stages[2])
+                .customizedAnalysisStatus(stages[3])
+                .simulated(true)
                 .build();
     }
 

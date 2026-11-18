@@ -137,9 +137,10 @@
         document.getElementById('analysis-sources').innerHTML = rows.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
     }
 
-    function schedulePoll() {
+    // 시뮬레이션 계정이 저장된 결과를 기다리는 동안(status.simulated)은 1초마다 조회해 단계가 차례로 넘어가게 한다
+    function schedulePoll(delay) {
         clearTimeout(state.pollTimer);
-        if (!state.disposed) state.pollTimer = setTimeout(loadStatus, 3500);
+        if (!state.disposed) state.pollTimer = setTimeout(loadStatus, delay || (state.simulated ? 1000 : 3500));
     }
 
     function canRetryAutomatically(status) {
@@ -157,6 +158,7 @@
     }
 
     function handleStatus(status) {
+        state.simulated = !!status.simulated;
         if (status.analysisCaseStatus === 'COMPLETED') {
             clearTimeout(state.pollTimer); clearTimeout(state.retryTimer);
             window.location.replace(route('/analysis-results/' + encodeURIComponent(caseId)));
@@ -196,7 +198,7 @@
         var ensureIndexed = reuseExistingIndex ? Promise.resolve()
             : api(route('/analysis-cases/' + caseId + '/index'), { method: 'POST' });
         ensureIndexed
-            .then(function () { var run = analysisApi('/run', { method: 'POST' }); schedulePoll(); return run; })
+            .then(function () { var run = analysisApi('/run', { method: 'POST' }); schedulePoll(1000); return run; })
             .then(function (result) {
                 // 시뮬레이션 계정은 같은 입력으로 끝난 분석을 다시 보여 주므로 그 결과로 바로 간다
                 if (result && String(result.analysisCaseId) !== String(caseId)) {

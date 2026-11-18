@@ -97,7 +97,7 @@ public class AnalysisService {
             // 시뮬레이션 계정: 같은 입력으로 끝난 분석이 있으면 AI 없이 잠시 기다린 뒤 그 결과를 보여 준다 (티켓은 평소처럼 차감)
             var stored = simulationService.reusableCase(userId, analysisCaseId);
             if (stored.isPresent()) {
-                simulationService.pause();
+                simulationService.pauseAnalysis(analysisCaseId);
                 return simulationService.takeOver(userId, analysisCaseId, stored.get().getAnalysisCaseId());
             }
             vectorIndexService.requireReady(userId, analysisCaseId);
