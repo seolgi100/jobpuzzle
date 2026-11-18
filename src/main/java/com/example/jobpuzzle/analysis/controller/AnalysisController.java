@@ -28,8 +28,8 @@ public class AnalysisController {
 
     @PostMapping("/cases/{analysisCaseId}/run")
     public ResponseEntity<ApiResponse<AnalysisCaseResponse>> run(@PathVariable Long analysisCaseId, @AuthenticationPrincipal(expression = "user") User user) {
-        analysisService.runCustomizedAnalysis(user.getUserId(), analysisCaseId);
-        return ResponseEntity.ok(ApiResponse.success(analysisCaseService.getCase(user.getUserId(), analysisCaseId)));
+        Long resultCaseId = analysisService.runCustomizedAnalysis(user.getUserId(), analysisCaseId);
+        return ResponseEntity.ok(ApiResponse.success(analysisCaseService.getCase(user.getUserId(), resultCaseId)));
     }
 
     @GetMapping("/cases/{analysisCaseId}/result")

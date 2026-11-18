@@ -8,6 +8,7 @@ import com.example.jobpuzzle.user.dto.JoinRequest;
 import com.example.jobpuzzle.user.dto.LoginRequest;
 import com.example.jobpuzzle.user.dto.MyInfoUpdateRequest;
 import com.example.jobpuzzle.user.dto.UserInfoResponse;
+import com.example.jobpuzzle.simulation.SimulationProperties;
 import com.example.jobpuzzle.user.entity.User;
 import com.example.jobpuzzle.user.repository.EmailVerificationStore;
 import com.example.jobpuzzle.user.repository.UserRepository;
@@ -36,6 +37,7 @@ import java.util.regex.Pattern;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final SimulationProperties simulationProperties;
     private final JobCategoryRepository jobCategoryRepository;
 
     // 비밀번호 암호화/검증에 쓰는 인코더 (SecurityConfig에 등록된 빈)
@@ -278,7 +280,7 @@ public class UserService {
     public UserInfoResponse getMyInfo(User principal) {
         User user = userRepository.findById(principal.getUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        return UserInfoResponse.from(user);
+        return UserInfoResponse.from(user, simulationProperties.getLoginIds().contains(user.getLoginId()));
     }
 
     // 내 정보 수정 - 이름/이메일/기본 관심 직무

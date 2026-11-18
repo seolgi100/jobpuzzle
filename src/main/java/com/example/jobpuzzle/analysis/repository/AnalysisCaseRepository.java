@@ -12,18 +12,24 @@ public interface AnalysisCaseRepository extends JpaRepository<AnalysisCase, Long
 
     Optional<AnalysisCase> findByAnalysisCaseIdAndUser_UserId(Long analysisCaseId, Long userId);
 
-    List<AnalysisCase> findByUser_UserIdAndStatusOrderByCreatedAtDesc(
+    List<AnalysisCase> findByUser_UserIdAndStatusAndHiddenAtIsNullOrderByCreatedAtDesc(
             Long userId,
             com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus status
     );
 
-    List<AnalysisCase> findByUser_UserIdAndStatusInOrderByCreatedAtDesc(
+    List<AnalysisCase> findByUser_UserIdAndStatusInAndHiddenAtIsNullOrderByCreatedAtDesc(
             Long userId,
             java.util.Collection<com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus> statuses
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<AnalysisCase> findWithLockByAnalysisCaseIdAndUser_UserId(Long analysisCaseId, Long userId);
+
+    // 시뮬레이션: 숨긴 것까지 포함한 완료 분석 (같은 입력의 결과를 다시 쓰기 위해)
+    List<AnalysisCase> findByUser_UserIdAndStatusOrderByAnalysisCaseIdDesc(
+            Long userId,
+            com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus status
+    );
 
     void deleteByUser_UserId(Long userId);
 }

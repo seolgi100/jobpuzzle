@@ -52,7 +52,7 @@ class AnalysisCasePreparationListTest {
         AnalysisCase analysisCase = AnalysisCase.builder().user(user).jobCategory(category).build();
         ReflectionTestUtils.setField(analysisCase, "analysisCaseId", 11L);
         ReflectionTestUtils.setField(analysisCase, "status", AnalysisCaseStatus.COMPLETED);
-        when(analysisCaseRepository.findByUser_UserIdAndStatusOrderByCreatedAtDesc(
+        when(analysisCaseRepository.findByUser_UserIdAndStatusAndHiddenAtIsNullOrderByCreatedAtDesc(
                 7L, AnalysisCaseStatus.COMPLETED
         )).thenReturn(List.of(analysisCase));
 
@@ -70,7 +70,7 @@ class AnalysisCasePreparationListTest {
         AnalysisCase failed = AnalysisCase.builder().user(user).jobCategory(category).build();
         ReflectionTestUtils.setField(failed, "analysisCaseId", 12L);
         ReflectionTestUtils.setField(failed, "status", AnalysisCaseStatus.FAILED);
-        when(analysisCaseRepository.findByUser_UserIdAndStatusInOrderByCreatedAtDesc(eq(7L), anyCollection()))
+        when(analysisCaseRepository.findByUser_UserIdAndStatusInAndHiddenAtIsNullOrderByCreatedAtDesc(eq(7L), anyCollection()))
                 .thenReturn(List.of(completed, failed));
         List<AnalysisCaseSource> sources = List.of(source(UserDocumentType.RESUME, 40L, "이력서"),
                 source(UserDocumentType.JOB_POSTING, 41L, "LUME_채용공고"));

@@ -82,7 +82,7 @@ public class AnalysisCaseService {
     // v2: 분석 결과 하나로 면접을 여러 번 만들 수 있어 완료된 분석은 모두 보여 준다.
     public List<AnalysisCaseResponse> getCompletedCases(Long userId) {
         return analysisCaseRepository
-                .findByUser_UserIdAndStatusOrderByCreatedAtDesc(
+                .findByUser_UserIdAndStatusAndHiddenAtIsNullOrderByCreatedAtDesc(
                         userId,
                         AnalysisCaseStatus.COMPLETED
                 )
@@ -97,7 +97,7 @@ public class AnalysisCaseService {
     // 면접 준비 화면용: 분석을 시작한 모든 케이스(작성 중 DRAFT 제외)를 최신순으로
     public List<AnalysisCaseResponse> getCases(Long userId) {
         return analysisCaseRepository
-                .findByUser_UserIdAndStatusInOrderByCreatedAtDesc(userId, List.of(
+                .findByUser_UserIdAndStatusInAndHiddenAtIsNullOrderByCreatedAtDesc(userId, List.of(
                         AnalysisCaseStatus.INPUT_CONFIRMED,
                         AnalysisCaseStatus.ANALYZING,
                         AnalysisCaseStatus.COMPLETED,

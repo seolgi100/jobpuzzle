@@ -197,7 +197,14 @@
             : api(route('/analysis-cases/' + caseId + '/index'), { method: 'POST' });
         ensureIndexed
             .then(function () { var run = analysisApi('/run', { method: 'POST' }); schedulePoll(); return run; })
-            .then(function () { state.running = false; loadStatus(); })
+            .then(function (result) {
+                // 시뮬레이션 계정은 같은 입력으로 끝난 분석을 다시 보여 주므로 그 결과로 바로 간다
+                if (result && String(result.analysisCaseId) !== String(caseId)) {
+                    window.location.replace(route('/analysis-results/' + result.analysisCaseId));
+                    return;
+                }
+                state.running = false; loadStatus();
+            })
             .catch(function (error) {
                 state.running = false;
                 clearTimeout(state.pollTimer);

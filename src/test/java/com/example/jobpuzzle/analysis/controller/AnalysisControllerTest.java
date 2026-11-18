@@ -53,6 +53,7 @@ class AnalysisControllerTest {
         when(response.getStatus()).thenReturn(AnalysisCaseStatus.ANALYZING);
         when(analysisCaseService.getCase(USER_ID, CASE_ID)).thenReturn(response);
 
+        when(analysisService.runCustomizedAnalysis(USER_ID, CASE_ID)).thenReturn(CASE_ID);
         mockMvc.perform(post("/analysis/cases/{caseId}/run", CASE_ID)
                 .with(authenticatedUser())
                         .with(csrf())

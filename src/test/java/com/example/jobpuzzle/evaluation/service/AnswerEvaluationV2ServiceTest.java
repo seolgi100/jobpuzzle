@@ -67,7 +67,7 @@ class AnswerEvaluationV2ServiceTest {
         when(answer.getMessageText()).thenReturn("API 응답 속도를 개선했습니다.");
 
         service = new AnswerEvaluationV2Service(evaluations, messages, mock(InterviewSessionQuestionRepository.class), followUps,
-                templates, callLogs, aiClientService,
+                templates, callLogs, aiClientService, mock(com.example.jobpuzzle.simulation.SimulationService.class),
                 new AiResponseProcessor(new ObjectMapper(), new AnalysisSourceMarkerParser()), properties, new ObjectMapper());
     }
 

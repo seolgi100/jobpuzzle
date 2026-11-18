@@ -61,7 +61,7 @@ public class UserSummaryService {
         // 선호 직무: 분석·면접을 가장 많이 진행한 직무 (같으면 최근에 진행한 쪽이 먼저 들어가 이긴다, 수정사항 5번)
         Map<String, Integer> activity = new LinkedHashMap<>();
         sessions.forEach(s -> activity.merge(jobName(s.getJobCategory()), 1, Integer::sum));
-        analysisCaseRepository.findByUser_UserIdAndStatusOrderByCreatedAtDesc(userId, AnalysisCaseStatus.COMPLETED)
+        analysisCaseRepository.findByUser_UserIdAndStatusAndHiddenAtIsNullOrderByCreatedAtDesc(userId, AnalysisCaseStatus.COMPLETED)
                 .stream().map(AnalysisCase::getJobCategory)
                 .forEach(job -> activity.merge(jobName(job), 1, Integer::sum));
 

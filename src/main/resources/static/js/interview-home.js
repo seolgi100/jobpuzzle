@@ -190,7 +190,10 @@
         at: time(c.createdAt),
         html: '<li><span class="ih-rec__what">맞춤 분석</span><span class="ih-rec__state">' + label + '</span>' +
           '<span class="ih-rec__when">' + esc(day(c.createdAt)) + '</span>' +
-          '<a class="ih-link" href="' + R.path(href) + '">' + (c.status === 'COMPLETED' ? '분석 결과' : '상태 확인') + '</a></li>'
+          '<a class="ih-link" href="' + R.path(href) + '">' + (c.status === 'COMPLETED' ? '분석 결과' : '상태 확인') + '</a>' +
+          // 시뮬레이션 계정만: 화면에서만 지우고 결과는 남긴다 (같은 자료로 다시 분석하면 다시 나옴)
+          (data.user && data.user.simulation && c.status !== 'ANALYZING'
+            ? '<button type="button" class="ih-link" data-hide-case="' + c.analysisCaseId + '">삭제</button>' : '') + '</li>'
       });
     });
     rows.sort(function (a, b) { return b.at - a.at; });
@@ -457,6 +460,19 @@
         render();
       } else if (t.hasAttribute('data-retry')) {
         load();
+      } else if (t.hasAttribute('data-hide-case')) {
+        var caseId = t.getAttribute('data-hide-case');
+        Dialog.confirm({
+          title: '이 분석을 삭제하시겠습니까?',
+          body: '목록에서만 지웁니다. 같은 공고와 자료로 다시 분석하면 이 결과가 다시 나옵니다.',
+          confirmLabel: '삭제',
+          onConfirm: function () {
+            fetch(R.path('/analysis-cases/' + caseId), { method: 'DELETE', credentials: 'same-origin' })
+              .then(function (response) { if (!response.ok) throw new Error(); })
+              .then(load)
+              .catch(function () { renderError('분석을 삭제하지 못했습니다. 잠시 후 다시 시도해 주십시오.'); });
+          }
+        });
       } else if (t.hasAttribute('data-new-posting')) {
         if (window.InterviewPage) window.InterviewPage.openCustom();
       } else if (t.hasAttribute('data-start-personality')) {

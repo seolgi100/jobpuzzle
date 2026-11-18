@@ -10,6 +10,7 @@ import com.example.jobpuzzle.ai.log.AiInputReferenceType;
 import com.example.jobpuzzle.ai.prompt.PromptTemplate;
 import com.example.jobpuzzle.ai.prompt.PromptTemplateRepository;
 import com.example.jobpuzzle.ai.service.AiClientService;
+import com.example.jobpuzzle.simulation.SimulationService;
 import com.example.jobpuzzle.ai.service.GenerationClientSelection;
 import com.example.jobpuzzle.ai.validation.AiProcessingException;
 import com.example.jobpuzzle.ai.validation.AiResponseProcessor;
@@ -88,6 +89,7 @@ public class QuestionGenerationV2Service {
     private final PromptTemplateRepository promptTemplateRepository;
     private final AiCallLogRepository aiCallLogRepository;
     private final AiClientService aiClientService;
+    private final SimulationService simulationService;
     private final AiResponseProcessor aiResponseProcessor;
     private final AiGenerationProperties aiProperties;
     private final InterviewQuestionProperties properties;
@@ -151,13 +153,17 @@ public class QuestionGenerationV2Service {
         callLog.start();
         aiCallLogRepository.save(callLog);
 
+        // 시뮬레이션 계정: 같은 분석·모드로 전에 만든 질문이 있으면 AI 대신 그 질문을 쓴다 (로딩만 흉내)
+        String simulated = simulationService.storedQuestions(userId, snapshotId, mode, avoidQuestions).orElse(null);
+        if (simulated != null) simulationService.pause();
+
         List<QuestionGenerationV2Result.Question> generated = null;
         RuntimeException last = null;
         int attempts = 1 + Math.max(0, aiProperties.getMaxRetries());
         for (int attempt = 1; attempt <= attempts && generated == null; attempt++) {
             try {
-                generated = validated(aiResponseProcessor.parseQuestionGenerationV2(
-                        aiClientService.generateQuestionsV2(selection, prompt)), tags.keySet());
+                generated = validated(aiResponseProcessor.parseQuestionGenerationV2(simulated != null ? simulated
+                        : aiClientService.generateQuestionsV2(selection, prompt)), tags.keySet());
             } catch (RuntimeException exception) {
                 last = exception;
                 log.warn("ai_question_generation_v2_retry attempt={}/{} snapshotId={} mode={} cause={}", attempt, attempts,
@@ -218,7 +224,7 @@ public class QuestionGenerationV2Service {
     @Transactional(readOnly = true)
     public InterviewModeAvailabilityResponse availability(Long userId) {
         List<AnalysisInputSnapshot> analyzed = analysisCaseRepository
-                .findByUser_UserIdAndStatusOrderByCreatedAtDesc(userId, AnalysisCaseStatus.COMPLETED).stream()
+                .findByUser_UserIdAndStatusAndHiddenAtIsNullOrderByCreatedAtDesc(userId, AnalysisCaseStatus.COMPLETED).stream()
                 .map(c -> snapshotRepository.findByAnalysisCase_AnalysisCaseIdAndUser_UserId(c.getAnalysisCaseId(), userId))
                 .flatMap(java.util.Optional::stream)
                 .toList();

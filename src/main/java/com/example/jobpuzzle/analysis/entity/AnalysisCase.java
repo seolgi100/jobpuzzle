@@ -20,6 +20,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 // 분석 작업 단위. DRAFT 상태에서 자료 선택과 직무·경력 기준을 자유롭게 편집하다가
 // 분석 입력을 확정하면(JSON-03) INPUT_CONFIRMED로 전환되고 이후 자료 구성을 바꿀 수 없다.
 @Getter
@@ -44,6 +46,10 @@ public class AnalysisCase extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AnalysisCaseStatus status;
+
+    // 시뮬레이션 계정의 "삭제": 목록에서만 숨기고 결과는 DB에 남긴다 (같은 입력으로 다시 분석하면 이 결과를 다시 보여 줌)
+    @Column(name = "hidden_at")
+    private LocalDateTime hiddenAt;
 
     @Builder
     private AnalysisCase(User user, JobCategory jobCategory) {
@@ -79,6 +85,14 @@ public class AnalysisCase extends BaseEntity {
             throw new CustomException(ErrorCode.ANALYSIS_CASE_NOT_READY);
         }
         this.status = AnalysisCaseStatus.FAILED;
+    }
+
+    public void hide() {
+        this.hiddenAt = LocalDateTime.now();
+    }
+
+    public void show() {
+        this.hiddenAt = null;
     }
 
     // 모든 JSON-05 결과가 원자적으로 저장된 경우에만 분석 작업을 완료한다.

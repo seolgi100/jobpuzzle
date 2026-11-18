@@ -180,6 +180,12 @@ app:
     toss:
       client-key: ${TOSS_CLIENT_KEY:}
       secret-key: ${TOSS_SECRET_KEY:}
+  # 시연용 시뮬레이션 계정: 이 아이디는 분석·질문 생성·답변 평가에서 AI 대신 계정에 저장된 결과를 다시 보여 준다.
+  # 쉼표로 여러 개. 비우면 시뮬레이션 없음
+  simulation:
+    login-ids: ${SIMULATION_LOGIN_IDS:}
+    min-delay: 5s
+    max-delay: 8s
   data-initializer:
     enabled: false
 

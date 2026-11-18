@@ -10,6 +10,7 @@ import com.example.jobpuzzle.ai.log.AiInputReferenceType;
 import com.example.jobpuzzle.ai.prompt.PromptTemplate;
 import com.example.jobpuzzle.ai.prompt.PromptTemplateRepository;
 import com.example.jobpuzzle.ai.service.AiClientService;
+import com.example.jobpuzzle.simulation.SimulationService;
 import com.example.jobpuzzle.ai.service.GenerationClientSelection;
 import com.example.jobpuzzle.ai.validation.AiResponseProcessor;
 import com.example.jobpuzzle.analysis.service.AnalysisSummaries;
@@ -58,6 +59,7 @@ public class AnswerEvaluationV2Service {
     private final PromptTemplateRepository promptTemplateRepository;
     private final AiCallLogRepository aiCallLogRepository;
     private final AiClientService aiClientService;
+    private final SimulationService simulationService;
     private final AiResponseProcessor aiResponseProcessor;
     private final AiGenerationProperties properties;
     private final ObjectMapper objectMapper;
@@ -84,13 +86,19 @@ public class AnswerEvaluationV2Service {
         String prompt = template.getTemplateText() + "\n\n[INPUT]\n"
                 + toJson(input(answerMessage, question, session, criteria, previousRound));
 
+        // 시뮬레이션 계정: 같은 질문에 전에 저장한 평가가 있으면 AI 대신 그 평가를 쓴다 (로딩만 흉내)
+        String simulated = simulationService.storedEvaluation(session.getUser(), answerMessage, mode,
+                previousRound != null).orElse(null);
+        if (simulated != null) simulationService.pause();
+
         AnswerEvaluationV2Result result = null;
         Map<EvaluationCriterion, Integer> scores = null;
         RuntimeException last = null;
         int attempts = 1 + Math.max(0, properties.getMaxRetries());
         for (int attempt = 1; attempt <= attempts && scores == null; attempt++) {
             try {
-                result = aiResponseProcessor.parseAnswerEvaluationV2(aiClientService.evaluateAnswer(selection, prompt));
+                result = aiResponseProcessor.parseAnswerEvaluationV2(simulated != null ? simulated
+                        : aiClientService.evaluateAnswer(selection, prompt));
                 scores = AnswerEvaluationV2Validator.validate(result, mode, previousRound != null);
             } catch (RuntimeException exception) {
                 last = exception;
