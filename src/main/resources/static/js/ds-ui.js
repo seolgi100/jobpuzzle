@@ -3,6 +3,12 @@
   'use strict';
 
   var DIM_LABELS = {
+    // 평가 명세 v2 2장 항목 (점수 집계 categoryScores의 키)
+    INTENT_UNDERSTANDING: '질문 의도 이해', LOGICAL_STRUCTURE: '논리적 구성', CLARITY: '표현 명확성',
+    CONCEPT_ACCURACY: '개념 정확성', PRINCIPLE_UNDERSTANDING: '원리 이해', PRACTICAL_APPLICATION: '실무 연결',
+    EXPERIENCE_SPECIFICITY: '경험 구체성', OUTCOME: '성과 및 결과', JOB_POSTING_ALIGNMENT: '공고 요구사항 연결',
+    ROLE_FIT: '직무·조직 적합성', AUTHENTICITY: '진정성과 일관성', SELF_AWARENESS: '자기 인식',
+    // v1 관점
     intentMatch: '질문 의도 이해',
     specificity: '경험 구체성',
     ownRole: '본인 역할',
