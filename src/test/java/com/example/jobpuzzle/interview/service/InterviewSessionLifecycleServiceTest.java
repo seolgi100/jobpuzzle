@@ -65,43 +65,6 @@ class InterviewSessionLifecycleServiceTest {
     @InjectMocks private InterviewSessionService service;
 
     @Test
-    void companyFitModeIsUnavailableWhenEveryActiveQuestionSetWasAlreadyConsumed() {
-        QuestionSet consumed = mock(QuestionSet.class);
-        when(consumed.getQuestionSetId()).thenReturn(41L);
-        when(questionSetRepository.findByUser_UserIdAndInterviewModeAndStatus(
-                7L, InterviewSessionMode.COMPANY_FIT, QuestionSetStatus.ACTIVE
-        )).thenReturn(List.of(consumed));
-        when(interviewSessionRepository.existsByQuestionSet_QuestionSetId(41L)).thenReturn(true);
-
-        var companyFit = service.getAvailableModes(7L).getModes().stream()
-                .filter(mode -> mode.getMode() == InterviewSessionMode.COMPANY_FIT)
-                .findFirst()
-                .orElseThrow();
-
-        assertThat(companyFit.isAvailable()).isFalse();
-    }
-
-    @Test
-    void companyFitModeIsAvailableWhenAtLeastOneActiveQuestionSetIsUnused() {
-        QuestionSet consumed = mock(QuestionSet.class);
-        QuestionSet unused = mock(QuestionSet.class);
-        when(consumed.getQuestionSetId()).thenReturn(41L);
-        when(unused.getQuestionSetId()).thenReturn(42L);
-        when(questionSetRepository.findByUser_UserIdAndInterviewModeAndStatus(
-                7L, InterviewSessionMode.COMPANY_FIT, QuestionSetStatus.ACTIVE
-        )).thenReturn(List.of(consumed, unused));
-        when(interviewSessionRepository.existsByQuestionSet_QuestionSetId(41L)).thenReturn(true);
-        when(interviewSessionRepository.existsByQuestionSet_QuestionSetId(42L)).thenReturn(false);
-
-        var companyFit = service.getAvailableModes(7L).getModes().stream()
-                .filter(mode -> mode.getMode() == InterviewSessionMode.COMPANY_FIT)
-                .findFirst()
-                .orElseThrow();
-
-        assertThat(companyFit.isAvailable()).isTrue();
-    }
-
-    @Test
     void canceledOrCompletedSessionStillPreventsQuestionSetReuse() {
         QuestionSet questionSet = mock(QuestionSet.class);
         when(questionSet.getQuestionSetId()).thenReturn(41L);

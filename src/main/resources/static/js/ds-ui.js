@@ -14,9 +14,13 @@
   };
   // 면접 모드 → [이름, 배지 클래스, 필터 키]
   var MODES = {
-    COMPANY_FIT: ['맞춤 면접', 'mbadge--custom', 'custom'],
-    BASIC: ['기본 질문', 'mbadge--basic', 'basic'],
-    WEAKNESS_REVIEW: ['약점 보완', 'mbadge--weak', 'weak']
+    KNOWLEDGE: ['기초 지식', 'mbadge--basic', 'knowledge'],
+    MATERIAL: ['자료 기반', 'mbadge--custom', 'material'],
+    PERSONALITY: ['인성', 'mbadge--persona', 'personality'],
+    // v1 기록 표시용. 평가 기준이 달라 필터에서는 "이전 면접" 하나로 묶는다.
+    COMPANY_FIT: ['맞춤 면접', 'mbadge--custom', 'v1'],
+    BASIC: ['기본 질문', 'mbadge--basic', 'v1'],
+    WEAKNESS_REVIEW: ['약점 보완', 'mbadge--weak', 'v1']
   };
 
   function esc(value) {

@@ -2,7 +2,12 @@
 (function () {
   'use strict';
 
-  var USAGE_LABEL = { BASIC: '기본 면접', WEAKNESS_REVIEW: '약점 보완 면접', COMPANY_FIT: '공고 맞춤 분석' };
+  var USAGE_LABEL = {
+    ANALYSIS: '공고·지원자 분석', KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
+    SESSION_RETRY: '면접 다시 진행', QUESTION_REGENERATE: '질문 다시 생성',
+    // v1 기록
+    BASIC: '기본 면접', WEAKNESS_REVIEW: '약점 보완 면접', COMPANY_FIT: '공고 맞춤 분석'
+  };
   var TYPE_LABEL = { CHARGE: '충전', USE: '사용', REFUND: '환불' };
 
   function api(path, options) {
@@ -39,8 +44,10 @@
     document.getElementById('ticket-balance').textContent = data.balance;
     var c = data.costs;
     document.getElementById('ticket-costs').innerHTML =
-      '<div class="ticket-cost"><b>기본 면접 ' + c.basic + '장</b>희망 직무로 기본 질문 생성</div>' +
-      '<div class="ticket-cost"><b>공고 맞춤 ' + c.companyFit + '장</b>공고와 내 자료로 맞춤 질문 생성</div>';
+      '<div class="ticket-cost"><b>공고·지원자 분석 ' + c.analysis + '장</b>공고와 내 자료를 비교해 분석</div>' +
+      '<div class="ticket-cost"><b>기초 지식 면접 ' + c.knowledge + '장</b>공고가 요구하는 지식을 묻는 질문</div>' +
+      '<div class="ticket-cost"><b>자료 기반 면접 ' + c.material + '장</b>내 경험과 자료를 파고드는 질문</div>' +
+      '<div class="ticket-cost"><b>인성 면접 ' + c.personality + '장</b>희망 직무의 인성 질문</div>';
     var rows = (data.history || []).map(function (h) {
       var label = (TYPE_LABEL[h.type] || h.type) + (h.usage ? ' · ' + (USAGE_LABEL[h.usage] || h.usage) : '');
       var change = h.amount > 0 ? '+' + h.amount : String(h.amount);

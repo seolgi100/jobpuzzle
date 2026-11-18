@@ -14,7 +14,7 @@
         ['jobPostingAnalysisStatus', '채용공고 분석', '필수·우대 요구사항을 뽑아요'],
         ['candidateMaterialAnalysisStatus', '지원자 자료 분석', '이력서·자기소개서에서 근거가 될 경험을 찾아요'],
         ['guideContextStatus', '직무 가이드 적용', '희망 직무에서 중요하게 보는 기준을 더해요'],
-        ['customizedAnalysisStatus', '맞춤 결과 생성', '요구사항별 연결 결과와 예상 질문을 만들어요']
+        ['customizedAnalysisStatus', '맞춤 결과 생성', '요구사항별 연결 결과와 보완 과제를 정리해요']
     ];
     var errorText = {
         ANALYSIS_002: '분석 작업을 찾을 수 없거나 접근 권한이 없어요.',

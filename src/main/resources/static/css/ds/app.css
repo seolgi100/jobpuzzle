@@ -74,6 +74,7 @@ textarea.input { height: auto; padding: 12px 14px; line-height: 1.6; resize: ver
 .mbadge--basic { background: #EEF2F8; color: var(--text-2); }
 .mbadge--weak { background: var(--warn-tint); color: var(--warn); }
 .mbadge--custom { background: var(--sky); color: #fff; }
+.mbadge--persona { background: var(--sky-tint); color: var(--sky-strong); }
 .mbadge--tag { background: #FFF; border: 1px solid #FBD5BD; color: var(--warn); }
 
 /* ── 페이지네이션 (공통) ── */

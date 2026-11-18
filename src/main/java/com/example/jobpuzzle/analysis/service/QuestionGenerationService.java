@@ -1,112 +1,36 @@
 package com.example.jobpuzzle.analysis.service;
 
-import com.example.jobpuzzle.ai.log.*;
-import com.example.jobpuzzle.ai.service.GenerationClientSelection;
-import com.example.jobpuzzle.ai.dto.InterviewQuestionGenerationResult;
-import com.example.jobpuzzle.ai.prompt.PromptTemplate;
-import com.example.jobpuzzle.ai.prompt.PromptTemplateRepository;
-import com.example.jobpuzzle.ai.prompt.PromptTemplateRenderer;
-import com.example.jobpuzzle.ai.service.AiClientService;
-import com.example.jobpuzzle.ai.validation.AiResponseProcessor;
-import com.example.jobpuzzle.ai.validation.InterviewQuestionGenerationResponseValidator;
-import com.example.jobpuzzle.analysis.dto.BasicQuestionRequest;
-import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
 import com.example.jobpuzzle.analysis.dto.PreparedQuestionSetResponse;
-import com.example.jobpuzzle.evaluation.entity.AnswerEvaluation;
-import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
+import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
 import com.example.jobpuzzle.evaluation.service.WeaknessTagNormalizer;
-import com.example.jobpuzzle.evaluation.service.SessionScoreAggregationService;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
-import com.example.jobpuzzle.interview.entity.*;
 import com.example.jobpuzzle.interview.dto.QuestionHintResponse;
 import com.example.jobpuzzle.interview.dto.QuestionListResponse;
+import com.example.jobpuzzle.interview.entity.*;
 import com.example.jobpuzzle.interview.repository.InterviewQuestionRepository;
-import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
 import com.example.jobpuzzle.interview.repository.InterviewSessionRepository;
-import com.example.jobpuzzle.interview.repository.InterviewSessionQuestionRepository;
-import com.example.jobpuzzle.jobcategory.entity.JobCategory;
-import com.example.jobpuzzle.jobcategory.repository.JobCategoryRepository;
-import com.example.jobpuzzle.user.entity.User;
-import com.example.jobpuzzle.user.repository.UserRepository;
+import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j
 public class QuestionGenerationService {
 
-    private final UserRepository userRepository;
-    private final JobCategoryRepository jobCategoryRepository;
+    // 질문 생성은 v2 QuestionGenerationV2Service가 맡는다. 여기는 만든 묶음 조회만 남았다.
+    private static final List<InterviewSessionMode> V2_MODES =
+            List.of(InterviewSessionMode.KNOWLEDGE, InterviewSessionMode.MATERIAL, InterviewSessionMode.PERSONALITY);
+
     private final QuestionSetRepository questionSetRepository;
     private final InterviewQuestionRepository interviewQuestionRepository;
     private final InterviewSessionRepository interviewSessionRepository;
-    private final InterviewSessionQuestionRepository interviewSessionQuestionRepository;
-    private final PromptTemplateRepository promptTemplateRepository;
-    private final AiCallLogRepository aiCallLogRepository;
-    private final AiClientService aiClientService;
-    private final PromptTemplateRenderer promptTemplateRenderer;
-    private final AiResponseProcessor aiResponseProcessor;
-    private final InterviewQuestionGenerationInputMapper inputMapper;
-    private final InterviewQuestionGenerationResponseValidator responseValidator;
-    private final InterviewQuestionGenerationResultWriter resultWriter;
     private final WeaknessTagNormalizer weaknessTagNormalizer;
-
-    public QuestionSetResponse generateBasicQuestionSet(Long userId, BasicQuestionRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        JobCategory jobCategory = jobCategoryRepository.findById(request.getJobCategoryId())
-                .orElseThrow(() -> new CustomException(ErrorCode.JOB_CATEGORY_NOT_FOUND));
-        if (jobCategory.getCareerLevel() != request.getCareerLevel()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
-        }
-
-        PromptTemplate template = activeTemplate("JSON-11");
-        String prompt = promptTemplateRenderer.renderInterviewQuestionGeneration(
-                template,
-                "basicInputJson",
-                inputMapper.basic(jobCategory)
-        );
-        AiCallLog callLog = startLog(
-                template,
-                AiExecutionStage.BASIC_QUESTION_GENERATION,
-                AiInputReferenceType.JOB_CAREER_CRITERIA,
-                jobCategory.getJobCategoryId() + ":" + request.getCareerLevel(),
-                prompt
-        );
-        String rawResponse = aiClientService.generateBasicQuestions(prompt);
-        InterviewQuestionGenerationResult generated =
-                aiResponseProcessor.parseInterviewQuestions(rawResponse, "JSON-11");
-        responseValidator.validateBasic(generated);
-
-        QuestionSet set = questionSetRepository.save(QuestionSet.create(
-                user,
-                InterviewSessionMode.BASIC,
-                jobCategory,
-                request.getCareerLevel(),
-                null,
-                QuestionSetGenerationSource.AI,
-                callLog.getPromptVersion(),
-                null,
-                null,
-                List.of(),
-                callLog
-        ));
-
-        List<InterviewQuestion> questions = resultWriter.saveBasic(set, generated);
-        callLog.succeed();
-        return QuestionSetResponse.from(set, questions);
-    }
 
     @Transactional(readOnly = true)
     public QuestionSetResponse getQuestionSet(Long userId, Long questionSetId) {
@@ -125,12 +49,12 @@ public class QuestionGenerationService {
         );
     }
 
-    // 아직 시작하지 않은 기본 질문 세트. 약점 보완 세트는 v2에서 없어졌다.
+    // 티켓을 쓰고 만들었지만 아직 면접을 시작하지 않은 v2 질문 묶음 (생성 직후 세션 만들기가 실패한 경우 등)
     @Transactional(readOnly = true)
     public List<PreparedQuestionSetResponse> getUnusedGeneratedQuestionSets(Long userId) {
-        return questionSetRepository
-                .findByUser_UserIdAndInterviewModeAndStatus(userId, InterviewSessionMode.BASIC, QuestionSetStatus.ACTIVE)
-                .stream()
+        return V2_MODES.stream()
+                .flatMap(mode -> questionSetRepository
+                        .findByUser_UserIdAndInterviewModeAndStatus(userId, mode, QuestionSetStatus.ACTIVE).stream())
                 .filter(set -> !interviewSessionRepository.existsByQuestionSet_QuestionSetId(set.getQuestionSetId()))
                 .map(set -> PreparedQuestionSetResponse.from(
                         set,
@@ -163,67 +87,4 @@ public class QuestionGenerationService {
         return QuestionHintResponse.from(question);
     }
 
-    private AiCallLog startLog(
-            PromptTemplate template,
-            AiExecutionStage stage,
-            AiInputReferenceType referenceType,
-            String referenceId,
-            String renderedPrompt
-    ) {
-        GenerationClientSelection selection = aiClientService.resolve(stage);
-        AiCallLog log = AiCallLog.pending(
-                selection.provider(),
-                selection.model(),
-                stage,
-                referenceType,
-                referenceId,
-                Integer.toHexString(renderedPrompt.hashCode()),
-                template,
-                null,
-                null
-        );
-        log.start();
-        // IDENTITY PK는 save 즉시 INSERT될 수 있으므로 필수 startedAt을 먼저 채운다.
-        aiCallLogRepository.save(log);
-        return log;
-    }
-
-    private PromptTemplate activeTemplate(String targetJson) {
-        return promptTemplateRepository
-                .findFirstByTargetJsonAndIsActiveTrueOrderByPromptTemplateIdDesc(targetJson)
-                .orElseThrow(() -> new CustomException(ErrorCode.AI_PROMPT_TEMPLATE_NOT_FOUND));
-    }
-
-    private AiCallLogErrorType generationErrorType(Throwable failure) {
-        Throwable current = failure;
-        while (current != null) {
-            if (current instanceof com.example.jobpuzzle.ai.validation.AiProcessingException processing) {
-                return processing.getErrorType();
-            }
-            current = current.getCause();
-        }
-        return AiCallLogErrorType.RESPONSE_VALIDATION_FAILED;
-    }
-
-    private String failureDetail(Throwable failure) {
-        StringBuilder detail = new StringBuilder();
-        Throwable current = failure;
-        while (current != null && detail.length() < 900) {
-            if (!detail.isEmpty()) detail.append(" <- ");
-            detail.append(current.getClass().getSimpleName()).append(": ")
-                    .append(current.getMessage() == null ? "(no message)" : current.getMessage());
-            current = current.getCause();
-        }
-        return responsePreview(detail.toString(), 900);
-    }
-
-    private String responsePreview(String value) {
-        return responsePreview(value, 500);
-    }
-
-    private String responsePreview(String value, int limit) {
-        if (value == null) return "(null)";
-        String singleLine = value.replaceAll("[\\r\\n\\t]+", " ").trim();
-        return singleLine.length() <= limit ? singleLine : singleLine.substring(0, limit);
-    }
 }

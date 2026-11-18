@@ -281,6 +281,11 @@ class AnalysisPipelineDatabaseIntegrationTest {
         analysisCaseService.confirmInput(userId, caseId);
         analysisService.runCustomizedAnalysis(userId, caseId);
 
+        // 분석을 마치면 기초 지식·자료 기반을 고를 수 있고, 인성 질문이 없는 테스트 직무라 인성은 막힌다.
+        assertThat(questionGenerationV2Service.availability(userId).getModes())
+                .extracting(m -> m.getMode() + ":" + m.isAvailable())
+                .containsExactly("KNOWLEDGE:true", "MATERIAL:true", "PERSONALITY:false");
+
         var knowledge = questionGenerationV2Service.generate(userId, InterviewSessionMode.KNOWLEDGE, caseId);
         var material = questionGenerationV2Service.generate(userId, InterviewSessionMode.MATERIAL, caseId);
         // 같은 분석 결과·같은 모드로 다시 만들 수 있다 (예전 (snapshot, mode) 유일 조건 제거)
@@ -343,6 +348,11 @@ class AnalysisPipelineDatabaseIntegrationTest {
         String suffix = java.util.UUID.randomUUID().toString();
         User user = userRepository.save(User.createLocalUser("personality-" + suffix, "encoded", suffix + "@example.test",
                 "Personality", backendNew));
+
+        // 분석 없이도 인성은 고를 수 있다
+        assertThat(questionGenerationV2Service.availability(user.getUserId()).getModes())
+                .extracting(m -> m.getMode() + ":" + m.isAvailable())
+                .containsExactly("KNOWLEDGE:false", "MATERIAL:false", "PERSONALITY:true");
 
         var set = questionGenerationV2Service.generatePersonality(user.getUserId());
 

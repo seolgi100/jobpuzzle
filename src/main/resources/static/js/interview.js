@@ -173,8 +173,8 @@
   function ticketLineHtml() {
     var t = state.tickets;
     if (!t) return '';
-    var short = t.balance < t.costs.companyFit;
-    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.companyFit + '장</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
+    var short = t.balance < t.costs.analysis;
+    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.analysis + '장</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
       (short ? ' · 모자라요. <a class="fl-link" href="' + window.JobPuzzleRoutes.path('/tickets') + '">충전하기</a>' : '') + '</p>';
   }
 
@@ -312,7 +312,7 @@
     if (!box || !action) return;
     DF.api('/tickets/me').then(function (tickets) {
       if (!document.getElementById('material-review-ticket')) return;
-      var cost = tickets.costs.companyFit;
+      var cost = tickets.costs.analysis;
       var short = cost - tickets.balance;
       box.innerHTML = '<p class="tk-title">' + (short > 0 ? '티켓이 ' + short + '장 부족해요' : '분석에 티켓 ' + cost + '장을 사용해요') + '</p>' +
         (short > 0 ? '' : '<p class="tk-what">분석이 실패하면 티켓은 돌려드려요.</p>') +

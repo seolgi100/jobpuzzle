@@ -12,7 +12,9 @@ public record TicketBalanceResponse(
         Costs costs,
         List<History> history
 ) {
-    public record Costs(int basic, int companyFit) {
+    // 평가 명세 v2 1장 티켓 표. 화면은 이 값만 보고 비용을 보여 준다 (하드코딩 금지).
+    public record Costs(int analysis, int knowledge, int material, int personality,
+                        int sessionRetry, int questionRegenerate) {
     }
 
     public record History(String type, String usage, int amount, int balanceAfter, LocalDateTime createdAt) {
@@ -21,7 +23,9 @@ public record TicketBalanceResponse(
     public static TicketBalanceResponse of(TicketWallet wallet, TicketProperties properties, List<TicketTransaction> transactions) {
         return new TicketBalanceResponse(
                 wallet.getBalance(),
-                new Costs(properties.getBasicCost(), properties.getCompanyFitCost()),
+                new Costs(properties.getAnalysisCost(), properties.getKnowledgeCost(), properties.getMaterialCost(),
+                        properties.getPersonalityCost(), properties.getSessionRetryCost(),
+                        properties.getQuestionRegenerateCost()),
                 transactions.stream()
                         .map(t -> new History(t.getType().name(), t.getUsage() == null ? null : t.getUsage().name(),
                                 t.getAmount(), t.getBalanceAfter(), t.getCreatedAt()))

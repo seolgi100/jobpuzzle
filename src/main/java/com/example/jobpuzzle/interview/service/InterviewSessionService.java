@@ -53,39 +53,7 @@ public class InterviewSessionService {
     private final WeaknessRemediationAttemptRepository weaknessRemediationAttemptRepository;
     private final WeaknessTagNormalizer weaknessTagNormalizer;
     private final SessionScoreAggregationService sessionScoreAggregationService;
-
-    @Transactional(readOnly = true)
-    public InterviewModeAvailabilityResponse getAvailableModes(Long userId) {
-        boolean companyFitAvailable = questionSetRepository
-                .findByUser_UserIdAndInterviewModeAndStatus(
-                        userId,
-                        InterviewSessionMode.COMPANY_FIT,
-                        QuestionSetStatus.ACTIVE
-                )
-                .stream()
-                .anyMatch(questionSet -> !interviewSessionRepository
-                        .existsByQuestionSet_QuestionSetId(questionSet.getQuestionSetId()));
-        boolean weaknessAvailable = !getUnresolvedWeaknessTags(userId).isEmpty();
-        return InterviewModeAvailabilityResponse.builder()
-                .modes(List.of(
-                        InterviewModeAvailabilityResponse.ModeAvailability.builder()
-                                .mode(InterviewSessionMode.BASIC)
-                                .available(true)
-                                .reason(null)
-                                .build(),
-                        InterviewModeAvailabilityResponse.ModeAvailability.builder()
-                                .mode(InterviewSessionMode.COMPANY_FIT)
-                                .available(companyFitAvailable)
-                                .reason(companyFitAvailable ? null : "완료된 회사 맞춤 질문 세트가 필요합니다.")
-                                .build(),
-                        InterviewModeAvailabilityResponse.ModeAvailability.builder()
-                                .mode(InterviewSessionMode.WEAKNESS_REVIEW)
-                                .available(weaknessAvailable)
-                                .reason(weaknessAvailable ? null : "미해결 약점 태그가 필요합니다.")
-                                .build()
-                ))
-                .build();
-    }
+    private final com.example.jobpuzzle.competency.service.CompetencyService competencyService;
 
     @Transactional(readOnly = true)
     public List<String> getUnresolvedWeaknessTags(Long userId) {
@@ -1151,8 +1119,19 @@ public class InterviewSessionService {
                 followUpCount,
                 hasPendingFollowUp ? pendingFollowUp.getMessageId() : null,
                 hasPendingFollowUp ? pendingFollowUp.getMessageText() : null,
-                messages
+                messages,
+                competencyTagNames(question)
         );
+    }
+
+    // 태그 코드를 그 직무의 태그 이름으로. 관리자가 지운 태그는 코드 그대로 보여 준다.
+    // ponytail: 질문마다 직무 태그를 다시 읽음, 질문 수(5~10개)가 늘면 세션 단위로 한 번만 읽기
+    private List<String> competencyTagNames(InterviewSessionQuestion question) {
+        List<String> codes = question.getQuestion().getCompetencyTags();
+        if (codes == null || codes.isEmpty()) return List.of();
+        var job = question.getSession().getJobCategory();
+        Map<String, String> names = competencyService.availableTags(job.getMainCategory(), job.getSubCategory());
+        return codes.stream().map(code -> names.getOrDefault(code, code)).toList();
     }
 
     private InterviewSession getOwnedSession(Long userId, Long sessionId) {

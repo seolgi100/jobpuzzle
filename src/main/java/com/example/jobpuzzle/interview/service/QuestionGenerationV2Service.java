@@ -34,6 +34,7 @@ import com.example.jobpuzzle.competency.service.CompetencyService;
 import com.example.jobpuzzle.evaluation.service.EvaluationFailureDiagnostics;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
+import com.example.jobpuzzle.interview.dto.InterviewModeAvailabilityResponse;
 import com.example.jobpuzzle.interview.entity.InterviewQuestion;
 import com.example.jobpuzzle.interview.entity.InterviewQuestionType;
 import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
@@ -184,11 +185,7 @@ public class QuestionGenerationV2Service {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         JobCategory job = user.getDefaultJobCategory();
         if (job == null) throw new CustomException(ErrorCode.PERSONALITY_JOB_REQUIRED);
-        List<PersonalityQuestion> pool = new ArrayList<>(personalityQuestionRepository
-                .findByMainCategoryAndSubCategoryOrderByPersonalityQuestionIdAsc(job.getMainCategory(), job.getSubCategory())
-                .stream()
-                .filter(q -> q.getCareerLevel() == JobCategoryCareerLevel.ANY || q.getCareerLevel() == job.getCareerLevel())
-                .toList());
+        List<PersonalityQuestion> pool = new ArrayList<>(personalityPool(job));
         if (pool.isEmpty()) throw new CustomException(ErrorCode.PERSONALITY_QUESTION_EMPTY);
         Collections.shuffle(pool);
 
@@ -201,6 +198,43 @@ public class QuestionGenerationV2Service {
                     picked.getCompetencyTagCodes(), null, order));
         }
         return QuestionSetResponse.from(set, interviewQuestionRepository.saveAll(questions));
+    }
+
+    /** 모드별로 지금 면접을 만들 수 있는지 (평가 명세 1장 모드별 조건). 화면이 고르기 전에 막을 때 쓴다. */
+    @Transactional(readOnly = true)
+    public InterviewModeAvailabilityResponse availability(Long userId) {
+        List<AnalysisInputSnapshot> analyzed = analysisCaseRepository
+                .findByUser_UserIdAndStatusOrderByCreatedAtDesc(userId, AnalysisCaseStatus.COMPLETED).stream()
+                .map(c -> snapshotRepository.findByAnalysisCase_AnalysisCaseIdAndUser_UserId(c.getAnalysisCaseId(), userId))
+                .flatMap(java.util.Optional::stream)
+                .toList();
+        boolean material = analyzed.stream().anyMatch(snapshot -> readinessResultRepository
+                .findBySnapshot_SnapshotId(snapshot.getSnapshotId())
+                .map(ReadinessResult::isCanGenerateQuestions).orElse(false));
+        JobCategory job = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND)).getDefaultJobCategory();
+        boolean personality = job != null && !personalityPool(job).isEmpty();
+        return InterviewModeAvailabilityResponse.builder().modes(List.of(
+                mode(InterviewSessionMode.KNOWLEDGE, !analyzed.isEmpty(), "분석을 마친 공고가 필요합니다."),
+                mode(InterviewSessionMode.MATERIAL, material, "자료 기반 면접을 만들 수 있는 분석 결과가 필요합니다."),
+                mode(InterviewSessionMode.PERSONALITY, personality, (job == null
+                        ? ErrorCode.PERSONALITY_JOB_REQUIRED : ErrorCode.PERSONALITY_QUESTION_EMPTY).getMessage())
+        )).build();
+    }
+
+    private static InterviewModeAvailabilityResponse.ModeAvailability mode(InterviewSessionMode mode, boolean available,
+                                                                           String reason) {
+        return InterviewModeAvailabilityResponse.ModeAvailability.builder()
+                .mode(mode).available(available).reason(available ? null : reason).build();
+    }
+
+    // 회원 직무의 인성 질문 중 본인 경력 수준과 공통(ANY) 질문
+    private List<PersonalityQuestion> personalityPool(JobCategory job) {
+        return personalityQuestionRepository
+                .findByMainCategoryAndSubCategoryOrderByPersonalityQuestionIdAsc(job.getMainCategory(), job.getSubCategory())
+                .stream()
+                .filter(q -> q.getCareerLevel() == JobCategoryCareerLevel.ANY || q.getCareerLevel() == job.getCareerLevel())
+                .toList();
     }
 
     private List<QuestionGenerationV2Result.Question> validated(QuestionGenerationV2Result result, Set<String> tags) {

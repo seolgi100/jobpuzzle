@@ -1,7 +1,6 @@
 package com.example.jobpuzzle.analysis.controller;
 
 import com.example.jobpuzzle.analysis.dto.AnalysisQuestionRequest;
-import com.example.jobpuzzle.analysis.dto.BasicQuestionRequest;
 import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
 import com.example.jobpuzzle.interview.service.QuestionGenerationV2Service;
 import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
@@ -29,18 +28,6 @@ public class QuestionSetController {
     private final QuestionGenerationService questionGenerationService;
     private final QuestionGenerationV2Service questionGenerationV2Service;
     private final TicketService ticketService;
-
-    @PostMapping("/basic")
-    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateBasic(
-            @AuthenticationPrincipal(expression = "user") User user,
-            @Valid @RequestBody BasicQuestionRequest request
-    ) {
-        // 티켓을 차감하고, 질문 생성에 실패하면 돌려준다.
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
-                ticketService.spend(user.getUserId(), TicketUsage.BASIC, ticketService.cost(TicketUsage.BASIC),
-                        () -> questionGenerationService.generateBasicQuestionSet(user.getUserId(), request))
-        ));
-    }
 
     // 평가 명세 v2 1장: 기초 지식·자료 기반·인성 면접 질문 생성. AI가 최종 실패하면 spend가 티켓을 돌려준다.
     @PostMapping("/knowledge")

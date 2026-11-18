@@ -10,7 +10,6 @@ import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.ai.validation.AiProcessingException;
 import com.example.jobpuzzle.analysis.service.CandidateMaterialPartitionSchemaFactory;
 import com.example.jobpuzzle.analysis.service.CustomizedSynthesisSchemaFactory;
-import com.example.jobpuzzle.analysis.service.InterviewQuestionGenerationSchemaFactory;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -49,7 +48,6 @@ public class AnthropicClient implements AiClient {
     private final ObjectMapper objectMapper;
     private final CandidateMaterialPartitionSchemaFactory partitionSchemas;
     private final CustomizedSynthesisSchemaFactory customizedSynthesisSchema;
-    private final InterviewQuestionGenerationSchemaFactory interviewQuestionGenerationSchema;
     private final ThreadLocal<AiProviderCompletionMetadata> completionMetadata = new ThreadLocal<>();
 
     public AnthropicClient(
@@ -60,8 +58,7 @@ public class AnthropicClient implements AiClient {
                 restClient,
                 objectMapper,
                 new CandidateMaterialPartitionSchemaFactory(objectMapper),
-                new CustomizedSynthesisSchemaFactory(objectMapper),
-                new InterviewQuestionGenerationSchemaFactory(objectMapper)
+                new CustomizedSynthesisSchemaFactory(objectMapper)
         );
     }
 
@@ -70,15 +67,13 @@ public class AnthropicClient implements AiClient {
             AiGenerationProperties properties,
             @Qualifier("anthropicRestClient") RestClient restClient,
             ObjectMapper objectMapper, CandidateMaterialPartitionSchemaFactory partitionSchemas,
-            CustomizedSynthesisSchemaFactory customizedSynthesisSchema,
-            InterviewQuestionGenerationSchemaFactory interviewQuestionGenerationSchema
+            CustomizedSynthesisSchemaFactory customizedSynthesisSchema
     ) {
         this.properties = properties;
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.partitionSchemas = partitionSchemas;
         this.customizedSynthesisSchema = customizedSynthesisSchema;
-        this.interviewQuestionGenerationSchema = interviewQuestionGenerationSchema;
     }
 
     @Override
@@ -99,12 +94,6 @@ public class AnthropicClient implements AiClient {
     @Override
     public String generateCustomizedAnalysis(String renderedPrompt) {
         return message(AiExecutionStage.CUSTOMIZED_SYNTHESIS, renderedPrompt);
-    }
-
-    // interview 추가: 실제 Claude HTTP 연동 시 이 두 메서드의 반환값만 JSON-11/JSON-09로 교체한다.
-    @Override
-    public String generateBasicQuestions(String renderedPrompt) {
-        return message(AiExecutionStage.BASIC_QUESTION_GENERATION, renderedPrompt);
     }
 
     @Override
@@ -179,8 +168,6 @@ public class AnthropicClient implements AiClient {
                         ? new OutputConfig(new Format("json_schema", partitionSchemas.schema(documentType)))
                         : stage == AiExecutionStage.CUSTOMIZED_SYNTHESIS
                         ? new OutputConfig(new Format("json_schema", customizedSynthesisSchema.schemaForPrompt(prompt)))
-                        : stage == AiExecutionStage.BASIC_QUESTION_GENERATION
-                        ? new OutputConfig(new Format("json_schema", interviewQuestionGenerationSchema.schema()))
                         : null
         );
 

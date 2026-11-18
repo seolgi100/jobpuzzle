@@ -34,8 +34,6 @@ public class PromptTemplateSeeder implements ApplicationRunner {
         List<Seed> seeds = List.of(
                 new Seed("INTERVIEW_COMPANY_FIT_SYNTHESIS", "회사 맞춤 분석 및 질문 생성", "JSON-05",
                         "prompts/json-05-company-fit-analysis.txt"),
-                new Seed("INTERVIEW_BASIC_QUESTION", "기본 모드 질문 생성", "JSON-11",
-                        "prompts/json-11-basic-question-generation.txt"),
                 new Seed("INTERVIEW_ANSWER_EVALUATION", "면접 답변 평가", "JSON-06",
                         "prompts/json-06-answer-evaluation.txt"),
                 new Seed("INTERVIEW_ANSWER_EVALUATION_V2", "면접 답변 평가 v2 (6개 항목, 1~5점)", "JSON-06-V2",

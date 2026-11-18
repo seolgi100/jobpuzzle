@@ -14,7 +14,7 @@
   }
 
   function renderChips() {
-    var counts = { all: state.sessions.length, custom: 0, weak: 0, basic: 0 };
+    var counts = { all: state.sessions.length, knowledge: 0, material: 0, personality: 0, v1: 0 };
     state.sessions.forEach(function (s) { counts[U.mode(s.mode)[2]] += 1; });
     document.querySelectorAll('[data-mode]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.mode === state.filter));

@@ -31,15 +31,23 @@ class QuestionGenerationServiceTest {
     @Mock private WeaknessTagNormalizer weaknessTagNormalizer;
     @InjectMocks private QuestionGenerationService service;
 
+    // v2 세 모드를 모두 조회하므로, 각 테스트가 정하지 않은 모드는 빈 목록
+    @org.junit.jupiter.api.BeforeEach
+    void noSetsByDefault() {
+        org.mockito.Mockito.lenient().when(questionSetRepository.findByUser_UserIdAndInterviewModeAndStatus(
+                org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()
+        )).thenReturn(List.of());
+    }
+
     @Test
-    void returnsOnlyUnusedBasicQuestionSets() {
+    void returnsOnlyUnusedV2QuestionSets() {
         QuestionSet unusedBasic = questionSet(11L);
         QuestionSet consumedBasic = questionSet(12L);
-        when(unusedBasic.getInterviewMode()).thenReturn(InterviewSessionMode.BASIC);
+        when(unusedBasic.getInterviewMode()).thenReturn(InterviewSessionMode.PERSONALITY);
         InterviewQuestion basicQuestion = mock(InterviewQuestion.class);
 
         when(questionSetRepository.findByUser_UserIdAndInterviewModeAndStatus(
-                7L, InterviewSessionMode.BASIC, QuestionSetStatus.ACTIVE
+                7L, InterviewSessionMode.PERSONALITY, QuestionSetStatus.ACTIVE
         )).thenReturn(List.of(unusedBasic, consumedBasic));
         when(interviewSessionRepository.existsByQuestionSet_QuestionSetId(11L)).thenReturn(false);
         when(interviewSessionRepository.existsByQuestionSet_QuestionSetId(12L)).thenReturn(true);
@@ -53,17 +61,17 @@ class QuestionGenerationServiceTest {
     }
 
     @Test
-    void preparedBasicQuestionIncludesItsJobCategoryAndCareerLevel() {
+    void preparedQuestionSetIncludesItsJobCategoryAndCareerLevel() {
         QuestionSet unusedBasic = questionSet(21L);
         JobCategory category = mock(JobCategory.class);
         InterviewQuestion question = mock(InterviewQuestion.class);
-        when(unusedBasic.getInterviewMode()).thenReturn(InterviewSessionMode.BASIC);
+        when(unusedBasic.getInterviewMode()).thenReturn(InterviewSessionMode.PERSONALITY);
         when(unusedBasic.getJobCategory()).thenReturn(category);
         when(unusedBasic.getCareerLevel()).thenReturn(JobCategoryCareerLevel.NEW);
         when(category.getMainCategory()).thenReturn("IT·개발");
         when(category.getSubCategory()).thenReturn("백엔드 개발");
         when(questionSetRepository.findByUser_UserIdAndInterviewModeAndStatus(
-                7L, InterviewSessionMode.BASIC, QuestionSetStatus.ACTIVE
+                7L, InterviewSessionMode.PERSONALITY, QuestionSetStatus.ACTIVE
         )).thenReturn(List.of(unusedBasic));
         when(interviewSessionRepository.existsByQuestionSet_QuestionSetId(21L)).thenReturn(false);
         when(interviewQuestionRepository.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(21L))

@@ -19,6 +19,8 @@ public class SessionQuestionResponse {
     private String questionText;
     private String intent;
     private List<InterviewQuestionEvaluationFocus> evaluationFocus;
+    // 역량 태그 이름 (출제 의도 보기에 함께 표시, 평가 명세 4-2). v1 질문은 빈 목록
+    private List<String> competencyTags;
     private int displayOrder;
     private InterviewSessionQuestionStatus status;
     private boolean answerSubmitted;
@@ -66,7 +68,8 @@ public class SessionQuestionResponse {
             int followUpCount,
             Long pendingFollowUpMessageId,
             String pendingFollowUpQuestion,
-            List<InterviewMessage> messages
+            List<InterviewMessage> messages,
+            List<String> competencyTags
     ) {
         return SessionQuestionResponse.builder()
                 .sessionQuestionId(question.getSessionQuestionId())
@@ -74,6 +77,7 @@ public class SessionQuestionResponse {
                 .questionText(question.getQuestionTextSnapshot())
                 .intent(question.getIntentSnapshot())
                 .evaluationFocus(question.getEvaluationFocusSnapshot())
+                .competencyTags(competencyTags)
                 .displayOrder(question.getDisplayOrder())
                 .status(question.getStatus())
                 .answerSubmitted(answerSubmitted)

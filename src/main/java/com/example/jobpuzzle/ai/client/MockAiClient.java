@@ -5,8 +5,6 @@ import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult.*;
 import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
 import com.example.jobpuzzle.ai.dto.FinalReportResult;
 import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
-import com.example.jobpuzzle.ai.dto.BasicQuestionGenerationInput;
-import com.example.jobpuzzle.ai.dto.InterviewQuestionGenerationResult;
 import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.dto.QuestionGenerationResult.*;
 import com.example.jobpuzzle.ai.dto.SourceReference;
@@ -26,7 +24,6 @@ import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV17Provid
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV18ProviderResult;
 import com.example.jobpuzzle.guide.entity.GuideMatchType;
 import com.example.jobpuzzle.interview.entity.InterviewQuestionReviewStatus;
-import com.example.jobpuzzle.interview.entity.InterviewQuestionEvaluationFocus;
 import com.example.jobpuzzle.interview.entity.InterviewQuestionType;
 import com.example.jobpuzzle.jobcategory.entity.JobCategoryCareerLevel;
 import org.springframework.stereotype.Component;
@@ -560,45 +557,6 @@ public class MockAiClient implements AiClient {
         return markerOf(markers, type, mapper) == null ? emptyValue : markerOf(markers, type, mapper);
     }
 
-    // interview 추가: 실제 AI 대신 JSON-11 계약에 맞춘 결정적 기본 질문 5개를 반환한다.
-    @Override
-    public String generateBasicQuestions(String renderedPrompt) {
-        BasicQuestionGenerationInput input = readSection(
-                renderedPrompt,
-                "BASIC_INPUT",
-                BasicQuestionGenerationInput.class
-        );
-        String job = input.subCategory();
-        List<InterviewQuestionGenerationResult.Question> questions = List.of(
-                generatedQuestion("basic-self-intro", InterviewQuestionType.SELF_INTRO,
-                        job + " 직무와 연결하여 자기소개를 해주세요.",
-                        "직무와 연결된 핵심 경험과 강점 확인",
-                        List.of(InterviewQuestionEvaluationFocus.intentMatch,
-                                InterviewQuestionEvaluationFocus.deliveryClarity)),
-                generatedQuestion("basic-motivation", InterviewQuestionType.MOTIVATION,
-                        job + " 직무를 선택한 이유와 지원 동기를 설명해주세요.",
-                        "직무 선택 이유와 동기의 구체성 확인",
-                        List.of(InterviewQuestionEvaluationFocus.intentMatch,
-                                InterviewQuestionEvaluationFocus.guideAlignment)),
-                generatedQuestion("basic-strength-weakness", InterviewQuestionType.STRENGTH_WEAKNESS,
-                        "본인의 강점과 보완 중인 약점을 실제 경험과 함께 설명해주세요.",
-                        "자기 이해와 개선 행동 확인",
-                        List.of(InterviewQuestionEvaluationFocus.specificity,
-                                InterviewQuestionEvaluationFocus.ownRole)),
-                generatedQuestion("basic-failure-conflict", InterviewQuestionType.FAILURE_CONFLICT,
-                        "실패하거나 갈등을 겪었던 경험과 해결 과정을 설명해주세요.",
-                        "문제 해결 과정과 본인 역할 확인",
-                        List.of(InterviewQuestionEvaluationFocus.problemSolving,
-                                InterviewQuestionEvaluationFocus.resultExpression)),
-                generatedQuestion("basic-job-general", InterviewQuestionType.JOB_GENERAL,
-                        job + " 직무에 필요한 핵심 역량은 무엇이라고 생각하나요?",
-                        "직무 이해와 준비 수준 확인",
-                        List.of(InterviewQuestionEvaluationFocus.intentMatch,
-                                InterviewQuestionEvaluationFocus.guideAlignment))
-        );
-        return json(new InterviewQuestionGenerationResult(questions));
-    }
-
     /**
      * 평가 명세 9-2 stub: [INPUT]의 mode로 미리 쓴 응답(fixture)을 고른다.
      * 답변이 30자 미만이면 점수가 낮고 꼬리질문이 있는 응답을 돌려줘, stub에서도 꼬리질문 흐름을 볼 수 있게 한다.
@@ -630,27 +588,6 @@ public class MockAiClient implements AiClient {
         } catch (java.io.IOException exception) {
             throw new IllegalStateException("stub 응답을 읽을 수 없습니다: " + path, exception);
         }
-    }
-
-    private InterviewQuestionGenerationResult.Question generatedQuestion(
-            String questionId,
-            InterviewQuestionType questionType,
-            String question,
-            String intent,
-            List<InterviewQuestionEvaluationFocus> evaluationFocus
-    ) {
-        return new InterviewQuestionGenerationResult.Question(
-                questionId,
-                questionType,
-                question,
-                intent,
-                evaluationFocus,
-                null,
-                null,
-                null,
-                InterviewQuestionReviewStatus.PASS,
-                null
-        );
     }
 
     private SourceReference reference(AnalysisSourceMarkerParser.SourceMarker marker) {

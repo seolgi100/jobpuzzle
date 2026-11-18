@@ -123,12 +123,6 @@ public class AiClientService {
                 anthropic.getModel(), anthropic.getMaxOutputTokens().forStage(stage));
     }
 
-    // interview 추가: 호출자는 Mock/Anthropic 구현을 알지 않고 동일한 JSON 계약만 사용한다.
-    public String generateBasicQuestions(String renderedPrompt) {
-        GenerationClientSelection selection = resolve(AiExecutionStage.BASIC_QUESTION_GENERATION);
-        return selection.client().generateBasicQuestions(renderedPrompt);
-    }
-
     public String generateQuestionsV2(GenerationClientSelection selection, String renderedPrompt) {
         requireStage(selection, AiExecutionStage.QUESTION_GENERATION);
         return selection.client().generateQuestionsV2(renderedPrompt);

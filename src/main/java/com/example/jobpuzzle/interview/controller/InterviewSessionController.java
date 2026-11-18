@@ -20,6 +20,7 @@ import java.util.List;
 public class InterviewSessionController {
 
     private final InterviewSessionService interviewSessionService;
+    private final com.example.jobpuzzle.interview.service.QuestionGenerationV2Service questionGenerationV2Service;
     private final SessionScoreAggregationService sessionScoreAggregationService;
 
     @GetMapping("/interview-modes/availability")
@@ -27,7 +28,7 @@ public class InterviewSessionController {
             @AuthenticationPrincipal(expression = "user") User user
     ) {
         return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.getAvailableModes(user.getUserId())
+                questionGenerationV2Service.availability(user.getUserId())
         ));
     }
 

@@ -3,7 +3,6 @@ package com.example.jobpuzzle.ai.validation;
 import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult;
 import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
 import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
-import com.example.jobpuzzle.ai.dto.InterviewQuestionGenerationResult;
 import com.example.jobpuzzle.ai.dto.AnswerEvaluationResult;
 import com.example.jobpuzzle.ai.dto.SourceReference;
 import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
@@ -357,13 +356,6 @@ public class AiResponseProcessor {
     }
 
     // interview 추가: JSON-09/11도 기존 AI 응답과 동일하게 알 수 없는 필드를 거부한다.
-    public InterviewQuestionGenerationResult parseInterviewQuestions(
-            String rawJson,
-            String contractName
-    ) {
-        return parse(rawJson, InterviewQuestionGenerationResult.class, contractName);
-    }
-
     public AnswerEvaluationResult parseAnswerEvaluation(String rawJson) {
         return parse(normalizeAnswerEvaluation(rawJson), AnswerEvaluationResult.class, "JSON-06");
     }

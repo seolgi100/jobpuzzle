@@ -70,17 +70,6 @@ public class PromptTemplateRenderer {
         return render(template, values);
     }
 
-    // interview 추가: JSON-09/11 입력 DTO를 하나의 명시적 JSON 구역으로 렌더링한다.
-    public String renderInterviewQuestionGeneration(
-            PromptTemplate template,
-            String placeholder,
-            Object input
-    ) {
-        Map<String, String> values = new LinkedHashMap<>();
-        values.put(placeholder, json(placeholder, input));
-        return render(template, values);
-    }
-
     // 템플릿 필수 변수를 치환하고 남은 placeholder가 있으면 Provider 호출 전에 실패시킨다.
     public String render(
             AiExecutionStage stage,

@@ -48,10 +48,13 @@
     return value ? new Date(value).getTime() : 0;
   }
 
+  var MODE_LABEL = {
+    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
+    BASIC: '기본 질문', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완'
+  };
+
   function modeLabel(mode) {
-    if (mode === 'BASIC') return '기본 질문';
-    if (mode === 'COMPANY_FIT') return '맞춤 면접';
-    return '약점 보완';
+    return MODE_LABEL[mode] || '면접';
   }
 
   // ───────────────── 데이터 묶기 ─────────────────
@@ -82,8 +85,8 @@
   function describePosting(g) {
     var cases = g.cases.slice().sort(function (a, b) { return time(b.createdAt) - time(a.createdAt); });
     var latest = cases[0];
+    // v2: 분석 결과 하나로 기초 지식·자료 기반 면접을 몇 번이든 만들 수 있다
     var completedCase = cases.filter(function (c) { return c.status === 'COMPLETED'; })[0];
-    var readyCase = cases.filter(function (c) { return c.status === 'COMPLETED' && c.questionSetAvailable; })[0];
     var running = latest.status === 'ANALYZING' || latest.status === 'INPUT_CONFIRMED';
     var failed = latest.status === 'FAILED';
     var sessions = g.sessions.slice().sort(function (a, b) {
@@ -96,7 +99,7 @@
     // 조각 상태: done | next | wait | running | failed
     var steps = [
       completedCase ? 'done' : running ? 'running' : failed ? 'failed' : 'next',
-      sessions.length || (completedCase && !completedCase.questionSetAvailable) ? 'done' : readyCase ? 'next' : 'wait',
+      sessions.length ? 'done' : completedCase ? 'next' : 'wait',
       // 진행 중인 면접이 있으면 지금 회차 기준으로 보여준다(이전 회차 완료는 기록에 남는다)
       active ? 'next' : done || review ? 'done' : 'wait',
       active ? 'wait' : review ? 'next' : done ? 'done' : 'wait'
@@ -109,12 +112,10 @@
       action = { label: '중간 결과 확인', href: '/interview-results?sessionId=' + review.sessionId };
     } else if (running) {
       action = { label: '분석 상태 확인', href: '/analysis/' + latest.analysisCaseId };
-    } else if (readyCase) {
-      action = { label: '면접 시작', href: '/interview?analysisCaseId=' + readyCase.analysisCaseId };
-    } else if (failed && !completedCase) {
+    } else if (completedCase) {
+      action = { label: done ? '다른 면접 보기' : '면접 고르기', href: '/interview?analysisCaseId=' + completedCase.analysisCaseId };
+    } else if (failed) {
       action = { label: '멈춘 분석 확인', href: '/analysis/' + latest.analysisCaseId };
-    } else if (done) {
-      action = { label: '리포트 보기', href: '/interview-results?sessionId=' + done.sessionId };
     } else {
       action = { label: '분석 결과 보기', href: '/analysis-results/' + (completedCase || latest).analysisCaseId };
     }
@@ -124,7 +125,6 @@
     else if (review) status = '결과 확인 전';
     else if (running) status = '분석 중';
     else if (failed && !completedCase) status = '분석 멈춤';
-    else if (readyCase) status = '질문 준비됨';
     else if (done) status = '면접 완료';
     else status = '분석 완료';
 
@@ -268,19 +268,19 @@
       '<p class="ih-fit__desc">채용공고와 내 자료를 맞춰, 그 공고에서 나올 질문으로 연습해요.</p>' +
       '<div class="ih-fit__board">' + stepsHtml(['idle', 'idle', 'idle', 'idle'], true) +
       '<ol class="ih-fit__steps">' + STEPS.map(function (name) { return '<li>' + name + '</li>'; }).join('') + '</ol></div>' +
-      '<div class="ih-fit__foot">' + (t ? fare(t.costs.companyFit) : '') +
+      '<div class="ih-fit__foot">' + (t ? fare(t.costs.analysis) : '') +
       '<button type="button" class="ih-btn ih-btn--ink ih-btn--lg" data-new-posting>공고 고르기</button></div></section>';
-    var basic = quickRow({
-      title: '기본 질문',
+    var personality = quickRow({
+      title: '인성 면접',
       note: category ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') : '희망 직무를 먼저 정해 주세요',
       disabled: !category,
-      fare: t ? fare(t.costs.basic) : '',
+      fare: t ? fare(t.costs.personality) : '',
       button: category
-        ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>시작</button>'
+        ? '<button type="button" class="ih-btn ih-btn--line" data-start-personality>시작</button>'
         : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">직무 정하기</a>'
     });
     return '<div class="ih-start">' + fit +
-      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + basic + '</ul></div></div>';
+      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + personality + '</ul></div></div>';
   }
 
   // ───────────────── 진행 중 / 전체 기록 ─────────────────
@@ -298,9 +298,7 @@
 
   function preparedRow(set) {
     return '<li class="ih-row">' +
-      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(set.mode === 'WEAKNESS_REVIEW'
-        ? '약점 보완 · #' + (set.targetWeaknessDisplayName || set.targetWeaknessTag || '')
-        : '기본 질문') + '</h3>' +
+      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(modeLabel(set.mode)) + '</h3>' +
       '<p class="ih-row__meta">' + esc(day(set.createdAt)) + ' 만듦 · 질문 ' + esc(set.questionCount) + '개</p></div>' +
       '<div class="ih-row__state"><span class="ih-row__status">시작 전</span></div>' +
       '<div class="ih-row__act"><button type="button" class="ih-btn ih-btn--line" data-open-set="' + esc(set.questionSetId) + '">면접 시작</button><span class="ih-menu-gap"></span></div></li>';
@@ -461,12 +459,12 @@
         load();
       } else if (t.hasAttribute('data-new-posting')) {
         if (window.InterviewPage) window.InterviewPage.openCustom();
-      } else if (t.hasAttribute('data-start-basic')) {
+      } else if (t.hasAttribute('data-start-personality')) {
         TicketConfirm.open({
-          usage: 'BASIC',
-          what: '희망 직무의 공통 질문을 만들고 바로 면접을 시작해요. 원치 않는 질문은 면접 중에 건너뛸 수 있어요.',
-          confirmLabel: '질문 만들기',
-          onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startBasic(); }
+          usage: 'PERSONALITY',
+          what: '희망 직무의 인성 질문 중에서 골라 바로 면접을 시작해요. 원치 않는 질문은 면접 중에 건너뛸 수 있어요.',
+          confirmLabel: '질문 받기',
+          onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startPersonality(); }
         });
       } else if (t.hasAttribute('data-open-set')) {
         if (window.InterviewLive) window.InterviewLive.openQuestionSet(t.getAttribute('data-open-set'));
@@ -554,10 +552,11 @@
 
   // ───────────────── 티켓 사용 확인 창 ─────────────────
   var TicketConfirm = (function () {
+    var COST_KEY = { ANALYSIS: 'analysis', KNOWLEDGE: 'knowledge', MATERIAL: 'material', PERSONALITY: 'personality' };
+
     function costFor(usage, tickets, explicit) {
       if (typeof explicit === 'number') return explicit;
-      if (usage === 'BASIC') return tickets.costs.basic;
-      return tickets.costs.companyFit;
+      return tickets.costs[COST_KEY[usage]];
     }
 
     function body(opts, tickets) {
