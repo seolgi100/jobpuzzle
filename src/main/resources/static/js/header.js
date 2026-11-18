@@ -92,6 +92,20 @@
         }
     }
 
+    // 상단 메뉴의 "티켓 N장" (디자인 기준 5장). 못 불러오면 칸을 숨긴 채 둔다.
+    function loadTicketCount() {
+        var slot = document.getElementById('app-header-tickets');
+        if (!slot) return;
+        fetch(window.JobPuzzleRoutes.path('/tickets/me'), { credentials: 'same-origin' })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (body) {
+                if (!body || !body.success) return;
+                document.getElementById('app-header-ticket-count').textContent = body.data.balance;
+                slot.hidden = false;
+            })
+            .catch(function () { /* 잔액은 보조 정보라 실패해도 메뉴는 그대로 */ });
+    }
+
     function loadCurrentUser() {
         if (!document.getElementById('app-user-chip')) return;
         fetch(window.JobPuzzleRoutes.path('/user/me'), { credentials: 'same-origin' })
@@ -100,6 +114,7 @@
                 if (result.ok && result.body.success) {
                     document.dispatchEvent(new CustomEvent('app-user-loaded', { detail: result.body.data }));
                     renderUserDisplay(result.body.data);
+                    loadTicketCount();
                     return;
                 }
                 window.location.href = window.JobPuzzleRoutes.path('/login');
