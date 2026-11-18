@@ -191,6 +191,7 @@ public class SessionReportV2Service {
                     question.getQuestionTextSnapshot(),
                     question.getIntentSnapshot(),
                     codes == null ? List.of() : codes.stream().map(code -> tagNames.getOrDefault(code, code)).toList(),
+                    codes == null ? List.of() : List.copyOf(codes),
                     status,
                     score,
                     messages.stream().filter(m -> SHOWN.contains(m.getMessageType()))

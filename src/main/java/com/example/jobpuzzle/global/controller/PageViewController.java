@@ -33,6 +33,10 @@ public class PageViewController {
     @GetMapping("/interview-report")
     public String interviewReport() { return "interview-report"; }
 
+    // 평가 명세 v2 4-3 사용자 종합 평가
+    @GetMapping("/summary")
+    public String summary() { return "summary"; }
+
     @GetMapping("/reports")
     public String reports() { return "reports"; }
 

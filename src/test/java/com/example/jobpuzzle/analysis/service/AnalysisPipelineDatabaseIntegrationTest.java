@@ -126,6 +126,7 @@ class AnalysisPipelineDatabaseIntegrationTest {
     @Autowired private com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository answerEvaluationRepository;
     @Autowired private com.example.jobpuzzle.evaluation.service.SessionReportV2Service sessionReportV2Service;
     @Autowired private com.example.jobpuzzle.evaluation.service.SessionScoreAggregationService scoreAggregationService;
+    @Autowired private com.example.jobpuzzle.evaluation.service.UserSummaryService userSummaryService;
     @SpyBean private InMemoryVectorSearchAdapter vectorSearchAdapter;
     @SpyBean private MockAiClient mockAiClient;
 
@@ -141,7 +142,7 @@ class AnalysisPipelineDatabaseIntegrationTest {
         assertThat(analysisCaseRepository.findById(fixture.analysisCase().getAnalysisCaseId()).orElseThrow().getStatus())
                 .isEqualTo(AnalysisCaseStatus.COMPLETED);
         var snapshotLogs = aiCallLogRepository.findAll().stream()
-                .filter(log -> log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId())))
+                .filter(log -> (log.getInputReferenceType() == com.example.jobpuzzle.ai.log.AiInputReferenceType.ANALYSIS_SNAPSHOT && log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId()))))
                 .toList();
         assertThat(snapshotLogs).extracting(log -> log.getExecutionStage()).containsExactlyInAnyOrder(
                 AiExecutionStage.JOB_POSTING_ANALYSIS,
@@ -192,7 +193,7 @@ class AnalysisPipelineDatabaseIntegrationTest {
                 String.valueOf(snapshot.getSnapshotId()))).isEmpty();
         assertThat(retrievalResultRepository.findBySnapshot_SnapshotIdOrderByRetrievalResultIdAsc(snapshot.getSnapshotId())).isEmpty();
         var snapshotLogs = aiCallLogRepository.findAll().stream()
-                .filter(log -> log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId())))
+                .filter(log -> (log.getInputReferenceType() == com.example.jobpuzzle.ai.log.AiInputReferenceType.ANALYSIS_SNAPSHOT && log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId()))))
                 .toList();
         assertThat(snapshotLogs).extracting(log -> log.getExecutionStage())
                 .containsExactlyInAnyOrder(AiExecutionStage.JOB_POSTING_ANALYSIS,
@@ -217,7 +218,7 @@ class AnalysisPipelineDatabaseIntegrationTest {
         assertThat(analysisCaseRepository.findById(fixture.analysisCase().getAnalysisCaseId()).orElseThrow().getStatus())
                 .isEqualTo(AnalysisCaseStatus.FAILED);
         assertThat(retrievalResultRepository.findBySnapshot_SnapshotIdOrderByRetrievalResultIdAsc(snapshot.getSnapshotId())).isEmpty();
-        assertThat(aiCallLogRepository.findAll()).filteredOn(log -> log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId())))
+        assertThat(aiCallLogRepository.findAll()).filteredOn(log -> (log.getInputReferenceType() == com.example.jobpuzzle.ai.log.AiInputReferenceType.ANALYSIS_SNAPSHOT && log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId()))))
                 .extracting(log -> log.getExecutionStage())
                 .doesNotContain(AiExecutionStage.CUSTOMIZED_SYNTHESIS);
     }
@@ -264,7 +265,7 @@ class AnalysisPipelineDatabaseIntegrationTest {
                 String.valueOf(snapshot.getSnapshotId()))).isPresent();
         assertThat(retrievalResultRepository.findBySnapshot_SnapshotIdOrderByRetrievalResultIdAsc(snapshot.getSnapshotId())).hasSize(2);
         var snapshotLogs = aiCallLogRepository.findAll().stream()
-                .filter(log -> log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId())))
+                .filter(log -> (log.getInputReferenceType() == com.example.jobpuzzle.ai.log.AiInputReferenceType.ANALYSIS_SNAPSHOT && log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId()))))
                 .toList();
         assertThat(snapshotLogs).extracting(log -> log.getExecutionStage())
                 .containsExactlyInAnyOrder(AiExecutionStage.JOB_POSTING_ANALYSIS,
@@ -443,6 +444,51 @@ class AnalysisPipelineDatabaseIntegrationTest {
         // 끝나지 않은 면접은 다음 회차를 만들 수 없다
         assertThatThrownBy(() -> interviewRoundService.retry(userId, regenerated.getSessionId()))
                 .extracting(error -> ((CustomException) error).getErrorCode()).isEqualTo(ErrorCode.ROUND_NOT_ALLOWED);
+    }
+
+    @Test
+    void buildsTheUserSummaryOnlyFromTheFifthFinishedReport() {
+        JobCategory backendNew = jobCategoryRepository.findAll().stream()
+                .filter(c -> c.getMainCategory().equals("IT·개발") && c.getSubCategory().equals("백엔드 개발")
+                        && c.getCareerLevel() == JobCategoryCareerLevel.NEW)
+                .findFirst().orElseThrow();
+        String suffix = java.util.UUID.randomUUID().toString();
+        Long userId = userRepository.save(User.createLocalUser("summary-" + suffix, "encoded", suffix + "@example.test",
+                "Summary", backendNew)).getUserId();
+
+        for (int round = 1; round <= 5; round++) {
+            Long sessionId = createSessionWithAll(userId, questionGenerationV2Service.generatePersonality(userId));
+            for (var question : interviewSessionService.getSessionQuestions(userId, sessionId)) {
+                answer(userId, question.getSessionQuestionId());
+            }
+            interviewSessionService.completeSession(userId, sessionId);
+            var summary = userSummaryService.summary(userId);
+            assertThat(summary.reportCount()).isEqualTo(round);
+            // 보고서 5개 미만이면 만들지 않는다 (명세 4-3)
+            assertThat(summary.available()).isEqualTo(round >= 5);
+        }
+
+        var summary = userSummaryService.summary(userId);
+        assertThat(summary.preferredJob()).isEqualTo("IT·개발 · 백엔드 개발");
+        assertThat(summary.strengths()).isNotEmpty().hasSizeLessThanOrEqualTo(2);
+        assertThat(summary.strengths()).extracting(t -> t.code()).doesNotContainAnyElementsOf(
+                summary.weaknesses().stream().map(t -> t.code()).toList());
+        assertThat(java.util.stream.Stream.concat(summary.strengths().stream(), summary.weaknesses().stream()))
+                .allSatisfy(tag -> {
+                    assertThat(tag.questionCount()).isGreaterThanOrEqualTo(3);
+                    assertThat(tag.name()).isNotBlank();
+                    assertThat(tag.best().text()).isNotBlank();
+                    assertThat(tag.worst().text()).isNotBlank();
+                    assertThat(tag.best().score()).isGreaterThanOrEqualTo(tag.worst().score());
+                });
+    }
+
+    private void answer(Long userId, Long sessionQuestionId) {
+        var answer = new com.example.jobpuzzle.interview.dto.AnswerSubmitRequest();
+        ReflectionTestUtils.setField(answer, "messageText",
+                "팀 프로젝트에서 익숙한 방식과 새 기술을 지연 시간과 부하 기준으로 비교해 골랐고, 시제품으로 측정해 근거를 남겼습니다.");
+        ReflectionTestUtils.setField(answer, "answerType", com.example.jobpuzzle.interview.entity.AnswerType.ORIGINAL_ANSWER);
+        interviewSessionService.submitAnswer(userId, sessionQuestionId, answer);
     }
 
     private Long createSessionWithAll(Long userId, com.example.jobpuzzle.analysis.dto.QuestionSetResponse set) {

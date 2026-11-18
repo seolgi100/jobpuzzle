@@ -29,8 +29,12 @@ public record SessionReportV2Response(
     public record Tally(int total, int answered, int evaluated, int skipped, int completionRate) {
     }
 
-    /** status: EVALUATED(점수 있음) · FAILED(답했지만 평가 실패) · SKIPPED(답하지 않음). */
+    /**
+     * status: EVALUATED(점수 있음) · FAILED(답했지만 평가 실패) · SKIPPED(답하지 않음).
+     * competencyTags는 화면용 이름, competencyTagCodes는 같은 순서의 코드(종합 평가 집계용).
+     */
     public record Question(Long sessionQuestionId, int order, String question, String intent, List<String> competencyTags,
+                           List<String> competencyTagCodes,
                            String status, Integer score, List<Message> conversation, List<Item> items,
                            String strengths, String improvements, String recommendedAnswer, Comparison comparison) {
     }

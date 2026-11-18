@@ -147,6 +147,12 @@ app:
     generated-question-count: 5
     personality-question-count: 5
 
+  # 사용자 종합 평가 (평가 명세 4-3): 보고서 수, 강점·아쉬운 점 태그 수, 태그당 최소 질문 수
+  summary:
+    min-reports: 5
+    top-n: 2
+    min-questions-per-tag: 3
+
   # 면접 티켓: 기본 면접 1장, 공고 맞춤 3장
   ticket:
     basic-cost: 1

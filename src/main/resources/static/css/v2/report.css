@@ -150,6 +150,34 @@ body.r2-body { background: #F5F7FA; }
 .r2 .foot-note { margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 15px; color: var(--text-2); }
 .r2 .error { margin-top: 48px; color: var(--caution); }
 
+/* 나의 종합 평가 (summary.html): 보고서와 같은 종이 한 장, 목차 없음 */
+.r2 .s2-doc { margin-top: 48px; }
+.r2 .tally--3 { grid-template-columns: repeat(3, 1fr); }
+.r2 .tally .tally-text { font-family: var(--sans); font-size: 19px; font-weight: 600; line-height: 1.5; margin-top: 8px; }
+.r2 .tg { border-bottom: 1px solid var(--line); }
+.r2 .tg summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 22px minmax(8em, 14em) 1fr 3em 20px; gap: 18px; align-items: center; padding: 22px 0; }
+.r2 .tg summary::-webkit-details-marker { display: none; }
+.r2 .tg-name { font-weight: 600; }
+.r2 .tg-name small { display: block; font-weight: 400; font-size: 15px; color: var(--text-2); }
+.r2 .tg summary .score { font-family: var(--serif); font-weight: 600; font-size: 22px; text-align: right; }
+.r2 .tg summary .chev { width: 14px; height: 14px; color: var(--text-2); transition: transform .4s var(--ease); }
+.r2 .tg[open] summary .chev { transform: rotate(180deg); }
+.r2 .tg-body { margin: 0 0 28px calc(22px + 18px); }
+.r2 .tg-q { font-weight: 600; }
+.r2 .tg-q .num { font-family: var(--serif); margin-left: 6px; }
+.r2 .tg-body dd p + p { margin-top: 4px; }
+.r2 .tg-link { display: inline-block; margin-top: 6px; color: var(--accent); font-weight: 600; text-decoration: none; }
+.r2 .tg-link:hover { text-decoration: underline; }
+.r2 .next-lead + .qs { margin-top: 24px; }
+@media (max-width: 760px) {
+  .r2 .tally--3 { grid-template-columns: 1fr; }
+  .r2 .tally--3 div { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
+  .r2 .tally--3 div:first-child { border-top: 0; }
+  .r2 .tg summary { grid-template-columns: 22px 1fr 3em 16px; gap: 12px; }
+  .r2 .tg summary .bar { display: none; }
+  .r2 .tg-body { margin-left: 0; }
+}
+
 /* 확인 창 */
 .r2-dialog { width: min(480px, calc(100% - 32px)); padding: 32px; border: 1px solid var(--line); border-top: 2px solid var(--ink); border-radius: 0; background: var(--paper); box-shadow: var(--float); }
 .r2-dialog::backdrop { background: rgba(18, 21, 27, .45); }
