@@ -189,6 +189,11 @@ app:
   data-initializer:
     enabled: false
 
+  # 자동 로그인 토큰 서명 키. 운영은 REMEMBER_ME_KEY 필수, 비우면 실행마다 무작위 값
+  # (토큰은 DB에 저장되므로 재시작해도 자동 로그인이 유지된다)
+  security:
+    remember-me-key: ${REMEMBER_ME_KEY:${random.uuid}}
+
   storage:
     local:
       base-dir: ./storage/documents

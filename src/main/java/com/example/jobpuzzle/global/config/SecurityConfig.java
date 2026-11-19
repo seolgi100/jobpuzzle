@@ -7,6 +7,7 @@ import com.example.jobpuzzle.global.security.CustomUserDetailsService;
 import com.example.jobpuzzle.global.security.OAuth2LoginSuccessHandler;
 import com.example.jobpuzzle.global.security.SecurityRequestClassifier;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -44,9 +45,6 @@ public class SecurityConfig {
 
     // 로그인하지 않은 화면 요청과 기능 요청을 각각 리다이렉트/JSON으로 처리
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-
-    // 자동로그인 토큰 서명에 쓰는 애플리케이션 키 (외부에 노출되면 안 됨)
-    private static final String REMEMBER_ME_KEY = "jobpuzzle-remember-me-key";
 
     // 자동로그인 유지 기간 - 7일
     private static final int REMEMBER_ME_VALID_SECONDS = 60 * 60 * 24 * 7;
@@ -111,9 +109,11 @@ public class SecurityConfig {
     // logout()은 RememberMeServices가 아니라 이 클래스가 같이 구현하는 LogoutHandler 인터페이스에 있어서,
     // 인터페이스 타입으로 받으면 UserService에서 logout()을 호출할 수 없음
     @Bean
-    public PersistentTokenBasedRememberMeServices rememberMeServices() {
+    // 키는 app.security.remember-me-key(환경 변수 REMEMBER_ME_KEY)에서 받는다 - 코드에 비밀값을 두지 않음
+    public PersistentTokenBasedRememberMeServices rememberMeServices(
+            @Value("${app.security.remember-me-key}") String rememberMeKey) {
         PersistentTokenBasedRememberMeServices services = new PersistentTokenBasedRememberMeServices(
-                REMEMBER_ME_KEY, customUserDetailsService, persistentTokenRepository);
+                rememberMeKey, customUserDetailsService, persistentTokenRepository);
         services.setTokenValiditySeconds(REMEMBER_ME_VALID_SECONDS);
         // 로그인 요청이 JSON body라 AbstractRememberMeServices가 찾는 "remember-me" 파라미터가 항상 없음.
         // alwaysRemember로 그 체크를 끄고, 호출 여부는 UserService.login()의 autoLogin 분기로 제어함.
@@ -132,7 +132,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           PersistentTokenBasedRememberMeServices rememberMeServices) throws Exception{
         http
                 .csrf(AbstractHttpConfigurer::disable)
 
@@ -154,7 +155,7 @@ public class SecurityConfig {
                 .requestCache(requestCache -> requestCache.requestCache(requestCache()))
                 // 세션이 없을 때 자동로그인 쿠키로 재인증을 시도하는 필터 등록
                 .rememberMe(rememberMe -> rememberMe
-                        .rememberMeServices(rememberMeServices())
+                        .rememberMeServices(rememberMeServices)
                 )
                 // 카카오/구글 로그인 설정 - 로그인 성공 시 customOAuth2UserService가 회원 조회/생성 처리
                 .oauth2Login(oauth2 -> oauth2
