@@ -22,7 +22,6 @@ body.app ::selection { background: var(--iv-accent); color: var(--iv-text); }
 }
 .ih { word-break: keep-all; }
 .ih[hidden] { display: none; }
-.ih-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .ih :focus-visible, .tk-layer :focus-visible { outline: 2px solid var(--iv-text); outline-offset: 2px; }
 
 /* ── 머리말 ── */
@@ -33,8 +32,8 @@ body.app ::selection { background: var(--iv-accent); color: var(--iv-text); }
 .ih-head__side { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .ih-balance { margin: 0; display: flex; align-items: baseline; gap: 10px; font-size: 15px; color: var(--iv-text-2); }
 .ih-balance b { font-size: 17px; font-weight: 800; color: var(--iv-text); font-variant-numeric: tabular-nums; }
-.ih-balance a, .ih-link, .ih-toggle { font-weight: 600; color: var(--iv-text); text-decoration: underline; text-decoration-color: var(--iv-line-strong); text-underline-offset: 4px; }
-.ih-balance a:hover, .ih-link:hover, .ih-toggle:hover { text-decoration-color: currentColor; }
+.ih-balance a, .ih-link { font-weight: 600; color: var(--iv-text); text-decoration: underline; text-decoration-color: var(--iv-line-strong); text-underline-offset: 4px; }
+.ih-balance a:hover, .ih-link:hover { text-decoration-color: currentColor; }
 .ih-jump { min-height: 44px; padding: 0 16px; border: 1px solid var(--iv-text); border-radius: 2px; background: var(--iv-surface); font: inherit; font-size: 14px; font-weight: 700; color: var(--iv-text); cursor: pointer; font-variant-numeric: tabular-nums; }
 .ih-jump[hidden] { display: none; }
 .ih-jump:hover { background: var(--iv-sub); }
@@ -124,9 +123,7 @@ body.app ::selection { background: var(--iv-accent); color: var(--iv-text); }
 .ih-btn--line:hover { background: var(--iv-sub); }
 .ih-btn:disabled { border-color: var(--iv-line-strong); color: var(--iv-text-2); cursor: not-allowed; }
 .ih-btn:disabled:hover { background: var(--iv-surface); }
-.ih-toggle, .ih-link { min-height: 44px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; cursor: pointer; }
-.ih-toggle::after { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 0 3px 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform .2s; }
-.ih-toggle[aria-expanded="true"]::after { transform: rotate(-135deg); margin-bottom: -1px; }
+.ih-link { min-height: 44px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; cursor: pointer; }
 
 /* ── 기록 목록 ── */
 .ih-rec { margin: 4px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--iv-line); }

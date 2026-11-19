@@ -17,7 +17,7 @@ body.jp-app-theme .site-header .site-header__nav a:hover, body.jp-app-theme .sit
 body.jp-app-theme .site-header .user-chip { border: 0 !important; background: none !important; color: #12151B !important; box-shadow: none !important; }
 
 /* 예전 변수 → 새 토큰: 벽 바탕 · 흰 종이 · 먹색 · 델프트 블루 하나 · 보완은 가라앉은 갈색, 그림자 없음 · 1px 선 */
-body.jp-app-theme, body.jp-app-theme.jp-interview-page {
+body.jp-app-theme {
   --jp-canvas-top: #F5F7FA; --jp-canvas-bottom: #F5F7FA;
   --jp-paper: #FFFFFF; --jp-paper-soft: #F5F7FA; --jp-paper-blue: #EDF2FA;
   --jp-blue-soft: #EDF2FA; --jp-blue: #3A62A8; --jp-blue-deep: #12151B;
@@ -34,7 +34,6 @@ body.jp-app-theme, body.jp-app-theme.jp-interview-page {
 }
 body.jp-app-theme .page-title { font-family: "HeirofLight", "Noto Serif KR", serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.35; }
 /* 영문·작은 눈썹 문구는 쓰지 않는다 (DESIGN-SYSTEM.md 3장) */
-body.jp-app-theme .eyebrow-label { display: none; }
 body.jp-app-theme .btn--primary { background: #12151B; border-color: #12151B; color: #fff; box-shadow: none; border-radius: 2px; }
 body.jp-app-theme .btn--primary:hover { background: #3A62A8; border-color: #3A62A8; }
 /* 시안에 없는 예전 장식(청록 퍼즐 조각)은 숨긴다 */

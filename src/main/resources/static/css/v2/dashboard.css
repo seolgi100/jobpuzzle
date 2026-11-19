@@ -131,6 +131,6 @@
   .r2 .tabs button { font-size: 19px; white-space: nowrap; }
   .r2 .rows li { grid-template-columns: 1fr; gap: 10px; }
   .r2 .rows .act { justify-self: start; }
-  .r2 .score, .r2 .status, .r2 .due,   .r2 .cal-grid > * { min-height: 64px; padding: 6px; }
+  .r2 .score, .r2 .status, .r2 .due, .r2 .cal-grid > * { min-height: 64px; padding: 6px; }
   .r2 .cal-grid .task { font-size: 0; padding: 0; height: 4px; }
 }
