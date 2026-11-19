@@ -1,6 +1,5 @@
 package com.example.jobpuzzle.ai.client;
 
-import com.example.jobpuzzle.ai.dto.FinalReportResult;
 import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
@@ -16,27 +15,8 @@ public interface AiClient {
         return analyzeCandidateMaterial(prompt);
     }
 
-    String generateCustomizedAnalysis(String renderedPrompt);
-
-    default String generateCustomizedAnalysisV13(String renderedPrompt, JsonNode outputSchema) {
-        return generateCustomizedAnalysis(renderedPrompt);
-    }
-
-    default String generateCustomizedAnalysisV15(String renderedPrompt, JsonNode outputSchema) {
-        return generateCustomizedAnalysisV13(renderedPrompt, outputSchema);
-    }
-
-    default String generateCustomizedAnalysisV16(String renderedPrompt, JsonNode outputSchema) {
-        return generateCustomizedAnalysisV13(renderedPrompt, outputSchema);
-    }
-
-    default String generateCustomizedAnalysisV17(String renderedPrompt, JsonNode outputSchema) {
-        return generateCustomizedAnalysisV13(renderedPrompt, outputSchema);
-    }
-
-    default String generateCustomizedAnalysisV18(String renderedPrompt, JsonNode outputSchema) {
-        return generateCustomizedAnalysisV13(renderedPrompt, outputSchema);
-    }
+    // JSON-05 v1.8~v1.10: 출력 schema를 강제한 맞춤 분석
+    String generateCustomizedAnalysisV18(String renderedPrompt, JsonNode outputSchema);
 
     // 평가 명세 v2: JSON-12 기초 지식·자료 기반 질문 생성
     String generateQuestionsV2(String renderedPrompt);
@@ -44,8 +24,6 @@ public interface AiClient {
     String evaluateAnswer(String renderedPrompt);
 
     QuestionGenerationResult generateQuestions(String prompt);
-
-    FinalReportResult finalReport(String prompt);
 
     AiProvider getProvider();
 

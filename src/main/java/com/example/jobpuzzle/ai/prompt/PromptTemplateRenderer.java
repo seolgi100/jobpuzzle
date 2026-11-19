@@ -39,30 +39,6 @@ public class PromptTemplateRenderer {
         this.objectMapper = objectMapper;
     }
 
-    // JSON-05 구조화 결과를 Jackson JSON으로 렌더링해 Provider가 입력 구역을 구분하게 한다.
-    public String renderCustomizedAnalysis(PromptTemplate template, String mainCategory, String subCategory, String careerLevel,
-                                           JobPostingAnalysisResult jobPostingAnalysis,
-                                           CandidateMaterialAnalysisResult candidateMaterialAnalysis,
-                                           GuideContextResultDto guideContext, RetrievedEvidenceContextDto retrievedEvidence) {
-        Map<String, String> values = new LinkedHashMap<>();
-        values.put("mainCategory", required("mainCategory", mainCategory));
-        values.put("subCategory", required("subCategory", subCategory));
-        values.put("careerLevel", required("careerLevel", careerLevel));
-        values.put("jobPostingAnalysisJson", json("jobPostingAnalysisJson", jobPostingAnalysis));
-        values.put("candidateMaterialAnalysisJson", json("candidateMaterialAnalysisJson", candidateMaterialAnalysis));
-        values.put("guideContextJson", json("guideContextJson", guideContext));
-        // 동일 retrieval chunk 원문은 한 번만 렌더링하고 requirement는 stable evidenceId로 참조한다.
-        values.put("retrievedEvidenceJson", json("retrievedEvidenceJson", CustomizedSynthesisEvidenceProjection.from(retrievedEvidence)));
-        String rendered = render(template, values);
-        List<String> requirementIds = retrievedEvidence.requirements().stream()
-                .map(RetrievedEvidenceContextDto.RequirementEvidence::requirementId).toList();
-        // 모델이 긴 근거 본문 뒤에도 모든 requirement를 잊지 않게 마지막에 작은 완료 체크리스트를 둔다.
-        return rendered + "\n\n[REQUIREMENT_COMPLETENESS_CHECKLIST]\n"
-                + "반환 전 requirementId " + requirementIds + " 각각을 match 배열 두 곳 중 정확히 한 번 포함했는지 확인하라.\n"
-                + "evidencedRequirementMatches에는 candidateSourceRefs 대신 현재 requirement의 candidateEvidenceIds만 반환하라. "
-                + "candidateEvidenceIds는 RETRIEVED_EVIDENCE의 candidateEvidence[].evidenceId만 사용한다.";
-    }
-
     // v1.3은 단일 provider input DTO만 렌더링하며 정본 밖의 후행 계약 지시를 추가하지 않는다.
     public String renderCustomizedAnalysisV13(PromptTemplate template, CustomizedSynthesisProviderInput input) {
         Map<String, String> values = new LinkedHashMap<>();

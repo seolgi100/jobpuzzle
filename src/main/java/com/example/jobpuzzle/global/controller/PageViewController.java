@@ -20,16 +20,10 @@ public class PageViewController {
     @GetMapping("/my-data")
     public String myData() { return "my-data"; }
 
-    @GetMapping("/job-analysis")
-    public String jobAnalysis() { return "job-analysis"; }
-
     @GetMapping("/interview")
     public String interview() { return "interview"; }
 
-    @GetMapping("/interview-results")
-    public String interviewResult() { return "interview-result"; }
-
-    // 평가 명세 v2 면접 보고서 (기초 지식·자료 기반·인성). v1 면접은 /interview-results 그대로
+    // 평가 명세 v2 면접 보고서 (기초 지식·자료 기반·인성).
     @GetMapping("/interview-report")
     public String interviewReport() { return "interview-report"; }
 

@@ -411,7 +411,7 @@
   function resumeSession(active) {
     if (active.status === 'COMPLETED') {
       window.location.replace(window.JobPuzzleRoutes.path(
-        '/interview-results?sessionId=' + encodeURIComponent(active.sessionId)
+        '/interview-report?sessionId=' + encodeURIComponent(active.sessionId)
       ));
       return;
     }
@@ -809,7 +809,7 @@
     if (!session) return;
     stopSpeechInput();
     allowLiveNavigation = true;
-    window.location.href = window.JobPuzzleRoutes.path('/interview-results?sessionId=' +
+    window.location.href = window.JobPuzzleRoutes.path('/interview-report?sessionId=' +
       encodeURIComponent(session.sessionId) + '&interim=true');
   }
 
@@ -855,7 +855,7 @@
             clearDraft();
             allowLiveNavigation = true;
             localStorage.removeItem('jobpuzzle_interview_session_id');
-            window.location.href = window.JobPuzzleRoutes.path('/interview-results?sessionId=' + encodeURIComponent(session.sessionId));
+            window.location.href = window.JobPuzzleRoutes.path('/interview-report?sessionId=' + encodeURIComponent(session.sessionId));
           })
           .catch(function (error) { notify('error', error.message); });
       }

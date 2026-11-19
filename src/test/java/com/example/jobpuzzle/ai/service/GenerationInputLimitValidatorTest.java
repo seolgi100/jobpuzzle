@@ -34,27 +34,6 @@ class GenerationInputLimitValidatorTest {
     }
 
     @Test
-    void customizedRetrievalChecksRequirementCountAndContentTotalWithoutTruncation() {
-        AiGenerationProperties properties = new AiGenerationProperties();
-        properties.getInputLimits().setJson05RequirementCount(1);
-        properties.getInputLimits().setJson05RetrievalChars(3);
-        GenerationInputLimitValidator validator = new GenerationInputLimitValidator(properties);
-
-        RetrievedEvidenceContextDto tooManyRequirements = new RetrievedEvidenceContextDto(List.of(requirement("a"), requirement("b")));
-        assertThatThrownBy(() -> validator.validateCustomizedRetrieval(tooManyRequirements))
-                .isInstanceOf(AiProcessingException.class)
-                .extracting(error -> ((AiProcessingException) error).getErrorType())
-                .isEqualTo(AiCallLogErrorType.INPUT_LIMIT_EXCEEDED);
-
-        properties.getInputLimits().setJson05RequirementCount(2);
-        RetrievedEvidenceContextDto tooLargeContent = new RetrievedEvidenceContextDto(List.of(requirement("1234")));
-        assertThatThrownBy(() -> validator.validateCustomizedRetrieval(tooLargeContent))
-                .isInstanceOf(AiProcessingException.class)
-                .extracting(error -> ((AiProcessingException) error).getErrorType())
-                .isEqualTo(AiCallLogErrorType.INPUT_LIMIT_EXCEEDED);
-    }
-
-    @Test
     void defaultLimitsAcceptFixtureScalePrompts() {
         GenerationInputLimitValidator validator = new GenerationInputLimitValidator(new AiGenerationProperties());
 

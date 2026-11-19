@@ -56,7 +56,7 @@
     var s = visible().filter(function (x) { return x.sessionId === state.selectedId; })[0];
     if (!s) { el.innerHTML = empty('확인할 리포트가 없습니다.', '면접을 마치면 점수와 보완 방향을 볼 수 있습니다.'); return; }
     var sc = state.scores[s.sessionId];
-    var link = path('/interview-results?sessionId=' + encodeURIComponent(s.sessionId));
+    var link = path('/interview-report?sessionId=' + encodeURIComponent(s.sessionId));
     var html = '<div class="rp-detail__top"><div><p class="rp-detail__eyebrow">' + U.mode(s.mode)[0] + '</p>' +
       '<h2 class="rp-detail__title">' + U.mode(s.mode)[0] + ' 리포트</h2>' +
       '<p class="rp-detail__meta">' + U.esc(U.dateTime(s.completedAt)) + ' · 질문 ' + (s.questionCount || 0) + '개</p></div>' +

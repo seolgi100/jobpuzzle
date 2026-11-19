@@ -75,8 +75,6 @@
 .r2 .status.is-live { color: var(--accent); font-weight: 600; }
 
 /* 약점 태그 줄 */
-.r2 .weak li { grid-template-columns: 22px minmax(0, 1fr) 140px 210px; }
-.r2 .weak .count { font-size: 16px; text-align: right; color: var(--text-2); }
 .r2 .weak .count b { color: var(--text); font-weight: 600; }
 
 /* 과제 */
@@ -134,7 +132,6 @@
   .r2 .tabs button { font-size: 19px; white-space: nowrap; }
   .r2 .rows li { grid-template-columns: 1fr; gap: 10px; }
   .r2 .rows .act { justify-self: start; }
-  .r2 .score, .r2 .status, .r2 .due, .r2 .weak .count { text-align: left; }
-  .r2 .cal-grid > * { min-height: 64px; padding: 6px; }
+  .r2 .score, .r2 .status, .r2 .due,   .r2 .cal-grid > * { min-height: 64px; padding: 6px; }
   .r2 .cal-grid .task { font-size: 0; padding: 0; height: 4px; }
 }

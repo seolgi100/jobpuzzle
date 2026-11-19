@@ -26,29 +26,6 @@ public class GenerationInputLimitValidator {
         }
     }
 
-    public void validateCustomizedRetrieval(RetrievedEvidenceContextDto evidence) {
-        if (evidence == null || evidence.requirements() == null) throw limit("JSON-05 retrieval evidence is missing");
-        int requirementLimit = properties.getInputLimits().getJson05RequirementCount();
-        int retrievalCharsLimit = properties.getInputLimits().getJson05RetrievalChars();
-        requirePositive(requirementLimit, "JSON-05 requirement limit");
-        requirePositive(retrievalCharsLimit, "JSON-05 retrieval chars limit");
-
-        if (evidence.requirements().size() > requirementLimit) {
-            throw limit("JSON-05 requirements=" + evidence.requirements().size() + " exceeds limit=" + requirementLimit);
-        }
-
-        int retrievalChars = evidence.requirements().stream()
-                .filter(requirement -> requirement != null && requirement.chunks() != null)
-                .flatMap(requirement -> requirement.chunks().stream())
-                .map(RetrievedEvidenceContextDto.RetrievedChunk::content)
-                .filter(content -> content != null)
-                .mapToInt(String::length)
-                .sum();
-        if (retrievalChars > retrievalCharsLimit) {
-            throw limit("JSON-05 retrieval chars=" + retrievalChars + " exceeds limit=" + retrievalCharsLimit);
-        }
-    }
-
     private void requirePositive(int value, String name) {
         if (value < 1) throw limit(name + " must be positive");
     }

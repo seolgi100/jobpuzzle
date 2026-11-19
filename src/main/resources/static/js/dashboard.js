@@ -10,10 +10,10 @@
     { name: '채용공고 분석하기', href: '/interview', test: function (d) { return d.analyses.length > 0; } },
     { name: '모의면접 시작하기', href: '/interview', test: function (d) { return d.active.length + d.history.length > 0; } },
     { name: '면접·답변 평가 받기', href: '/reports', test: function (d) { return d.history.length > 0; } },
-    { name: '약점 보완하기', href: '/action-plans', test: function (d) { return d.solved.length > 0 || d.plans.some(function (p) { return p.status === 'DONE'; }); } }
+    { name: '약점 보완하기', href: '/action-plans', test: function (d) { return d.plans.some(function (p) { return p.status === 'DONE'; }); } }
   ];
   var DONE_ROWS = 5, TASK_ROWS = 8, MINI_MAX = 10;
-  var data = { user: null, jobs: [], docs: [], analyses: [], active: [], history: [], open: [], solved: [], plans: [], scores: {} };
+  var data = { user: null, jobs: [], docs: [], analyses: [], active: [], history: [], plans: [], scores: {} };
   var today = new Date(); today.setHours(0, 0, 0, 0);
   var TODAY = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
@@ -70,13 +70,12 @@
     var set = function (k, v) { document.querySelector('[data-stat="' + k + '"]').textContent = v; };
     var late = data.plans.filter(overdue).length;
     set('active', data.active.length);
-    set('open', data.open.length);
+    set('done', data.history.length);
     set('overdue', late);
     set('nodue', data.plans.filter(function (p) { return pending(p) && !p.deadline; }).length);
     document.querySelector('[data-late]').classList.toggle('is-late', late > 0);
     var count = function (k, v) { document.querySelector('[data-count="' + k + '"]').textContent = v; };
     count('sessions', data.active.length + data.history.length);
-    count('weakness', data.open.length + data.solved.length);
     count('tasks', data.plans.length);
   }
 
@@ -102,24 +101,11 @@
       return '<li><div><div class="name">' + esc(sessionName(s)) + '</div><div class="sub">' + esc(sessionSub(s, md(s.completedAt) + ' 완료')) + '</div></div>' +
         mini(s.questionCount || 0, -1, s.questionCount || 0) +
         '<div class="score num">' + (sc && sc.overallScore != null ? sc.overallScore + '<small>점</small>' : '') + '</div>' +
-        '<div class="act"><a class="btn btn-ghost" href="' + route('/interview-results?sessionId=' + s.sessionId) + '">리포트 보기</a></div></li>';
+        '<div class="act"><a class="btn btn-ghost" href="' + route('/interview-report?sessionId=' + s.sessionId) + '">리포트 보기</a></div></li>';
     }).join('') : empty('완료된 면접이 없습니다.');
   }
 
   // ── 약점 태그 ──
-  function weakRow(t, solved) {
-    var last = (t.recentOccurrences || [])[0];
-    var sub = solved ? '해결 완료' : [last && last.score != null ? '최근 시도 ' + last.score + '점' : '', '기준 70점'].filter(Boolean).join(' · ');
-    return '<li><svg class="piece' + (solved ? '' : ' is-empty') + '" aria-hidden="true"><use href="#pc"/></svg>' +
-      '<div><div class="name">' + esc(t.displayName || U.weakLabel(t.tag)) + '</div><div class="sub">' + esc(t.description ? t.description + ' · ' + sub : sub) + '</div></div>' +
-      '<div class="count">' + (solved ? '' : '보완 필요 <b class="num">' + (t.unresolvedCount || t.occurrenceCount || 0) + '</b>건') + '</div>' +
-      '<div class="act">' + (last && last.sessionId ? '<a class="btn btn-ghost" href="' + route('/interview-results?sessionId=' + last.sessionId) + '">최근 면접 보기</a>' : '') + '</div></li>';
-  }
-  function renderWeakness() {
-    document.querySelector('[data-list="open"]').innerHTML = data.open.length ? data.open.map(function (t) { return weakRow(t, false); }).join('') : empty('해결하지 않은 약점이 없습니다.');
-    document.querySelector('[data-list="solved"]').innerHTML = data.solved.length ? data.solved.map(function (t) { return weakRow(t, true); }).join('') : empty('아직 해결된 약점이 없습니다.');
-  }
-
   // ── 과제: 목록 + 달력 ──
   function dueHtml(p) {
     var id = p.actionPlanId;
@@ -169,7 +155,7 @@
     document.getElementById('cal-note').textContent = nodue ? nodue + '개는 마감일이 없어 달력에 보이지 않습니다. 목록에서 마감일을 정해 주십시오.' : '';
   }
 
-  function renderAll() { renderHead(); renderStats(); renderSessions(); renderWeakness(); renderTasks(); }
+  function renderAll() { renderHead(); renderStats(); renderSessions(); renderTasks(); }
 
   // ── 탭 (누르거나 왼쪽·오른쪽 화살표) ──
   var tabs = [].slice.call(document.querySelectorAll('[role="tab"]'));
@@ -224,10 +210,10 @@
     Promise.all([
       get('/job-category', []), get('/documents?size=100', { content: [] }), get('/analysis-cases/completed', []),
       get('/interview-sessions/active-list', []), get('/interview-sessions/history', []),
-      get('/interview-weakness-tags/details', []), get('/interview-weakness-tags/resolved', []), get('/action-plan', [])
+      get('/action-plan', [])
     ]).then(function (r) {
       data.jobs = r[0] || []; data.docs = (r[1] && r[1].content) || []; data.analyses = r[2] || [];
-      data.active = r[3] || []; data.history = r[4] || []; data.open = r[5] || []; data.solved = r[6] || []; data.plans = r[7] || [];
+      data.active = r[3] || []; data.history = r[4] || []; data.plans = r[5] || [];
       renderAll();
       data.history.slice(0, DONE_ROWS).forEach(function (s) {
         get('/interview-sessions/' + s.sessionId + '/score', null).then(function (sc) { data.scores[s.sessionId] = sc; renderSessions(); });

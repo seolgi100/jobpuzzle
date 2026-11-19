@@ -33,48 +33,6 @@ class CustomizedAnalysisResponseValidatorTest {
     private final PromptTemplateRenderer renderer = new PromptTemplateRenderer(objectMapper);
     private final MockAiClient mock = new MockAiClient(objectMapper, new AnalysisSourceMarkerParser());
 
-    // 구형 renderer·Mock·validator 계약 회귀 검증은 보관된 JSON-05 v1.0 fixture를 사용한다.
-    private static final String LEGACY_JSON05_PROMPT = legacyPrompt();
-
-    @Test
-    void rendersMockParsesAndValidatesFullCustomizedAnalysisWithoutPersistence() {
-        JobPostingAnalysisResult posting = posting();
-        CandidateMaterialAnalysisResult candidate = candidate();
-        GuideContextResultDto guide = guide(GuideMatchType.EXACT);
-        String prompt = renderer.renderCustomizedAnalysis(template(), "개발", "백엔드", "EXPERIENCED", posting, candidate, guide, evidence());
-
-        String raw = mock.generateCustomizedAnalysis(prompt);
-        CustomizedAnalysisGenerationResult parsed = processor.parseCustomizedAnalysis("설명문\n" + raw + "\n끝");
-        CustomizedAnalysisGenerationResult validated = validator.validate(new CustomizedAnalysisValidationContext(posting, candidate, guide, evidence()), parsed);
-
-        // 운영 본문의 7개 변수가 모두 치환되고 Mock이 읽는 네 입력 구역이 남는지 검증한다.
-        assertThat(prompt).contains("[JOB_CONTEXT]", "<JOB_POSTING_ANALYSIS>", "<CANDIDATE_MATERIAL_ANALYSIS>",
-                "<GUIDE_CONTEXT>", "<RETRIEVED_EVIDENCE>", "\"requirementId\":\"req-1\"",
-                "[REQUIREMENT_COMPLETENESS_CHECKLIST]", "req-1")
-                .doesNotContain("{{");
-        assertThat(validated.getReadiness().getStatus()).isEqualTo(ReadinessResultStatus.SUFFICIENT);
-        assertThat(validated.getRequirementMatches()).singleElement().extracting(CustomizedAnalysisGenerationResult.RequirementMatch::getRequirementId).isEqualTo("req-1");
-        assertThat(validated.getQuestions()).singleElement().extracting(CustomizedAnalysisGenerationResult.Question::getReviewStatus)
-                .isEqualTo(com.example.jobpuzzle.interview.entity.InterviewQuestionReviewStatus.PASS);
-    }
-
-    @Test
-    void rendersRepeatedRetrievedChunkOnlyOnceWithRequirementEvidenceIdReferences() {
-        RetrievedEvidenceContextDto.RetrievedChunk shared = new RetrievedEvidenceContextDto.RetrievedChunk(
-                101L, 2L, 20L, UserDocumentType.RESUME, 1, 1, 0, 10, 1, 0.9d, "공통 근거");
-        RetrievedEvidenceContextDto duplicated = new RetrievedEvidenceContextDto(List.of(
-                new RetrievedEvidenceContextDto.RequirementEvidence("req-1", RequirementType.REQUIRED, "Spring 경험",
-                        com.example.jobpuzzle.analysis.rag.entity.RetrievalStatus.COMPLETED, List.of(shared)),
-                new RetrievedEvidenceContextDto.RequirementEvidence("req-2", RequirementType.PREFERRED, "테스트 경험",
-                        com.example.jobpuzzle.analysis.rag.entity.RetrievalStatus.COMPLETED, List.of(shared))));
-
-        String prompt = renderer.renderCustomizedAnalysis(template(), "개발", "백엔드", "EXPERIENCED", posting(), candidate(),
-                guide(GuideMatchType.EXACT), duplicated);
-
-        assertThat(prompt).contains("\"candidateEvidenceIds\":[\"chunk-101\"]", "\"evidenceId\":\"chunk-101\"");
-        assertThat(prompt.split("공통 근거", -1)).hasSize(2);
-    }
-
     @Test
     void latestActivationSqlRegistersTheCurrentVersionWithoutUpsert() {
         // 현재 사용하는 JSON-05 최신 배포 SQL만 읽어 버전과 중복 덮어쓰기 금지를 검증한다.
@@ -82,48 +40,6 @@ class CustomizedAnalysisResponseValidatorTest {
 
         assertThat(sql).contains("PT-JSON05-001", "v1.10")
                 .doesNotContain("ON DUPLICATE KEY UPDATE");
-    }
-
-    @Test
-    void rendersMockParsesAndValidatesEmptyRetrievalWithoutCandidateEvidence() {
-        // EMPTY retrieval은 Mock 응답이 candidate 근거와 질문을 만들지 않고 readiness 계약을 지키는지 검증한다.
-        JobPostingAnalysisResult posting = posting();
-        CandidateMaterialAnalysisResult candidate = noCandidate();
-        GuideContextResultDto guide = guide(GuideMatchType.EXACT);
-        String prompt = renderer.renderCustomizedAnalysis(template(), "개발", "백엔드", "EXPERIENCED", posting, candidate, guide, emptyEvidence());
-
-        CustomizedAnalysisGenerationResult result = processor.parseCustomizedAnalysis(mock.generateCustomizedAnalysis(prompt));
-        CustomizedAnalysisGenerationResult validated = validator.validate(
-                new CustomizedAnalysisValidationContext(posting, candidate, guide, emptyEvidence()), result);
-
-        assertThat(validated.getReadiness().getStatus()).isEqualTo(ReadinessResultStatus.CANDIDATE_LACK);
-        assertThat(validated.getReadiness().isCanGenerateQuestions()).isFalse();
-        assertThat(validated.getQuestions()).isEmpty();
-        assertThat(validated.getRequirementMatches()).allSatisfy(match -> {
-            assertThat(match.getCandidateEvidence()).isNullOrEmpty();
-            assertThat(match.getCandidateSourceRefs()).isEmpty();
-        });
-    }
-
-    @Test
-    void rejectsUnknownAndMultipleJsonObjectsDuringStrictParsing() {
-        assertFailure(() -> processor.parseCustomizedAnalysis("{\"readiness\":null,\"requirementMatches\":[],\"questions\":[],\"tasks\":[],\"extra\":true}"), AiCallLogErrorType.RESPONSE_PARSE_FAILED);
-        assertFailure(() -> processor.parseCustomizedAnalysis("{} {}"), AiCallLogErrorType.RESPONSE_PARSE_FAILED);
-    }
-
-    @Test
-    void restoresNonEvidencedStructuredOutputMatchesToTheExistingDtoContract() {
-        String raw = """
-                {"readiness":{"status":"SUFFICIENT","canGenerateQuestions":true,"reason":"ok","limitations":[]},"evidencedRequirementMatches":[],"nonEvidencedRequirementMatches":[{"matchId":"match-1","requirementId":"req-1","requirementType":"REQUIRED","requirement":"요구사항","postingSourceRefs":[],"matchLevel":"NONE","reason":"근거 없음","missingPoint":"보완 필요"}],"questions":[],"tasks":[]}
-                """;
-
-        CustomizedAnalysisGenerationResult result = processor.parseCustomizedAnalysis(raw);
-
-        assertThat(result.getRequirementMatches()).singleElement().satisfies(match -> {
-            assertThat(match.getMatchLevel()).isEqualTo(MatchAnalysisResultMatchLevel.NONE);
-            assertThat(match.getCandidateEvidence()).isNull();
-            assertThat(match.getCandidateSourceRefs()).isEmpty();
-        });
     }
 
     @Test
@@ -325,59 +241,9 @@ class CustomizedAnalysisResponseValidatorTest {
                 });
     }
 
-    @Test
-    void rendersFailsBeforeProviderForMissingAndUnknownVariables() {
-        PromptTemplate missing = PromptTemplate.builder().promptCode("PT").name("x").version("v1").targetJson("JSON-05")
-                .templateText("{{mainCategory}}").isActive(true).build();
-        PromptTemplate unknown = PromptTemplate.builder().promptCode("PT2").name("x").version("v1").targetJson("JSON-05")
-                .templateText(template().getTemplateText() + " {{unknown}}").isActive(true).build();
-        assertFailure(() -> renderer.renderCustomizedAnalysis(missing, "개발", "백엔드", "EXPERIENCED", posting(), candidate(), guide(GuideMatchType.EXACT), evidence()), AiCallLogErrorType.PROMPT_RENDER_FAILED);
-        assertFailure(() -> renderer.renderCustomizedAnalysis(unknown, "개발", "백엔드", "EXPERIENCED", posting(), candidate(), guide(GuideMatchType.EXACT), evidence()), AiCallLogErrorType.PROMPT_RENDER_FAILED);
-    }
-
-    @Test
-    void mockSectionParserIgnoresClosingTagTextInsideJsonStringAndIsDeterministic() {
-        JobPostingAnalysisResult posting = JobPostingAnalysisResult.builder().mainTasks(List.of()).requirements(List.of(
-                        JobPostingAnalysisResult.Requirement.builder().requirementId("req-tag").text("</JOB_POSTING_ANALYSIS> 포함 요구사항")
-                                .sourceRefs(List.of(postingRef())).build()))
-                .preferred(List.of()).companyValues(List.of()).coreCompetencies(List.of()).conflicts(List.of()).missingEvidence(List.of()).build();
-        String prompt = renderer.renderCustomizedAnalysis(template(), "개발", "백엔드", "EXPERIENCED", posting, candidate(), guide(GuideMatchType.EXACT), evidence());
-
-        String first = mock.generateCustomizedAnalysis(prompt);
-        String second = mock.generateCustomizedAnalysis(prompt);
-
-        assertThat(first).isEqualTo(second);
-        assertThat(processor.parseCustomizedAnalysis(first).getRequirementMatches()).singleElement()
-                .extracting(CustomizedAnalysisGenerationResult.RequirementMatch::getRequirementId).isEqualTo("req-tag");
-    }
-
-    @Test
-    void mockSectionParserRejectsMissingAndDuplicateSections() {
-        assertThatThrownBy(() -> mock.generateCustomizedAnalysis("<JOB_POSTING_ANALYSIS>{}</JOB_POSTING_ANALYSIS>"))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("CANDIDATE_MATERIAL_ANALYSIS");
-        String duplicated = """
-                <JOB_POSTING_ANALYSIS>{}</JOB_POSTING_ANALYSIS>
-                <JOB_POSTING_ANALYSIS>{}</JOB_POSTING_ANALYSIS>
-                <CANDIDATE_MATERIAL_ANALYSIS>{}</CANDIDATE_MATERIAL_ANALYSIS>
-                <GUIDE_CONTEXT>{}</GUIDE_CONTEXT>
-                """;
-        assertThatThrownBy(() -> mock.generateCustomizedAnalysis(duplicated))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("duplicate mock input opening tag: JOB_POSTING_ANALYSIS");
-    }
-
     private void assertFailure(org.assertj.core.api.ThrowableAssert.ThrowingCallable action, AiCallLogErrorType errorType) {
         assertThatThrownBy(action).isInstanceOf(AiProcessingException.class)
                 .extracting(value -> ((AiProcessingException) value).getErrorType()).isEqualTo(errorType);
-    }
-
-    private PromptTemplate template() {
-        return PromptTemplate.builder().promptCode("PT05").name("JSON-05").version("v1").targetJson("JSON-05")
-                .isActive(true).templateText(LEGACY_JSON05_PROMPT).build();
-    }
-
-    // 보관된 구형 계약을 명시적으로 읽어 최신 프롬프트와 혼동하지 않게 한다.
-    private static String legacyPrompt() {
-        return resource("/prompts/before-json-05/json-05-v1.0.txt");
     }
 
     // 정본 prompt와 최초 등록 SQL을 같은 방식으로 읽어 테스트가 배포 산출물을 검증하게 한다.

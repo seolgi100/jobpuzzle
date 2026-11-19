@@ -128,8 +128,6 @@ app:
           json02: ${ANTHROPIC_JSON02_MAX_OUTPUT_TOKENS:6144}
           json05: ${ANTHROPIC_JSON05_MAX_OUTPUT_TOKENS:8192}
           json06: ${ANTHROPIC_JSON06_MAX_OUTPUT_TOKENS:4096}
-          json07: ${ANTHROPIC_JSON07_MAX_OUTPUT_TOKENS:6144}
-          json11: ${ANTHROPIC_JSON11_MAX_OUTPUT_TOKENS:4096}
           json12: ${ANTHROPIC_JSON12_MAX_OUTPUT_TOKENS:4096}
       input-limits:
         # fixture 8·9 실측보다 충분히 큰 기본값이다. 초과 입력은 자동 축약하지 않고 Provider 호출 전에 실패한다.

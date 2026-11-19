@@ -32,16 +32,12 @@ public class PromptTemplateSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         List<Seed> seeds = List.of(
-                new Seed("INTERVIEW_COMPANY_FIT_SYNTHESIS", "회사 맞춤 분석 및 질문 생성", "JSON-05",
-                        "prompts/json-05-company-fit-analysis.txt"),
                 new Seed("INTERVIEW_ANSWER_EVALUATION", "면접 답변 평가", "JSON-06",
                         "prompts/json-06-answer-evaluation.txt"),
                 new Seed("INTERVIEW_ANSWER_EVALUATION_V2", "면접 답변 평가 v2 (6개 항목, 1~5점)", "JSON-06-V2",
                         "prompts/json-06-v2-answer-evaluation.txt"),
                 new Seed("INTERVIEW_QUESTION_GENERATION_V2", "기초 지식·자료 기반 면접 질문 생성 v2", "JSON-12",
-                        "prompts/json-12-v2-question-generation.txt"),
-                new Seed("INTERVIEW_FINAL_REPORT", "면접 최종 리포트", "JSON-07",
-                        "prompts/json-07-final-report.txt")
+                        "prompts/json-12-v2-question-generation.txt")
         );
 
         int inserted = 0;

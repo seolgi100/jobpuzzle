@@ -27,34 +27,6 @@ class AiResponseProcessorTest {
     );
 
     @Test
-    void parsesV15FixedSlotsAndRejectsUnknownFields() {
-        String valid = """
-                {"readiness":{"reason":"준비","limitations":[]},"requirementMatchesById":{},
-                "primaryQuestion":null,"tasksByRequirementId":{}}
-                """;
-
-        assertThat(processor.parseCustomizedAnalysisV15(valid).getRequirementMatchesById()).isEmpty();
-        assertFailure(() -> processor.parseCustomizedAnalysisV15(
-                valid.replaceFirst("\\{", "{\"unexpected\":true,")),
-                AiCallLogErrorType.RESPONSE_PARSE_FAILED);
-    }
-
-    @Test
-    void parsesV16FlatMapsAndRejectsUnknownFields() {
-        String valid = """
-                {"readiness":{"reason":"준비","limitations":[]},"matchLevelsById":{},
-                "matchReasonsById":{},"missingPointsById":{},"candidateEvidenceById":{},
-                "candidateEvidenceIdById":{},"primaryQuestion":null,"taskApplicableById":{},
-                "taskMissingPointsById":{},"taskSuggestionsById":{}}
-                """;
-
-        assertThat(processor.parseCustomizedAnalysisV16(valid).getMatchLevelsById()).isEmpty();
-        assertFailure(() -> processor.parseCustomizedAnalysisV16(
-                valid.replaceFirst("\\{", "{\"unexpected\":true,")),
-                AiCallLogErrorType.RESPONSE_PARSE_FAILED);
-    }
-
-    @Test
     void parsesFullJsonCodeBlockAndValidatesEchoedSourceReference() {
         JobPostingAnalysisResult result = processor.parseJobPosting("""
                 ```json

@@ -21,11 +21,11 @@ class CustomizedSynthesisV18ResultAssemblerTest {
     @Test
     void normalizesHighNarrativeInsteadOfRejectingNonBlankMissingPoint() {
         CustomizedSynthesisV18ProviderResult provider = new CustomizedSynthesisV18ProviderResult(
-                new CustomizedSynthesisV16ProviderResult.Readiness("준비됨", List.of()),
+                new CustomizedSynthesisV18ProviderResult.Readiness("준비됨", List.of()),
                 Map.of("req-1", "HIGH::cand-1"),
                 Map.of("req-1", new CustomizedSynthesisV18ProviderResult.Narrative(
                         "충족", "모델이 잘못 넣은 부족점", "후보 근거", "불필요한 과제")),
-                List.of(new CustomizedSynthesisV16ProviderResult.QuestionSlot(
+                List.of(new CustomizedSynthesisV18ProviderResult.QuestionSlot(
                         "req-1", InterviewQuestionType.COMPANY_FIT, "설명해 주세요", "검증",
                         InterviewQuestionEvaluationFocus.requirementConnection, "cand-1")));
 

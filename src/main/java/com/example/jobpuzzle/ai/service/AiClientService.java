@@ -3,7 +3,6 @@ package com.example.jobpuzzle.ai.service;
 import com.example.jobpuzzle.ai.client.AiClient;
 import com.example.jobpuzzle.ai.client.AiProviderCompletionMetadata;
 import com.example.jobpuzzle.ai.config.AiGenerationProperties;
-import com.example.jobpuzzle.ai.dto.FinalReportResult;
 import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.log.AiExecutionStage;
 import com.example.jobpuzzle.ai.log.AiProvider;
@@ -51,40 +50,6 @@ public class AiClientService {
     public String analyzeCandidateMaterial(GenerationClientSelection selection, String prompt) {
         requireStage(selection, AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS);
         return selection.client().analyzeCandidateMaterial(prompt);
-    }
-
-    // JSON-05 Provider 원시 JSON을 후속 파싱·검증 계층으로 전달한다.
-    public String generateCustomizedAnalysis(GenerationClientSelection selection, String renderedPrompt) {
-        requireStage(selection, AiExecutionStage.CUSTOMIZED_SYNTHESIS);
-        return selection.client().generateCustomizedAnalysis(renderedPrompt);
-    }
-
-    public String generateCustomizedAnalysisV13(
-            GenerationClientSelection selection, String renderedPrompt, JsonNode outputSchema
-    ) {
-        requireStage(selection, AiExecutionStage.CUSTOMIZED_SYNTHESIS);
-        return selection.client().generateCustomizedAnalysisV13(renderedPrompt, outputSchema);
-    }
-
-    public String generateCustomizedAnalysisV15(
-            GenerationClientSelection selection, String renderedPrompt, JsonNode outputSchema
-    ) {
-        requireStage(selection, AiExecutionStage.CUSTOMIZED_SYNTHESIS);
-        return selection.client().generateCustomizedAnalysisV15(renderedPrompt, outputSchema);
-    }
-
-    public String generateCustomizedAnalysisV16(
-            GenerationClientSelection selection, String renderedPrompt, JsonNode outputSchema
-    ) {
-        requireStage(selection, AiExecutionStage.CUSTOMIZED_SYNTHESIS);
-        return selection.client().generateCustomizedAnalysisV16(renderedPrompt, outputSchema);
-    }
-
-    public String generateCustomizedAnalysisV17(
-            GenerationClientSelection selection, String renderedPrompt, JsonNode outputSchema
-    ) {
-        requireStage(selection, AiExecutionStage.CUSTOMIZED_SYNTHESIS);
-        return selection.client().generateCustomizedAnalysisV17(renderedPrompt, outputSchema);
     }
 
     public String generateCustomizedAnalysisV18(
@@ -139,22 +104,8 @@ public class AiClientService {
         }
     }
 
-    public void logAiCall() {
-        // TODO: 클래스 정의서 기준으로 구현
-    }
-
     // 아래 두 API는 분석 외 모듈의 기존 호출 표면을 보존한다. stage 기반 분석 실행에는 사용하지 않는다.
     public QuestionGenerationResult generateQuestions(String prompt) { return mockAiClient.generateQuestions(prompt); }
-    public FinalReportResult finalReport(String prompt) {
-        return resolve(AiExecutionStage.FINAL_REPORT).client().finalReport(prompt);
-    }
-    public FinalReportResult finalReport(
-            GenerationClientSelection selection,
-            String prompt
-    ) {
-        requireStage(selection, AiExecutionStage.FINAL_REPORT);
-        return selection.client().finalReport(prompt);
-    }
     public AiProvider getProvider() {
         return resolve(AiExecutionStage.FINAL_REPORT).provider();
     }

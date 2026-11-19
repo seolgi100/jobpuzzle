@@ -18,21 +18,9 @@ import com.example.jobpuzzle.analysis.rag.service.RetrievalContextService;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisEvidenceCatalog;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderInput;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderResult;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisSchemaContext;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV15ProviderResult;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV16ProviderResult;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV17ProviderResult;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV18ProviderResult;
 import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisEvidenceCatalogFactory;
 import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisProviderInputFactory;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisResultAssembler;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV13SchemaFactory;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV15ResultAssembler;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV15SchemaFactory;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV16ResultAssembler;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV16SchemaFactory;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV17ResultAssembler;
-import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV17SchemaFactory;
 import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV18ResultAssembler;
 import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisV18SchemaFactory;
 import com.example.jobpuzzle.analysis.repository.*;
@@ -65,11 +53,7 @@ import java.util.Set;
 public class CustomizedSynthesisStageExecutor {
     // 보정 규칙 변경 시 과거 실패 fingerprint와 분리해 수정된 validator로 한 번은 다시 실행할 수 있게 한다.
     private static final String VALIDATION_POLICY_VERSION = "repair-v5";
-    private static final Set<String> PROVIDER_CONTRACT_VERSIONS = Set.of("v1.3", "v1.4");
-    private static final String FIXED_SLOT_CONTRACT_VERSION = "v1.5";
-    private static final String FLAT_SLOT_CONTRACT_VERSION = "v1.6";
-    private static final String COMPACT_SLOT_CONTRACT_VERSION = "v1.7";
-    private static final Set<String> REQUIRED_NARRATIVE_CONTRACT_VERSIONS = Set.of("v1.8", "v1.9", "v1.10");
+    private static final Set<String> SUPPORTED_CONTRACT_VERSIONS = Set.of("v1.8", "v1.9", "v1.10");
     private final AnalysisInputSnapshotRepository snapshotRepository;
     private final JobPostingAnalysisRepository jobPostingRepository;
     private final CandidateMaterialAnalysisRepository candidateRepository;
@@ -94,14 +78,6 @@ public class CustomizedSynthesisStageExecutor {
     private final Json05ExecutionDiagnostic diagnostic;
     private final CustomizedSynthesisEvidenceCatalogFactory evidenceCatalogFactory;
     private final CustomizedSynthesisProviderInputFactory providerInputFactory;
-    private final CustomizedSynthesisV13SchemaFactory v13SchemaFactory;
-    private final CustomizedSynthesisResultAssembler resultAssembler;
-    private final CustomizedSynthesisV15SchemaFactory v15SchemaFactory;
-    private final CustomizedSynthesisV15ResultAssembler v15ResultAssembler;
-    private final CustomizedSynthesisV16SchemaFactory v16SchemaFactory;
-    private final CustomizedSynthesisV16ResultAssembler v16ResultAssembler;
-    private final CustomizedSynthesisV17SchemaFactory v17SchemaFactory;
-    private final CustomizedSynthesisV17ResultAssembler v17ResultAssembler;
     private final CustomizedSynthesisV18SchemaFactory v18SchemaFactory;
     private final CustomizedSynthesisV18ResultAssembler v18ResultAssembler;
     private final TransactionTemplate transactionTemplate;
@@ -121,14 +97,6 @@ public class CustomizedSynthesisStageExecutor {
                                             Json05ExecutionDiagnostic diagnostic,
                                             CustomizedSynthesisEvidenceCatalogFactory evidenceCatalogFactory,
                                             CustomizedSynthesisProviderInputFactory providerInputFactory,
-                                            CustomizedSynthesisV13SchemaFactory v13SchemaFactory,
-                                            CustomizedSynthesisResultAssembler resultAssembler,
-                                            CustomizedSynthesisV15SchemaFactory v15SchemaFactory,
-                                            CustomizedSynthesisV15ResultAssembler v15ResultAssembler,
-                                            CustomizedSynthesisV16SchemaFactory v16SchemaFactory,
-                                            CustomizedSynthesisV16ResultAssembler v16ResultAssembler,
-                                            CustomizedSynthesisV17SchemaFactory v17SchemaFactory,
-                                            CustomizedSynthesisV17ResultAssembler v17ResultAssembler,
                                             CustomizedSynthesisV18SchemaFactory v18SchemaFactory,
                                             CustomizedSynthesisV18ResultAssembler v18ResultAssembler,
                                             @Value("${app.ai.running-timeout-seconds}") long runningTimeoutSeconds,
@@ -157,14 +125,6 @@ public class CustomizedSynthesisStageExecutor {
         this.diagnostic = diagnostic;
         this.evidenceCatalogFactory = evidenceCatalogFactory;
         this.providerInputFactory = providerInputFactory;
-        this.v13SchemaFactory = v13SchemaFactory;
-        this.resultAssembler = resultAssembler;
-        this.v15SchemaFactory = v15SchemaFactory;
-        this.v15ResultAssembler = v15ResultAssembler;
-        this.v16SchemaFactory = v16SchemaFactory;
-        this.v16ResultAssembler = v16ResultAssembler;
-        this.v17SchemaFactory = v17SchemaFactory;
-        this.v17ResultAssembler = v17ResultAssembler;
         this.v18SchemaFactory = v18SchemaFactory;
         this.v18ResultAssembler = v18ResultAssembler;
         this.runningTimeoutSeconds = runningTimeoutSeconds;
@@ -180,31 +140,11 @@ public class CustomizedSynthesisStageExecutor {
             return;
         }
         try {
-            if (REQUIRED_NARRATIVE_CONTRACT_VERSIONS.contains(lease.promptTemplate().getVersion())) {
-                executeV18(lease);
-                return;
+            // v1.8 이후 계약(결정 + 필수 설명)만 지원한다. 옛 버전은 v1-final 태그에 남아 있다.
+            if (!SUPPORTED_CONTRACT_VERSIONS.contains(lease.promptTemplate().getVersion())) {
+                throw new CustomException(ErrorCode.AI_PROMPT_TEMPLATE_NOT_FOUND);
             }
-            if (COMPACT_SLOT_CONTRACT_VERSION.equals(lease.promptTemplate().getVersion())) {
-                executeV17(lease);
-                return;
-            }
-            if (FLAT_SLOT_CONTRACT_VERSION.equals(lease.promptTemplate().getVersion())) {
-                executeV16(lease);
-                return;
-            }
-            if (FIXED_SLOT_CONTRACT_VERSION.equals(lease.promptTemplate().getVersion())) {
-                executeV15(lease);
-                return;
-            }
-            if (PROVIDER_CONTRACT_VERSIONS.contains(lease.promptTemplate().getVersion())) {
-                executeV13(lease);
-                return;
-            }
-            inputLimitValidator.validateCustomizedRetrieval(lease.retrievedEvidence().evidence());
-            String prompt = promptTemplateRenderer.renderCustomizedAnalysis(lease.promptTemplate(), lease.mainCategory(), lease.subCategory(),
-                    lease.careerLevel(), lease.jobPosting(), lease.candidate(), lease.guideDto(), lease.retrievedEvidence().evidence());
-            inputLimitValidator.validateRenderedPrompt(lease.selection(), prompt);
-            executeWithPrompt(lease, prompt);
+            executeV18(lease);
         } catch (RuntimeException exception) {
             // 하위 실행 단계가 이미 실패 log와 CustomException을 확정한 경우 중복 기록하지 않는다.
             if (exception instanceof CustomException customException) throw customException;
@@ -213,106 +153,10 @@ public class CustomizedSynthesisStageExecutor {
         }
     }
 
-    // Provider 실패는 파싱·검증·저장 실패와 분리해 안전한 오류 유형으로 기록한다.
-    private void executeWithPrompt(Lease lease, String prompt) {
-        String rawResponse;
-        AiProviderCompletionMetadata completion = null;
-        String phase = "JSON05_TEXT_EXTRACTED";
-        try {
-            rawResponse = aiClientService.generateCustomizedAnalysis(lease.selection(), prompt);
-            diagnostic.checkpoint(phase);
-            completion = aiClientService.consumeCompletionMetadata(lease.selection());
-            recordMetadata(lease.aiCallLogId(), completion);
-        } catch (RuntimeException exception) {
-            // Provider가 전달한 typed AI 오류는 log와 API 메시지에서 그대로 구분한다.
-            if (exception instanceof AiProcessingException processingException) {
-                recordMetadata(lease.aiCallLogId(), processingException.getCompletionMetadata());
-            }
-            RuntimeException diagnostic = exception instanceof AiProcessingException || exception instanceof CustomException
-                    ? exception : new Json05ProviderBoundaryException(exception);
-            AiCallLogErrorType errorType = errorType(diagnostic);
-            this.diagnostic.failure(phase, exception);
-            safelyRecordFailure(lease.aiCallLogId(), errorType, diagnostic, phase);
-            throw toApiException(errorType, diagnostic);
-        }
-        try {
-            CustomizedAnalysisGenerationResult result = aiResponseProcessor.parseCustomizedAnalysis(rawResponse);
-            phase = "JSON05_PARSED";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_PROVIDER_DTO_MAPPED";
-            diagnostic.checkpoint(phase);
-            responseValidator.validate(new CustomizedAnalysisValidationContext(lease.jobPosting(), lease.candidate(), lease.guideDto(),
-                    lease.retrievedEvidence().evidence()), result);
-            phase = "JSON05_SOURCE_REFS_RESTORED";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_VALIDATED";
-            diagnostic.checkpoint(phase);
-            recordMetadata(lease.aiCallLogId(), completion == null ? null
-                    : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
-            persistResult(lease, result);
-            phase = "JSON05_WRITTEN";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_QUESTION_SET_CREATED";
-            diagnostic.checkpoint(phase);
-        } catch (RuntimeException exception) {
-            // 저장기가 이미 계약된 CustomException과 안전한 오류 코드를 확정했다면 provider 오류로 덮어쓰지 않는다.
-            if (exception instanceof CustomException customException) {
-                this.diagnostic.failure(phase, exception);
-                throw customException;
-            }
-            RuntimeException diagnostic = exception instanceof AiProcessingException || exception instanceof CustomException
-                    ? exception : new Json05PostProcessingException(exception);
-            AiCallLogErrorType errorType = postProcessingErrorType(phase, diagnostic);
-            // error log 저장이 실패해도 원래 validator/parse 오류와 첫 application frame을 잃지 않는다.
-            this.diagnostic.failure(phase, exception);
-            safelyRecordPostProcessingFailure(lease.aiCallLogId(), completion, errorType, diagnostic, phase);
-            throw toApiException(errorType, diagnostic);
-        }
-    }
 
-    private void executeV13(Lease lease) {
-        CustomizedSynthesisEvidenceCatalog authority =
-                evidenceCatalogFactory.create(lease.jobPosting(), lease.retrievedEvidence().evidence());
-        CustomizedSynthesisProviderInput input = providerInputFactory.create(
-                lease.mainCategory(), lease.subCategory(), lease.careerLevel(),
-                lease.candidate(), lease.guideDto(), authority);
-        String prompt = promptTemplateRenderer.renderCustomizedAnalysisV13(lease.promptTemplate(), input);
-        inputLimitValidator.validateRenderedPrompt(lease.selection(), prompt);
-        executeV13WithPrompt(lease, prompt, v13SchemaFactory.schema(CustomizedSynthesisSchemaContext.from(input)), authority);
-    }
 
-    private void executeV15(Lease lease) {
-        CustomizedSynthesisEvidenceCatalog authority =
-                evidenceCatalogFactory.create(lease.jobPosting(), lease.retrievedEvidence().evidence());
-        CustomizedSynthesisProviderInput input = providerInputFactory.create(
-                lease.mainCategory(), lease.subCategory(), lease.careerLevel(),
-                lease.candidate(), lease.guideDto(), authority);
-        String prompt = promptTemplateRenderer.renderCustomizedAnalysisV13(lease.promptTemplate(), input);
-        inputLimitValidator.validateRenderedPrompt(lease.selection(), prompt);
-        executeV15WithPrompt(lease, prompt, v15SchemaFactory.schema(input), input, authority);
-    }
 
-    private void executeV16(Lease lease) {
-        CustomizedSynthesisEvidenceCatalog authority =
-                evidenceCatalogFactory.create(lease.jobPosting(), lease.retrievedEvidence().evidence());
-        CustomizedSynthesisProviderInput input = providerInputFactory.create(
-                lease.mainCategory(), lease.subCategory(), lease.careerLevel(),
-                lease.candidate(), lease.guideDto(), authority);
-        String prompt = promptTemplateRenderer.renderCustomizedAnalysisV13(lease.promptTemplate(), input);
-        inputLimitValidator.validateRenderedPrompt(lease.selection(), prompt);
-        executeV16WithPrompt(lease, prompt, v16SchemaFactory.schema(input), input, authority);
-    }
 
-    private void executeV17(Lease lease) {
-        CustomizedSynthesisEvidenceCatalog authority =
-                evidenceCatalogFactory.create(lease.jobPosting(), lease.retrievedEvidence().evidence());
-        CustomizedSynthesisProviderInput input = providerInputFactory.create(
-                lease.mainCategory(), lease.subCategory(), lease.careerLevel(),
-                lease.candidate(), lease.guideDto(), authority);
-        String prompt = promptTemplateRenderer.renderCustomizedAnalysisV13(lease.promptTemplate(), input);
-        inputLimitValidator.validateRenderedPrompt(lease.selection(), prompt);
-        executeV17WithPrompt(lease, prompt, v17SchemaFactory.schema(input), input, authority);
-    }
 
     private void executeV18(Lease lease) {
         CustomizedSynthesisEvidenceCatalog authority =
@@ -381,230 +225,9 @@ public class CustomizedSynthesisStageExecutor {
         }
     }
 
-    private void executeV17WithPrompt(Lease lease, String prompt, com.fasterxml.jackson.databind.JsonNode schema,
-                                      CustomizedSynthesisProviderInput input,
-                                      CustomizedSynthesisEvidenceCatalog authority) {
-        String rawResponse;
-        AiProviderCompletionMetadata completion = null;
-        String phase = "JSON05_TEXT_EXTRACTED";
-        try {
-            rawResponse = aiClientService.generateCustomizedAnalysisV17(lease.selection(), prompt, schema);
-            diagnostic.checkpoint(phase);
-            completion = aiClientService.consumeCompletionMetadata(lease.selection());
-            recordMetadata(lease.aiCallLogId(), completion);
-        } catch (RuntimeException exception) {
-            if (exception instanceof AiProcessingException processingException) {
-                recordMetadata(lease.aiCallLogId(), processingException.getCompletionMetadata());
-            }
-            RuntimeException boundary = exception instanceof AiProcessingException || exception instanceof CustomException
-                    ? exception : new Json05ProviderBoundaryException(exception);
-            AiCallLogErrorType errorType = errorType(boundary);
-            diagnostic.failure(phase, exception);
-            safelyRecordFailure(lease.aiCallLogId(), errorType, boundary, phase);
-            throw toApiException(errorType, boundary);
-        }
-        try {
-            CustomizedSynthesisV17ProviderResult provider = aiResponseProcessor.parseCustomizedAnalysisV17(rawResponse);
-            phase = "JSON05_PARSED";
-            diagnostic.checkpoint(phase);
-            CustomizedAnalysisGenerationResult result =
-                    v17ResultAssembler.assemble(provider, input, authority, lease.guideDto().getMatchType());
-            phase = "JSON05_PROVIDER_DTO_MAPPED";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_SOURCE_REFS_RESTORED";
-            diagnostic.checkpoint(phase);
-            responseValidator.validate(new CustomizedAnalysisValidationContext(
-                    lease.jobPosting(), lease.candidate(), lease.guideDto(), lease.retrievedEvidence().evidence()), result);
-            phase = "JSON05_VALIDATED";
-            diagnostic.checkpoint(phase);
-            recordMetadata(lease.aiCallLogId(), completion == null ? null
-                    : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
-            persistResult(lease, result);
-            diagnostic.checkpoint("JSON05_WRITTEN");
-            diagnostic.checkpoint("JSON05_QUESTION_SET_CREATED");
-        } catch (RuntimeException exception) {
-            if (exception instanceof CustomException customException) {
-                diagnostic.failure(phase, exception);
-                throw customException;
-            }
-            RuntimeException postProcessing = exception instanceof AiProcessingException
-                    ? exception : new Json05PostProcessingException(exception);
-            AiCallLogErrorType errorType = postProcessingErrorType(phase, postProcessing);
-            diagnostic.failure(phase, exception);
-            safelyRecordPostProcessingFailure(
-                    lease.aiCallLogId(), completion, errorType, postProcessing, phase);
-            throw toApiException(errorType, postProcessing);
-        }
-    }
 
-    private void executeV16WithPrompt(Lease lease, String prompt, com.fasterxml.jackson.databind.JsonNode schema,
-                                      CustomizedSynthesisProviderInput input,
-                                      CustomizedSynthesisEvidenceCatalog authority) {
-        String rawResponse;
-        AiProviderCompletionMetadata completion = null;
-        String phase = "JSON05_TEXT_EXTRACTED";
-        try {
-            rawResponse = aiClientService.generateCustomizedAnalysisV16(lease.selection(), prompt, schema);
-            diagnostic.checkpoint(phase);
-            completion = aiClientService.consumeCompletionMetadata(lease.selection());
-            recordMetadata(lease.aiCallLogId(), completion);
-        } catch (RuntimeException exception) {
-            if (exception instanceof AiProcessingException processingException) {
-                recordMetadata(lease.aiCallLogId(), processingException.getCompletionMetadata());
-            }
-            RuntimeException boundary = exception instanceof AiProcessingException || exception instanceof CustomException
-                    ? exception : new Json05ProviderBoundaryException(exception);
-            AiCallLogErrorType errorType = errorType(boundary);
-            diagnostic.failure(phase, exception);
-            safelyRecordFailure(lease.aiCallLogId(), errorType, boundary, phase);
-            throw toApiException(errorType, boundary);
-        }
-        try {
-            CustomizedSynthesisV16ProviderResult provider = aiResponseProcessor.parseCustomizedAnalysisV16(rawResponse);
-            phase = "JSON05_PARSED";
-            diagnostic.checkpoint(phase);
-            CustomizedAnalysisGenerationResult result =
-                    v16ResultAssembler.assemble(provider, input, authority, lease.guideDto().getMatchType());
-            phase = "JSON05_PROVIDER_DTO_MAPPED";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_SOURCE_REFS_RESTORED";
-            diagnostic.checkpoint(phase);
-            responseValidator.validate(new CustomizedAnalysisValidationContext(
-                    lease.jobPosting(), lease.candidate(), lease.guideDto(), lease.retrievedEvidence().evidence()), result);
-            phase = "JSON05_VALIDATED";
-            diagnostic.checkpoint(phase);
-            recordMetadata(lease.aiCallLogId(), completion == null ? null
-                    : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
-            persistResult(lease, result);
-            diagnostic.checkpoint("JSON05_WRITTEN");
-            diagnostic.checkpoint("JSON05_QUESTION_SET_CREATED");
-        } catch (RuntimeException exception) {
-            if (exception instanceof CustomException customException) {
-                diagnostic.failure(phase, exception);
-                throw customException;
-            }
-            RuntimeException postProcessing = exception instanceof AiProcessingException
-                    ? exception : new Json05PostProcessingException(exception);
-            AiCallLogErrorType errorType = postProcessingErrorType(phase, postProcessing);
-            diagnostic.failure(phase, exception);
-            safelyRecordPostProcessingFailure(
-                    lease.aiCallLogId(), completion, errorType, postProcessing, phase);
-            throw toApiException(errorType, postProcessing);
-        }
-    }
 
-    private void executeV15WithPrompt(Lease lease, String prompt, com.fasterxml.jackson.databind.JsonNode schema,
-                                      CustomizedSynthesisProviderInput input,
-                                      CustomizedSynthesisEvidenceCatalog authority) {
-        String rawResponse;
-        AiProviderCompletionMetadata completion = null;
-        String phase = "JSON05_TEXT_EXTRACTED";
-        try {
-            rawResponse = aiClientService.generateCustomizedAnalysisV15(lease.selection(), prompt, schema);
-            diagnostic.checkpoint(phase);
-            completion = aiClientService.consumeCompletionMetadata(lease.selection());
-            recordMetadata(lease.aiCallLogId(), completion);
-        } catch (RuntimeException exception) {
-            if (exception instanceof AiProcessingException processingException) {
-                recordMetadata(lease.aiCallLogId(), processingException.getCompletionMetadata());
-            }
-            RuntimeException boundary = exception instanceof AiProcessingException || exception instanceof CustomException
-                    ? exception : new Json05ProviderBoundaryException(exception);
-            AiCallLogErrorType errorType = errorType(boundary);
-            diagnostic.failure(phase, exception);
-            safelyRecordFailure(lease.aiCallLogId(), errorType, boundary, phase);
-            throw toApiException(errorType, boundary);
-        }
-        try {
-            CustomizedSynthesisV15ProviderResult provider = aiResponseProcessor.parseCustomizedAnalysisV15(rawResponse);
-            phase = "JSON05_PARSED";
-            diagnostic.checkpoint(phase);
-            CustomizedAnalysisGenerationResult result =
-                    v15ResultAssembler.assemble(provider, input, authority, lease.guideDto().getMatchType());
-            phase = "JSON05_PROVIDER_DTO_MAPPED";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_SOURCE_REFS_RESTORED";
-            diagnostic.checkpoint(phase);
-            responseValidator.validate(new CustomizedAnalysisValidationContext(
-                    lease.jobPosting(), lease.candidate(), lease.guideDto(), lease.retrievedEvidence().evidence()), result);
-            phase = "JSON05_VALIDATED";
-            diagnostic.checkpoint(phase);
-            recordMetadata(lease.aiCallLogId(), completion == null ? null
-                    : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
-            persistResult(lease, result);
-            diagnostic.checkpoint("JSON05_WRITTEN");
-            diagnostic.checkpoint("JSON05_QUESTION_SET_CREATED");
-        } catch (RuntimeException exception) {
-            if (exception instanceof CustomException customException) {
-                diagnostic.failure(phase, exception);
-                throw customException;
-            }
-            RuntimeException postProcessing = exception instanceof AiProcessingException
-                    ? exception : new Json05PostProcessingException(exception);
-            AiCallLogErrorType errorType = postProcessingErrorType(phase, postProcessing);
-            diagnostic.failure(phase, exception);
-            safelyRecordPostProcessingFailure(
-                    lease.aiCallLogId(), completion, errorType, postProcessing, phase);
-            throw toApiException(errorType, postProcessing);
-        }
-    }
 
-    private void executeV13WithPrompt(Lease lease, String prompt, com.fasterxml.jackson.databind.JsonNode schema,
-                                      CustomizedSynthesisEvidenceCatalog authority) {
-        String rawResponse;
-        AiProviderCompletionMetadata completion = null;
-        String phase = "JSON05_TEXT_EXTRACTED";
-        try {
-            rawResponse = aiClientService.generateCustomizedAnalysisV13(lease.selection(), prompt, schema);
-            diagnostic.checkpoint(phase);
-            completion = aiClientService.consumeCompletionMetadata(lease.selection());
-            recordMetadata(lease.aiCallLogId(), completion);
-        } catch (RuntimeException exception) {
-            if (exception instanceof AiProcessingException processingException) {
-                recordMetadata(lease.aiCallLogId(), processingException.getCompletionMetadata());
-            }
-            RuntimeException boundary = exception instanceof AiProcessingException || exception instanceof CustomException
-                    ? exception : new Json05ProviderBoundaryException(exception);
-            AiCallLogErrorType errorType = errorType(boundary);
-            diagnostic.failure(phase, exception);
-            safelyRecordFailure(lease.aiCallLogId(), errorType, boundary, phase);
-            throw toApiException(errorType, boundary);
-        }
-        try {
-            CustomizedSynthesisProviderResult provider = aiResponseProcessor.parseCustomizedAnalysisV13(rawResponse);
-            phase = "JSON05_PARSED";
-            diagnostic.checkpoint(phase);
-            CustomizedAnalysisGenerationResult result =
-                    resultAssembler.assemble(provider, authority, lease.guideDto().getMatchType());
-            phase = "JSON05_PROVIDER_DTO_MAPPED";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_SOURCE_REFS_RESTORED";
-            diagnostic.checkpoint(phase);
-            responseValidator.validate(new CustomizedAnalysisValidationContext(
-                    lease.jobPosting(), lease.candidate(), lease.guideDto(), lease.retrievedEvidence().evidence()), result);
-            phase = "JSON05_VALIDATED";
-            diagnostic.checkpoint(phase);
-            recordMetadata(lease.aiCallLogId(), completion == null ? null
-                    : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
-            persistResult(lease, result);
-            phase = "JSON05_WRITTEN";
-            diagnostic.checkpoint(phase);
-            phase = "JSON05_QUESTION_SET_CREATED";
-            diagnostic.checkpoint(phase);
-        } catch (RuntimeException exception) {
-            if (exception instanceof CustomException customException) {
-                diagnostic.failure(phase, exception);
-                throw customException;
-            }
-            RuntimeException postProcessing = exception instanceof AiProcessingException
-                    ? exception : new Json05PostProcessingException(exception);
-            AiCallLogErrorType errorType = postProcessingErrorType(phase, postProcessing);
-            diagnostic.failure(phase, exception);
-            safelyRecordPostProcessingFailure(
-                    lease.aiCallLogId(), completion, errorType, postProcessing, phase);
-            throw toApiException(errorType, postProcessing);
-        }
-    }
 
     private AiProviderCompletionMetadata failureMetadata(AiProviderCompletionMetadata completion, RuntimeException exception) {
         if (completion == null) return null;

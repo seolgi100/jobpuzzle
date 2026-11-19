@@ -63,7 +63,7 @@
     var canStart = v2 || (questions.length > 0 && result.interviewStartAllowed === true);
     var sid = v2 ? null : result.linkedSessionId, completed = result.linkedSessionStatus === 'COMPLETED';
     var cta = canStart ? ['이 분석으로 면접 보기', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))]
-      : sid ? (completed ? ['완료한 면접 결과 보기', route('/interview-results?sessionId=' + encodeURIComponent(sid))]
+      : sid ? (completed ? ['완료한 면접 결과 보기', route('/interview-report?sessionId=' + encodeURIComponent(sid))]
         : ['진행 중인 면접으로 돌아가기', route('/interview?resumeSessionId=' + encodeURIComponent(sid))])
         : ['면접 준비로 이동', route('/interview')];
     var ctaSub = canStart ? (v2 ? '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있습니다.'
