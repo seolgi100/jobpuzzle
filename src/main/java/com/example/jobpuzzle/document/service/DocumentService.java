@@ -140,16 +140,6 @@ public class DocumentService {
         document.rename(displayName);
     }
 
-    @Transactional
-    public void updateOriginalFileRetention(Long userId, Long documentId, boolean keepOriginal) {
-        UserDocument document = findOwnedDocument(userId, documentId);
-        if (!keepOriginal && !document.getFiles().isEmpty()) {
-            document.getFiles().forEach(file -> fileStorage.delete(file.getFilePath()));
-            document.clearFiles();
-        }
-        document.updateKeepOriginal(keepOriginal);
-    }
-
     private UserDocument findOwnedDocument(Long userId, Long documentId) {
         return userDocumentRepository.findByDocumentIdAndUser_UserId(documentId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.DOCUMENT_NOT_FOUND));

@@ -55,34 +55,6 @@ class ActionPlanServiceTest {
         );
     }
 
-    // 달력 조회가 로그인 사용자와 요청 날짜 범위로 제한되는지 검증한다.
-    @Test
-    void queriesCalendarOnlyInsideRequestedDateRangeForAuthenticatedUser() {
-        LocalDate from = LocalDate.of(2026, 8, 1);
-        LocalDate to = LocalDate.of(2026, 8, 31);
-        when(actionPlanRepository.findOwnedCalendarActionPlans(USER_ID, from, to))
-                .thenReturn(List.of());
-
-        assertThat(actionPlanService.getActionPlanCalendar(USER_ID, from, to)).isEmpty();
-
-        verify(actionPlanRepository).findOwnedCalendarActionPlans(USER_ID, from, to);
-    }
-
-    // 역전된 날짜 범위를 Repository 접근 전에 거부하는지 검증한다.
-    @Test
-    void rejectsInvalidCalendarDateRangeBeforeRepositoryAccess() {
-        LocalDate from = LocalDate.of(2026, 8, 31);
-        LocalDate to = LocalDate.of(2026, 8, 1);
-
-        assertThatThrownBy(() -> actionPlanService.getActionPlanCalendar(USER_ID, from, to))
-                .isInstanceOf(CustomException.class)
-                .extracting(error -> ((CustomException) error).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_REQUEST);
-
-        verify(actionPlanRepository, never())
-                .findOwnedCalendarActionPlans(USER_ID, from, to);
-    }
-
     // 소유 액션플랜 완료 시 상태와 완료 시각이 함께 응답되는지 검증한다.
     @Test
     void completesOwnedActionPlanAndRecordsCompletionTime() {

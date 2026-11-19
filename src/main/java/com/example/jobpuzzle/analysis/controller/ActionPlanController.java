@@ -11,7 +11,6 @@ import com.example.jobpuzzle.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -40,18 +38,6 @@ public class ActionPlanController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 actionPlanService.getActionPlanList(user.getUserId(), status, analysisCaseId)
-        ));
-    }
-
-    // 로그인 사용자의 마감일 지정 액션플랜을 날짜 범위로 반환한다.
-    @GetMapping("/calendar")
-    public ResponseEntity<ApiResponse<List<ActionPlanListResponse>>> getActionPlanCalendar(
-            @AuthenticationPrincipal(expression = "user") User user,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                actionPlanService.getActionPlanCalendar(user.getUserId(), from, to)
         ));
     }
 

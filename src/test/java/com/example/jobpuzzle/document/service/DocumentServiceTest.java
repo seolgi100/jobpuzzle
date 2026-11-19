@@ -125,24 +125,6 @@ class DocumentServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_FILE_TYPE);
     }
 
-    @Test
-    @DisplayName("원본 보관을 끄면 자료에 딸린 파일이 전부 삭제된다")
-    void updateOriginalFileRetention_deletesAllFiles_whenKeepOriginalFalse() {
-        UserDocument document = UserDocument.builder()
-                .documentType(UserDocumentType.JOB_POSTING).sourceType(UserDocumentSourceType.IMAGE)
-                .displayName("스크린샷 공고").keepOriginal(true).build();
-        document.addFile("image/uuid1.png", "cap1.png");
-        document.addFile("image/uuid2.png", "cap2.png");
-        ReflectionTestUtils.setField(document, "documentId", 100L);
-
-        when(userDocumentRepository.findByDocumentIdAndUser_UserId(100L, 1L)).thenReturn(Optional.of(document));
-
-        documentService.updateOriginalFileRetention(1L, 100L, false);
-
-        verify(fileStorage, times(2)).delete(anyString());
-        assertThat(document.getFiles()).isEmpty();
-    }
-
     private void stubUserAndStorage() {
         when(userRepository.getReferenceById(1L)).thenReturn(User.builder().build());
         when(fileStorage.store(any(), any())).thenReturn("stored/path");
