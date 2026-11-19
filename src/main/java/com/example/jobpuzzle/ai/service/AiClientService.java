@@ -3,7 +3,6 @@ package com.example.jobpuzzle.ai.service;
 import com.example.jobpuzzle.ai.client.AiClient;
 import com.example.jobpuzzle.ai.client.AiProviderCompletionMetadata;
 import com.example.jobpuzzle.ai.config.AiGenerationProperties;
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.log.AiExecutionStage;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
@@ -104,13 +103,4 @@ public class AiClientService {
         }
     }
 
-    // 아래 두 API는 분석 외 모듈의 기존 호출 표면을 보존한다. stage 기반 분석 실행에는 사용하지 않는다.
-    public QuestionGenerationResult generateQuestions(String prompt) { return mockAiClient.generateQuestions(prompt); }
-    public AiProvider getProvider() {
-        return resolve(AiExecutionStage.FINAL_REPORT).provider();
-    }
-
-    public String getModel() {
-        return resolve(AiExecutionStage.FINAL_REPORT).model();
-    }
 }

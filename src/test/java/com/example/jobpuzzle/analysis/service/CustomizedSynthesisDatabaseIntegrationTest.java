@@ -90,8 +90,6 @@ class CustomizedSynthesisDatabaseIntegrationTest {
         ReadinessResult stored = readinessResultRepository.findBySnapshot_SnapshotId(fixture.snapshot().getSnapshotId()).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(ReadinessResultStatus.POSTING_LACK);
         assertThat(stored.isCanGenerateQuestions()).isFalse();
-        assertThat(questionSetRepository.existsBySnapshot_SnapshotIdAndInterviewMode(fixture.snapshot().getSnapshotId(),
-                com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT)).isFalse();
         assertThat(aiCallLogRepository.findById(fixture.runningLog().getAiCallLogId()).orElseThrow().getStatus()).isEqualTo(AiCallLogStatus.SUCCEEDED);
         assertThat(analysisCaseRepository.findById(fixture.analysisCase().getAnalysisCaseId()).orElseThrow().getStatus()).isEqualTo(AnalysisCaseStatus.COMPLETED);
     }

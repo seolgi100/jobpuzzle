@@ -414,21 +414,6 @@ class CustomizedSynthesisStageExecutorTest {
     }
 
     @Test
-    void questionSetForQuestionGenerationDisabledResultIsRejected() {
-        AiCallLog successLog = customizedSucceededLog(73L);
-        ReadinessResult readiness = mock(ReadinessResult.class);
-        when(readiness.getAiCallLog()).thenReturn(successLog);
-        when(readiness.isCanGenerateQuestions()).thenReturn(false);
-        when(readinessRepository.existsBySnapshot_SnapshotId(SNAPSHOT_ID)).thenReturn(true);
-        when(readinessRepository.findBySnapshot_SnapshotId(SNAPSHOT_ID)).thenReturn(Optional.of(readiness));
-        when(matchRepository.findBySnapshot_SnapshotIdOrderByMatchIdAsc(SNAPSHOT_ID)).thenReturn(List.of());
-        when(questionSetRepository.findBySnapshot_SnapshotIdAndInterviewMode(anyLong(), any()))
-                .thenReturn(Optional.of(mock(com.example.jobpuzzle.interview.entity.QuestionSet.class)));
-
-        assertIntegrityConflict();
-    }
-
-    @Test
     void resultEntitiesWithDifferentAiCallLogsAreRejected() {
         AiCallLog readinessLog = customizedSucceededLog(74L);
         AiCallLog actionLog = customizedSucceededLog(75L);

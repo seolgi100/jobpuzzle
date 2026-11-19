@@ -1,6 +1,5 @@
 package com.example.jobpuzzle.ai.client;
 
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,13 +22,9 @@ public interface AiClient {
 
     String evaluateAnswer(String renderedPrompt);
 
-    QuestionGenerationResult generateQuestions(String prompt);
-
     AiProvider getProvider();
 
     String getModel();
-
-    String call(String prompt);
 
     // 기존 문자열 반환 계약은 유지한다. metadata가 없는 provider는 null을 반환한다.
     default AiProviderCompletionMetadata consumeCompletionMetadata() {

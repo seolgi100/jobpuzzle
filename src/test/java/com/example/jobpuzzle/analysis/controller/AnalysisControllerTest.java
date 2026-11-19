@@ -8,7 +8,6 @@ import com.example.jobpuzzle.analysis.service.AnalysisCaseService;
 import com.example.jobpuzzle.analysis.service.AnalysisResultQueryService;
 import com.example.jobpuzzle.analysis.service.AnalysisService;
 import com.example.jobpuzzle.analysis.service.AnalysisStatusQueryService;
-import com.example.jobpuzzle.analysis.service.CompanyFitQuestionSetQueryService;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.global.security.CustomUserDetails;
@@ -44,7 +43,6 @@ class AnalysisControllerTest {
     @MockBean private AnalysisCaseService analysisCaseService;
     @MockBean private AnalysisResultQueryService resultQueryService;
     @MockBean private AnalysisStatusQueryService statusQueryService;
-    @MockBean private CompanyFitQuestionSetQueryService questionSetQueryService;
 
     @Test
     void runReturnsTheCurrentCaseStatusAfterSuccessfulExecution() throws Exception {

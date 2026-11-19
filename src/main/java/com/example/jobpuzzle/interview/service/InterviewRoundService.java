@@ -93,7 +93,7 @@ public class InterviewRoundService {
     private InterviewSession latestCompletedRound(Long userId, Long sessionId) {
         InterviewSession session = sessionRepository.findBySessionIdAndUser_UserIdAndDeletedAtIsNull(sessionId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_SESSION_NOT_FOUND));
-        if (!session.isCompleted() || !session.getMode().isV2()) {
+        if (!session.isCompleted()) {
             throw new CustomException(ErrorCode.ROUND_NOT_ALLOWED);
         }
         if (sessionRepository.existsByPreviousSession_SessionIdAndStatusNot(sessionId, InterviewSessionStatus.CANCELED)) {

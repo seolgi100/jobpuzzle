@@ -151,11 +151,8 @@ app:
     top-n: 2
     min-questions-per-tag: 3
 
-  # 면접 티켓: 기본 면접 1장, 공고 맞춤 3장
+  # 티켓 차감 수 (평가 명세 1장)
   ticket:
-    basic-cost: 1
-    company-fit-cost: 3
-    # v2 (평가 명세 1장)
     analysis-cost: 1
     knowledge-cost: 1
     material-cost: 3

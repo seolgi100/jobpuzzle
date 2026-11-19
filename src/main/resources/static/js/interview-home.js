@@ -49,8 +49,7 @@
   }
 
   var MODE_LABEL = {
-    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
-    BASIC: '기본 질문', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완'
+    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접'
   };
 
   function modeLabel(mode) {

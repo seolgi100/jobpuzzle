@@ -1,3 +1,0 @@
-package com.example.jobpuzzle.analysis.dto;
-import lombok.Builder; import lombok.Getter; import java.util.List;
-@Getter @Builder public class CompanyFitQuestionSetResponse { private Long analysisCaseId; private Long snapshotId; private Long questionSetId; private String mode; private String readinessStatus; private boolean canGenerateQuestions; private Long guideId; private String guideVersion; private String guideMatchType; private List<Question> questions; @Getter @Builder public static class Question { private Long questionId; private int displayOrder; private String questionType; private String question; private String intent; private Object evaluationFocus; private Long relatedMatchId; private String relatedRequirementId; private Object sourceRefs; } }

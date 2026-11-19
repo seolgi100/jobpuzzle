@@ -13,11 +13,8 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 // 사용자가 선택한 질문으로 생성하는 면접 세션과 모드별 불변 기준 저장
 @Getter
@@ -85,19 +82,6 @@ public class InterviewSession extends BaseTimeEntity {
     // AI 질문 생성 프롬프트 버전
     @Column(name = "prompt_version", length = 20)
     private String promptVersion;
-
-    // WEAKNESS_REVIEW 대상 약점 태그
-    @Column(name = "target_weakness_tag", length = 100)
-    private String targetWeaknessTag;
-
-    // WEAKNESS_REVIEW 질문 생성에 사용한 평가 ID 목록
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(
-            name = "basis_evaluation_ids",
-            nullable = false,
-            columnDefinition = "json"
-    )
-    private List<Long> basisEvaluationIds;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -180,22 +164,12 @@ public class InterviewSession extends BaseTimeEntity {
         }
 
         session.promptVersion = questionSet.getPromptVersion();
-        session.targetWeaknessTag = questionSet.getTargetWeaknessTag();
-        session.basisEvaluationIds =
-                questionSet.getBasisEvaluationIds() == null
-                        ? List.of()
-                        : List.copyOf(questionSet.getBasisEvaluationIds());
 
         session.status = InterviewSessionStatus.CREATED;
         session.lastActivityAt = LocalDateTime.now();
         session.round = 1;
 
         return session;
-    }
-
-    // targetDimension은 INTERVIEW_SESSION 컬럼이 아니므로 QuestionSet에서 조회
-    public String getTargetDimension() {
-        return questionSet.getTargetDimension();
     }
 
     // 최초 답변 제출 시 IN_PROGRESS로 전환

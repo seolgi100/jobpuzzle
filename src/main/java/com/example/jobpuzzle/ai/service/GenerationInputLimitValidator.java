@@ -2,9 +2,7 @@ package com.example.jobpuzzle.ai.service;
 
 import com.example.jobpuzzle.ai.config.AiGenerationProperties;
 import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
-import com.example.jobpuzzle.ai.log.AiExecutionStage;
 import com.example.jobpuzzle.ai.validation.AiProcessingException;
-import com.example.jobpuzzle.analysis.rag.dto.RetrievedEvidenceContextDto;
 import org.springframework.stereotype.Component;
 
 /** Provider 호출 전 입력 계약을 검사한다. 초과 자료를 임의 요약·절단하지 않고 명시적으로 실패시킨다. */

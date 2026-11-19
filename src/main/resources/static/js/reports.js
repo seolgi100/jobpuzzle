@@ -14,7 +14,7 @@
   }
 
   function renderChips() {
-    var counts = { all: state.sessions.length, knowledge: 0, material: 0, personality: 0, v1: 0 };
+    var counts = { all: state.sessions.length, knowledge: 0, material: 0, personality: 0 };
     state.sessions.forEach(function (s) { counts[U.mode(s.mode)[2]] += 1; });
     document.querySelectorAll('[data-mode]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.mode === state.filter));
@@ -66,19 +66,12 @@
     } else {
       var dims = Object.keys(sc.categoryScores || {}).map(function (k) { return { d: U.DIM_LABELS[k] || k, v: sc.categoryScores[k] }; })
         .filter(function (x) { return x.v != null && x.v > 0; }).sort(function (a, b) { return b.v - a.v; });
-      var weak = [];
-      (sc.questionScores || []).forEach(function (q) {
-        (q.weaknessTags || []).forEach(function (t) { if (weak.indexOf(t) < 0) weak.push(t); });
-      });
       html += '<div class="rp-preview">' + U.ring(sc.overallScore) + '<div>' +
         (dims.length
           ? '<h4>잘한 관점</h4><div class="mini-bars">' + dims.slice(0, 3).map(bar).join('') + '</div>' +
             (dims.length > 3 ? '<h4 style="margin-top:16px">보완할 관점</h4><div class="mini-bars">' + dims.slice(-2).reverse().map(bar).join('') + '</div>' : '')
           : '<p style="margin:0; color:var(--text-3)">평가된 관점이 아직 없습니다.</p>') +
-        '</div></div>' +
-        '<div class="rp-block"><h4>반복된 약점</h4>' + (weak.length
-          ? '<div class="tags">' + weak.map(function (w) { return '<span class="wtag">' + U.esc(U.weakLabel(w)) + '</span>'; }).join('') + '</div>'
-          : '<p style="margin:0; font-size:13.5px; color:var(--text-3)">이 면접에서 확인된 약점이 없습니다.</p>') + '</div>';
+        '</div></div>';
     }
     html += '<p class="rp-note">리포트에서 관점별 근거, 다음 연습 질문, 서류 보완 제안까지 볼 수 있습니다. 처음 여는 리포트는 정리하는 데 몇 초 걸릴 수 있습니다.</p>';
     el.innerHTML = html;

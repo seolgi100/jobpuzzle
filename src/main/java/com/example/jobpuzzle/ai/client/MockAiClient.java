@@ -4,24 +4,15 @@ import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult;
 import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult.*;
 import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
 import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult.*;
 import com.example.jobpuzzle.ai.dto.SourceReference;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.ai.validation.AnalysisSourceMarkerParser;
-import com.example.jobpuzzle.analysis.entity.ActionPlanMatchLevel;
-import com.example.jobpuzzle.analysis.entity.MatchAnalysisResultMatchLevel;
-import com.example.jobpuzzle.analysis.entity.ReadinessResultStatus;
 import com.example.jobpuzzle.analysis.entity.RequirementType;
-import com.example.jobpuzzle.analysis.rag.dto.CustomizedSynthesisEvidenceProjection;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderInput;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderResult;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderEvidenceCatalog;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV18ProviderResult;
-import com.example.jobpuzzle.guide.entity.GuideMatchType;
 import com.example.jobpuzzle.interview.entity.InterviewQuestionReviewStatus;
 import com.example.jobpuzzle.interview.entity.InterviewQuestionType;
-import com.example.jobpuzzle.jobcategory.entity.JobCategoryCareerLevel;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -162,19 +153,6 @@ public class MockAiClient implements AiClient {
                 decisions, narratives, questions));
     }
 
-    private ReadinessResultStatus readiness(List<RequirementInput> requirements, List<SourceReference> candidateRefs, String guideMatchType) {
-        if (requirements.isEmpty()) return ReadinessResultStatus.POSTING_LACK;
-        if (candidateRefs.isEmpty()) return ReadinessResultStatus.CANDIDATE_LACK;
-        if (GuideMatchType.NONE.name().equals(guideMatchType)) return ReadinessResultStatus.GUIDE_LACK;
-        if (GuideMatchType.FALLBACK_PARENT_CATEGORY.name().equals(guideMatchType)
-                || GuideMatchType.FALLBACK_COMMON.name().equals(guideMatchType)) return ReadinessResultStatus.PARTIAL;
-        return ReadinessResultStatus.SUFFICIENT;
-    }
-
-    private List<String> limitations(ReadinessResultStatus status) {
-        return status == ReadinessResultStatus.SUFFICIENT ? List.of() : List.of(status.name());
-    }
-
     private CustomizedAnalysisGenerationResult.Question question(CustomizedAnalysisGenerationResult.RequirementMatch match, SourceReference candidateRef) {
         return CustomizedAnalysisGenerationResult.Question.builder().questionId("question-" + match.getRequirementId())
                 .questionType(InterviewQuestionType.COMPANY_FIT).question(match.getRequirement() + " 경험을 설명해주세요.")
@@ -185,13 +163,6 @@ public class MockAiClient implements AiClient {
                 .reviewStatus(InterviewQuestionReviewStatus.PASS).build();
     }
 
-    private CustomizedAnalysisGenerationResult.Task task(CustomizedAnalysisGenerationResult.RequirementMatch match) {
-        return CustomizedAnalysisGenerationResult.Task.builder().taskId("task-" + match.getRequirementId())
-                .relatedMatchId(match.getMatchId()).relatedRequirementId(match.getRequirementId())
-                .matchLevel(ActionPlanMatchLevel.valueOf(match.getMatchLevel().name()))
-                .missingPoint(match.getMissingPoint()).suggestion("관련 경험 근거를 보완하세요.").build();
-    }
-
     private List<RequirementInput> requirements(JobPostingAnalysisResult result) {
         List<RequirementInput> inputs = new java.util.ArrayList<>();
         result.getRequirements().forEach(value -> inputs.add(new RequirementInput(value.getRequirementId(), RequirementType.REQUIRED, value.getText(), value.getSourceRefs())));
@@ -199,61 +170,9 @@ public class MockAiClient implements AiClient {
         return inputs;
     }
 
-    private List<SourceReference> candidateSourceRefs(CandidateMaterialAnalysisResult result) {
-        List<SourceReference> refs = new java.util.ArrayList<>();
-        if (result.getResume() != null) {
-            result.getResume().getExperiences().forEach(value -> refs.addAll(value.getSourceRefs()));
-            result.getResume().getSkills().forEach(value -> refs.addAll(value.getSourceRefs()));
-            result.getResume().getRoles().forEach(value -> refs.addAll(value.getSourceRefs()));
-            result.getResume().getResults().forEach(value -> refs.addAll(value.getSourceRefs()));
-        }
-        if (result.getCoverLetter() != null) {
-            addSummaryRefs(refs, result.getCoverLetter().getMotivation());
-            addSummaryRefs(refs, result.getCoverLetter().getValues());
-            result.getCoverLetter().getExperienceNarratives().forEach(value -> addSummaryRefs(refs, value));
-            addSummaryRefs(refs, result.getCoverLetter().getJobConnection());
-        }
-        if (result.getPortfolio() != null)
-            result.getPortfolio().getProjects().forEach(value -> refs.addAll(value.getSourceRefs()));
-        if (result.getExperienceNote() != null)
-            result.getExperienceNote().getStarCandidates().forEach(value -> refs.addAll(value.getSourceRefs()));
-        return refs;
-    }
-
-    // projection의 requirement별 evidenceId가 가리키는 chunk만 JSON-05 candidate 근거로 echo한다.
-    private Map<String, List<SourceReference>> retrievedCandidateSourceRefs(CustomizedSynthesisEvidenceProjection evidence) {
-        if (evidence == null || evidence.requirements() == null) throw new IllegalArgumentException("missing mock retrieved evidence");
-        Map<String, CustomizedSynthesisEvidenceProjection.CandidateEvidence> byId = new java.util.LinkedHashMap<>();
-        for (CustomizedSynthesisEvidenceProjection.CandidateEvidence candidate : evidence.candidateEvidence()) {
-            byId.put(candidate.evidenceId(), candidate);
-        }
-        Map<String, List<SourceReference>> values = new java.util.LinkedHashMap<>();
-        for (CustomizedSynthesisEvidenceProjection.RequirementEvidence requirement : evidence.requirements()) {
-            values.put(requirement.requirementId(), requirement.candidateEvidenceIds().stream()
-                    .map(byId::get)
-                    .filter(java.util.Objects::nonNull)
-                    .map(chunk -> SourceReference.builder().extractionId(chunk.extractionId()).documentId(chunk.documentId())
-                            .documentType(chunk.documentType()).pageNumber(chunk.pageStart()).segmentId(null)
-                            .evidenceText(chunk.content()).build()).toList());
-        }
-        return values;
-    }
-
-    private void addSummaryRefs(List<SourceReference> refs, CandidateMaterialAnalysisResult.SummaryEvidence value) {
-        if (value != null) refs.addAll(value.getSourceRefs());
-    }
-
     private <T> T readSection(String prompt, String name, Class<T> type) {
         try {
             return objectMapper.readValue(section(prompt, name), type);
-        } catch (JsonProcessingException exception) {
-            throw new IllegalArgumentException("invalid mock input section: " + name);
-        }
-    }
-
-    private JsonNode readSectionTree(String prompt, String name) {
-        try {
-            return objectMapper.readTree(section(prompt, name));
         } catch (JsonProcessingException exception) {
             throw new IllegalArgumentException("invalid mock input section: " + name);
         }
@@ -375,63 +294,6 @@ public class MockAiClient implements AiClient {
         }
     }
 
-    // 확정된 분석 정보를 바탕으로 적합도, 면접 질문, 보완 과제를 생성
-    @Override
-    public QuestionGenerationResult generateQuestions(String prompt) {
-        // readiness, requirementMatches, questions, tasks를 고정값으로 반환
-        return QuestionGenerationResult.builder()
-                .readiness(Readiness.builder()
-                        .status(ReadinessResultStatus.PARTIAL)
-                        .reason("Spring Boot 개발 경험은 확인되지만 AWS 인프라 운영 경험에 대한 근거가 부족함")
-                        .build())
-
-                .requirementMatches(List.of(
-                        RequirementMatch.builder()
-                                .requirement("Spring Boot 기반 백엔드 개발 경험")
-                                .candidateEvidence("팀 프로젝트에서 Spring Boot를 사용하여 회원가입 및 로그인 API를 구현함")
-                                .matchLevel(MatchAnalysisResultMatchLevel.HIGH)
-                                .reason("요구사항과 직접 연결되는 프로젝트 경험 및 담당 기능이 확인됨")
-                                .missingPoint("")
-                                .build(),
-
-                        RequirementMatch.builder()
-                                .requirement("AWS 인프라 운영 경험")
-                                .candidateEvidence("제출 자료에서 관련 경험을 확인할 수 없음")
-                                .matchLevel(MatchAnalysisResultMatchLevel.NONE)
-                                .reason("AWS 배포 또는 운영 경험에 대한 구체적인 근거가 없음")
-                                .missingPoint("AWS를 활용한 배포·운영 경험 및 담당 역할")
-                                .build()
-                ))
-
-                .questions(List.of(
-                        Question.builder()
-                                .questionId("q-001")
-                                .questionType(InterviewQuestionType.EXPERIENCE)
-                                .question("Spring Boot로 개발한 API 중 본인이 담당한 기능과 구현 과정을 설명해주세요.")
-                                .intent("지원자의 실제 담당 범위와 기술 활용 수준 확인")
-                                .evaluationFocus(List.of(
-                                        "본인 담당 역할",
-                                        "구현 과정",
-                                        "문제 해결 경험"
-                                ))
-                                .relatedRequirement("Spring Boot 기반 백엔드 개발 경험")
-                                .reviewStatus(InterviewQuestionReviewStatus.PASS)
-                                .reviewNote("")
-                                .build()
-                ))
-
-                .tasks(List.of(
-                        ActionPlanItem.builder()
-                                .taskId("t-001")
-                                .relatedRequirement("AWS 인프라 운영 경험")
-                                .matchLevel(ActionPlanMatchLevel.NONE)
-                                .missingPoint("AWS를 활용한 배포·운영 경험 및 담당 역할")
-                                .suggestion("AWS를 활용한 배포 실습을 진행하고 사용 서비스, 배포 과정, 발생 문제와 해결 내용을 포트폴리오에 추가")
-                                .build()
-                ))
-                .build();
-    }
-
     // 현재 AI 클라이언트 구현체가 사용하는 제공자를 반환
     @Override
     public AiProvider getProvider() {
@@ -443,9 +305,4 @@ public class MockAiClient implements AiClient {
         return "mock-fixed-sample";
     }
 
-    @Override
-    public String call(String prompt) {
-        // TODO: Mock JSON 응답 반환
-        return "{}";
-    }
 }

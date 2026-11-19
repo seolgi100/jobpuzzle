@@ -39,8 +39,6 @@ class ScoreCalculatorTest {
                 INTENT_UNDERSTANDING, LOGICAL_STRUCTURE, CLARITY, EXPERIENCE_SPECIFICITY, OUTCOME, JOB_POSTING_ALIGNMENT);
         assertThat(EvaluationCriterion.forMode(InterviewSessionMode.PERSONALITY)).containsExactly(
                 INTENT_UNDERSTANDING, LOGICAL_STRUCTURE, CLARITY, ROLE_FIT, AUTHENTICITY, SELF_AWARENESS);
-        assertThatThrownBy(() -> EvaluationCriterion.forMode(InterviewSessionMode.WEAKNESS_REVIEW))
-                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

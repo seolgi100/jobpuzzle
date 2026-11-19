@@ -44,7 +44,7 @@ public class UserSummaryService {
     public UserSummaryResponse summary(Long userId) {
         List<InterviewSession> sessions = sessionRepository
                 .findByUser_UserIdAndStatusAndDeletedAtIsNullOrderByCompletedAtDesc(userId, InterviewSessionStatus.COMPLETED)
-                .stream().filter(s -> s.getMode().isV2()).toList();
+                .stream().toList();
 
         List<Answered> answered = new ArrayList<>();
         Map<String, String> tagNames = new HashMap<>();

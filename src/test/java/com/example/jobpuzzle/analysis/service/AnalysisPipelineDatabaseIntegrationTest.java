@@ -170,8 +170,6 @@ class AnalysisPipelineDatabaseIntegrationTest {
         var readiness = readinessResultRepository.findBySnapshot_SnapshotId(snapshot.getSnapshotId()).orElseThrow();
         assertThat(readiness.getStatus()).isEqualTo(ReadinessResultStatus.SUFFICIENT);
         assertThat(readiness.isCanGenerateQuestions()).isTrue();
-        assertThat(questionSetRepository.existsBySnapshot_SnapshotIdAndInterviewMode(snapshot.getSnapshotId(),
-                com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT)).isFalse();
         // v2 분석은 1장만 쓴다 (충전 10장 - 1장).
         assertThat(ticketService.getBalance(fixture.user().getUserId()).balance()).isEqualTo(9);
     }

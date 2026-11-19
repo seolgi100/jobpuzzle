@@ -13,10 +13,6 @@ public class QuestionListResponse {
     private String relatedRequirementId;
     private String reviewStatus;
     private int displayOrder;
-    private Long originSessionId;
-    private String originMode;
-    private Integer originScore;
-    private Object originDiagnostics;
 
     public static QuestionListResponse from(InterviewQuestion value) {
         return QuestionListResponse.builder()
@@ -26,18 +22,6 @@ public class QuestionListResponse {
                 .relatedRequirementId(value.getRelatedRequirementId())
                 .reviewStatus(value.getReviewStatus().name())
                 .displayOrder(value.getDisplayOrder())
-                .originSessionId(value.getOriginEvaluation() == null
-                        ? null
-                        : value.getOriginEvaluation().getSessionQuestion().getSession().getSessionId())
-                .originMode(value.getOriginEvaluation() == null
-                        ? null
-                        : value.getOriginEvaluation().getEvaluationMode().name())
-                .originScore(value.getOriginEvaluation() == null
-                        ? null
-                        : value.getOriginEvaluation().getScore())
-                .originDiagnostics(value.getOriginEvaluation() == null
-                        ? java.util.List.of()
-                        : value.getOriginEvaluation().getWeaknessTags())
                 .build();
     }
 }

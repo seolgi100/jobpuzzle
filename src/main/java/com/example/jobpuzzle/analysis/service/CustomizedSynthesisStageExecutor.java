@@ -17,7 +17,6 @@ import com.example.jobpuzzle.analysis.rag.dto.RetrievedEvidenceContext;
 import com.example.jobpuzzle.analysis.rag.service.RetrievalContextService;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisEvidenceCatalog;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderInput;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderResult;
 import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisV18ProviderResult;
 import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisEvidenceCatalogFactory;
 import com.example.jobpuzzle.analysis.synthesis.service.CustomizedSynthesisProviderInputFactory;
@@ -337,7 +336,7 @@ public class CustomizedSynthesisStageExecutor {
     }
 
     private boolean hasAnyJson05Result(Long id) {
-        return readinessRepository.existsBySnapshot_SnapshotId(id) || matchRepository.existsBySnapshot_SnapshotId(id) || actionPlanRepository.existsBySnapshot_SnapshotId(id) || questionSetRepository.existsBySnapshot_SnapshotIdAndInterviewMode(id, com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT);
+        return readinessRepository.existsBySnapshot_SnapshotId(id) || matchRepository.existsBySnapshot_SnapshotId(id) || actionPlanRepository.existsBySnapshot_SnapshotId(id);
     }
 
     // fingerprint와 무관하게 같은 snapshot의 활성 실행은 하나만 허용한다.
@@ -370,14 +369,6 @@ public class CustomizedSynthesisStageExecutor {
         List<MatchAnalysisResult> matches = matchRepository.findBySnapshot_SnapshotIdOrderByMatchIdAsc(id);
         if (!hasExpectedMatches(id, matches)) return false;
         if (matches.stream().anyMatch(value -> !sameLog(resultLog, value.getAiCallLog()))) return false;
-        // v2 분석은 질문 세트가 없다. v1 분석에서 함께 만든 질문 세트가 있으면 그것만 예전 규칙으로 검사한다.
-        var set = questionSetRepository.findBySnapshot_SnapshotIdAndInterviewMode(id, com.example.jobpuzzle.interview.entity.InterviewSessionMode.COMPANY_FIT).orElse(null);
-        if (set != null) {
-            var questions = questionRepository.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(set.getQuestionSetId());
-            if (!readiness.isCanGenerateQuestions() || !sameLog(resultLog, set.getAiCallLog()) || questions.isEmpty() || questions.size() > 10
-                    || questions.stream().anyMatch(question -> question.getReviewStatus() != com.example.jobpuzzle.interview.entity.InterviewQuestionReviewStatus.PASS))
-                return false;
-        }
         List<ActionPlan> actions = actionPlanRepository.findBySnapshot_SnapshotIdOrderByActionPlanIdAsc(id);
         return actions.stream().allMatch(value -> sameLog(resultLog, value.getAiCallLog()))
                 && matches.stream().filter(value -> value.getMatchLevel() != MatchAnalysisResultMatchLevel.HIGH)

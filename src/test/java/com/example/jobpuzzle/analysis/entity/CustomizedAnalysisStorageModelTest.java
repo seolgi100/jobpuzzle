@@ -63,28 +63,6 @@ class CustomizedAnalysisStorageModelTest {
     }
 
     @Test
-    void storesOnlyPassQuestionsInCompanyFitQuestionSet() {
-        AnalysisInputSnapshot snapshot = mock(AnalysisInputSnapshot.class);
-        JobCategory category = JobCategory.builder().mainCategory("개발").subCategory("백엔드")
-                .careerLevel(JobCategoryCareerLevel.EXPERIENCED).build();
-        AiCallLog log = mock(AiCallLog.class);
-        when(snapshot.getJobCategory()).thenReturn(category);
-        when(log.getPromptVersion()).thenReturn("v1");
-        QuestionSet set = QuestionSet.companyFit(snapshot, null, log);
-        CustomizedAnalysisGenerationResult.Question pass = question(InterviewQuestionReviewStatus.PASS);
-
-        InterviewQuestion question = InterviewQuestion.from(set, null, pass, 0);
-
-        assertThat(set.getInterviewMode()).isEqualTo(InterviewSessionMode.COMPANY_FIT);
-        assertThat(question.getQuestionId()).isNull();
-        assertThat(question.getQuestionKey()).isEqualTo("question-ai-key");
-        assertThat(question.getQuestionType()).isEqualTo(InterviewQuestionType.GENERAL);
-        assertThat(question.getReviewStatus()).isEqualTo(InterviewQuestionReviewStatus.PASS);
-        assertThatThrownBy(() -> InterviewQuestion.from(set, null, question(InterviewQuestionReviewStatus.REVISE), 1))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     void removesNotAnalyzableAndDoesNotKeepSessionIdOnGeneratedQuestion() {
         assertThat(java.util.Arrays.stream(ReadinessResultStatus.values()).map(Enum::name))
                 .doesNotContain("NOT_ANALYZABLE");

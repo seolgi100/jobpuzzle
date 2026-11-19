@@ -62,7 +62,6 @@ public class SessionReportV2Service {
     public SessionReportV2Response report(Long userId, Long sessionId) {
         InterviewSession session = sessionRepository.findBySessionIdAndUser_UserIdAndDeletedAtIsNull(sessionId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_SESSION_NOT_FOUND));
-        if (!session.getMode().isV2()) throw new CustomException(ErrorCode.INVALID_REQUEST);
         return build(session);
     }
 

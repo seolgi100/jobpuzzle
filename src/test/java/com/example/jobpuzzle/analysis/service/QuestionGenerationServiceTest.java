@@ -7,7 +7,6 @@ import com.example.jobpuzzle.interview.entity.QuestionSetStatus;
 import com.example.jobpuzzle.interview.repository.InterviewQuestionRepository;
 import com.example.jobpuzzle.interview.repository.InterviewSessionRepository;
 import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
-import com.example.jobpuzzle.evaluation.service.WeaknessTagNormalizer;
 import com.example.jobpuzzle.jobcategory.entity.JobCategory;
 import com.example.jobpuzzle.jobcategory.entity.JobCategoryCareerLevel;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ class QuestionGenerationServiceTest {
     @Mock private QuestionSetRepository questionSetRepository;
     @Mock private InterviewQuestionRepository interviewQuestionRepository;
     @Mock private InterviewSessionRepository interviewSessionRepository;
-    @Mock private WeaknessTagNormalizer weaknessTagNormalizer;
     @InjectMocks private QuestionGenerationService service;
 
     // v2 세 모드를 모두 조회하므로, 각 테스트가 정하지 않은 모드는 빈 목록

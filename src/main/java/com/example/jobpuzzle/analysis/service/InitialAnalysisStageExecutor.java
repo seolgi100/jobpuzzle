@@ -25,7 +25,6 @@ import com.example.jobpuzzle.analysis.entity.JobPostingAnalysis;
 import com.example.jobpuzzle.analysis.repository.AnalysisInputSnapshotRepository;
 import com.example.jobpuzzle.analysis.repository.CandidateMaterialAnalysisRepository;
 import com.example.jobpuzzle.analysis.repository.JobPostingAnalysisRepository;
-import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import org.springframework.stereotype.Service;

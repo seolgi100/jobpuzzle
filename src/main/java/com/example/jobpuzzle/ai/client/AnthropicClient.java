@@ -1,6 +1,5 @@
 package com.example.jobpuzzle.ai.client;
 
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.config.AiGenerationProperties;
 import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
 import com.example.jobpuzzle.ai.log.AiFailureKind;
@@ -28,7 +27,6 @@ import org.springframework.web.client.RestClientResponseException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -104,11 +102,6 @@ public class AnthropicClient implements AiClient {
     }
 
     @Override
-    public QuestionGenerationResult generateQuestions(String prompt) {
-        return null;
-    }
-
-    @Override
     public AiProvider getProvider() {
         return AiProvider.ANTHROPIC;
     }
@@ -116,11 +109,6 @@ public class AnthropicClient implements AiClient {
     @Override
     public String getModel() {
         return properties.getAnthropic().getModel();
-    }
-
-    @Override
-    public String call(String prompt) {
-        return message(AiExecutionStage.JOB_POSTING_ANALYSIS, prompt);
     }
 
     /**
@@ -352,26 +340,6 @@ public class AnthropicClient implements AiClient {
                            @JsonProperty("output_config") OutputConfig outputConfig) { }
     private record OutputConfig(Format format) { }
     private record Format(String type, com.fasterxml.jackson.databind.JsonNode schema) { }
-    private String stripCodeFence(String text) {
-        Matcher matcher = JSON_CODE_BLOCK.matcher(text);
-        return matcher.matches() ? matcher.group(1).trim() : text;
-    }
-
-    private String extractJsonObject(String text) {
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start < 0 || end <= start) {
-            return null;
-        }
-        return text.substring(start, end + 1);
-    }
-
-    // TEMP-DEBUG: 원인 확인되면 이 로그 라인 제거 예정. DB error_message에는 원문을 남기지 않고 서버 로그에만 전체 원문을 남긴다.
-    private AiProcessingException debugFailure(String normalized, JsonProcessingException exception) {
-        log.warn("JSON 파싱 실패 [{}] 원문 전체:\n{}", exception.getClass().getSimpleName(), normalized);
-        return failure(AiCallLogErrorType.JSON_PARSE_FAIL, "Claude 응답 JSON 파싱 실패: " + exception.getClass().getSimpleName());
-    }
-
     private record Message(String role, String content) { }
     private record Thinking(String type) { }
     @JsonIgnoreProperties(ignoreUnknown = true)

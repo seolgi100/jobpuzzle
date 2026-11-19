@@ -197,8 +197,7 @@ class FullFlowTest {
         Long questionId = data(get("/question-sets/" + set.path("questionSetId").asLong() + "/questions"), null, 200).get(0).path("questionId").asLong();
         Long sessionId = data(post("/interview-sessions"), Map.of("questionSetId", set.path("questionSetId").asLong(),
                 "selectedQuestionIds", List.of(questionId)), 201).path("sessionId").asLong();
-        data(post("/interview-sessions/" + sessionId + "/start"), null, 200);
-        JsonNode question = data(get("/interview-sessions/" + sessionId + "/questions/next"), null, 200);
+        JsonNode question = nextQuestion(sessionId);
         Map<String, Object> answer = Map.of("messageText", LONG_ANSWER, "answerType", "ORIGINAL_ANSWER",
                 "parentQuestionMessageId", question.path("conversation").get(0).path("messageId").asLong());
         String answerPath = "/interview-session-questions/" + question.path("sessionQuestionId").asLong() + "/answers";
@@ -266,13 +265,21 @@ class FullFlowTest {
                 .stream().map(Long::valueOf).toList();
         Long sessionId = data(post("/interview-sessions"), Map.of("questionSetId", setId, "selectedQuestionIds", ids), 201)
                 .path("sessionId").asLong();
-        data(post("/interview-sessions/" + sessionId + "/start"), null, 200);
         return answerAll(sessionId);
+    }
+
+    /** 화면(interview-live.js)처럼 질문 목록에서 아직 끝나지 않은 첫 질문을 고른다. */
+    private JsonNode nextQuestion(Long sessionId) throws Exception {
+        for (JsonNode q : data(get("/interview-sessions/" + sessionId + "/questions"), null, 200)) {
+            String status = q.path("status").asText();
+            if (!"COMPLETED".equals(status) && !"SKIPPED".equals(status)) return q;
+        }
+        return null;
     }
 
     /** 첫 질문은 짧게 답해 꼬리질문까지 거치고, 나머지는 충분히 답한 뒤 면접을 끝낸다. */
     private Long answerAll(Long sessionId) throws Exception {
-        JsonNode question = data(get("/interview-sessions/" + sessionId + "/questions/next"), null, 200);
+        JsonNode question = nextQuestion(sessionId);
         boolean first = true;
         while (question != null && !question.isNull() && !question.isMissingNode()) {
             JsonNode result = data(post("/interview-session-questions/" + question.path("sessionQuestionId").asLong() + "/answers"),

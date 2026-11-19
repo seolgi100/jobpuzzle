@@ -1,20 +1,13 @@
 package com.example.jobpuzzle.interview.service;
 
-import com.example.jobpuzzle.analysis.dto.CompanyFitQuestionSetResponse;
 import com.example.jobpuzzle.analysis.entity.CandidateMaterialAnalysis;
 import com.example.jobpuzzle.analysis.entity.JobPostingAnalysis;
 import com.example.jobpuzzle.analysis.repository.CandidateMaterialAnalysisRepository;
 import com.example.jobpuzzle.analysis.repository.JobPostingAnalysisRepository;
-import com.example.jobpuzzle.analysis.service.CompanyFitQuestionSetQueryService;
-import com.example.jobpuzzle.evaluation.service.AnswerEvaluationService;
+import com.example.jobpuzzle.evaluation.service.AnswerEvaluationV2Service;
 import com.example.jobpuzzle.evaluation.entity.AnswerEvaluation;
 import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
-import com.example.jobpuzzle.evaluation.entity.WeaknessTagResolveStatus;
-import com.example.jobpuzzle.evaluation.repository.WeaknessTagStatusRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessTagLogRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessRemediationAttemptRepository;
 import com.example.jobpuzzle.evaluation.service.SessionScoreAggregationService;
-import com.example.jobpuzzle.evaluation.service.WeaknessTagNormalizer;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.interview.dto.*;
@@ -43,334 +36,12 @@ public class InterviewSessionService {
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewSessionQuestionRepository sessionQuestionRepository;
     private final InterviewMessageRepository interviewMessageRepository;
-    private final CompanyFitQuestionSetQueryService companyFitQuestionSetQueryService;
     private final JobPostingAnalysisRepository jobPostingAnalysisRepository;
     private final CandidateMaterialAnalysisRepository candidateMaterialAnalysisRepository;
-    private final AnswerEvaluationService answerEvaluationService;
+    private final AnswerEvaluationV2Service answerEvaluationService;
     private final AnswerEvaluationRepository answerEvaluationRepository;
-    private final WeaknessTagStatusRepository weaknessTagStatusRepository;
-    private final WeaknessTagLogRepository weaknessTagLogRepository;
-    private final WeaknessRemediationAttemptRepository weaknessRemediationAttemptRepository;
-    private final WeaknessTagNormalizer weaknessTagNormalizer;
     private final SessionScoreAggregationService sessionScoreAggregationService;
     private final com.example.jobpuzzle.competency.service.CompetencyService competencyService;
-
-    @Transactional(readOnly = true)
-    public List<String> getUnresolvedWeaknessTags(Long userId) {
-        var allLogs = weaknessTagLogRepository.findByUser_UserIdOrderByTagLogIdDesc(userId);
-        return weaknessTagStatusRepository
-                .findByUser_UserIdAndStatus(userId, WeaknessTagResolveStatus.UNRESOLVED)
-                .stream()
-                .filter(weakness -> allLogs.stream()
-                        .filter(log -> Objects.equals(log.getTag(), weakness.getTag()))
-                        .anyMatch(log -> isCompletedSession(log.getSession())))
-                .sorted(Comparator.comparing(
-                        weakness -> weakness.getLastOccurredAt(),
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                ))
-                .map(weakness -> canonicalStatusTag(weakness.getTag(), allLogs))
-                .distinct()
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    // 해결(RESOLVED)된 약점 태그를 이름만 정리해 돌려준다. 다시 약점으로 잡히면 미해결 목록으로 옮겨 간다.
-    public List<WeaknessTagResponse> getResolvedWeaknessTags(Long userId) {
-        return weaknessTagStatusRepository
-                .findByUser_UserIdAndStatus(userId, WeaknessTagResolveStatus.RESOLVED)
-                .stream()
-                .map(status -> weaknessTagNormalizer.canonicalTag(status.getTag()))
-                .distinct()
-                .map(tag -> WeaknessTagResponse.builder()
-                        .tag(tag)
-                        .displayName(weaknessTagNormalizer.displayName(tag))
-                        .description(weaknessTagNormalizer.displayName(tag) + " 기준을 넘겨 해결했어요.")
-                        .recentOccurrences(List.of())
-                        .build())
-                .toList();
-    }
-
-    public List<WeaknessTagResponse> getUnresolvedWeaknessTagDetails(Long userId) {
-        var allLogs = weaknessTagLogRepository.findByUser_UserIdOrderByTagLogIdDesc(userId);
-        var statuses = weaknessTagStatusRepository
-                .findByUser_UserIdAndStatus(userId, WeaknessTagResolveStatus.UNRESOLVED)
-                .stream()
-                .filter(weakness -> allLogs.stream()
-                        .filter(log -> Objects.equals(log.getTag(), weakness.getTag()))
-                        .anyMatch(log -> isCompletedSession(log.getSession())))
-                .collect(Collectors.groupingBy(
-                        weakness -> canonicalStatusTag(weakness.getTag(), allLogs)
-                ));
-        var allAttempts = weaknessRemediationAttemptRepository
-                .findByOriginTagLog_User_UserIdOrderByAttemptIdDesc(userId);
-        Map<Long, com.example.jobpuzzle.evaluation.dto.SessionScoreSummary> scoreCache = new HashMap<>();
-        return statuses.entrySet().stream()
-                .map(entry -> {
-                    String canonicalTag = entry.getKey();
-                    var dimensionLogs = allLogs.stream()
-                            .filter(log -> logBelongsToDimension(log, canonicalTag))
-                            .filter(log -> isCompletedSession(log.getSession()))
-                            .toList();
-                    Map<Long, List<com.example.jobpuzzle.evaluation.entity.WeaknessTagLog>> logsBySession =
-                            dimensionLogs.stream()
-                                    .filter(log -> log.getSession() != null)
-                                    .collect(Collectors.groupingBy(
-                                            log -> log.getSession().getSessionId(),
-                                            LinkedHashMap::new,
-                                            Collectors.toList()
-                                    ));
-                    List<WeaknessTagResponse.Occurrence> occurrences = logsBySession.values().stream()
-                            .map(originLogs -> buildWeaknessOccurrence(
-                                    userId, canonicalTag, originLogs, allAttempts, scoreCache))
-                            .filter(occurrence -> occurrence.getScore() == null
-                                    || occurrence.getScore() < 70)
-                            .sorted(Comparator.comparing(
-                                    WeaknessTagResponse.Occurrence::getOccurredAt,
-                                    Comparator.nullsLast(Comparator.reverseOrder())))
-                            .limit(10)
-                            .toList();
-                    int unresolvedCount = (int) occurrences.stream()
-                            .filter(occurrence -> !"RESOLVED".equals(occurrence.getStatus()))
-                            .count();
-                    return WeaknessTagResponse.builder()
-                            .tag(canonicalTag)
-                            .displayName(weaknessTagNormalizer.displayName(canonicalTag))
-                            .description(weaknessTagNormalizer.displayName(canonicalTag)
-                                    + "이 반복해서 확인되었습니다. 최근 평가를 바탕으로 집중 연습합니다.")
-                            .occurrenceCount(occurrences.size())
-                            .unresolvedCount(unresolvedCount)
-                            .recentAttemptCount(occurrences.stream()
-                                    .mapToInt(occurrence -> occurrence.getAttempts().size())
-                                    .sum())
-                            .recentOccurrences(occurrences)
-                            .build();
-                })
-                .filter(item -> item.getUnresolvedCount() > 0)
-                .sorted(Comparator.comparing(
-                        item -> item.getRecentOccurrences().isEmpty()
-                                ? null : item.getRecentOccurrences().get(0).getOccurredAt(),
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                ))
-                .toList();
-    }
-
-    private String canonicalStatusTag(
-            String storedTag,
-            List<com.example.jobpuzzle.evaluation.entity.WeaknessTagLog> allLogs
-    ) {
-        return allLogs.stream()
-                .filter(log -> Objects.equals(log.getTag(), storedTag))
-                .map(com.example.jobpuzzle.evaluation.entity.WeaknessTagLog::getEvaluation)
-                .filter(Objects::nonNull)
-                .map(this::singleFailedDimension)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .map(dimension -> dimension + "_weak")
-                .orElseGet(() -> weaknessTagNormalizer.canonicalTag(storedTag));
-    }
-
-    private boolean logBelongsToDimension(
-            com.example.jobpuzzle.evaluation.entity.WeaknessTagLog log,
-            String canonicalTag
-    ) {
-        String targetDimension = weaknessTagNormalizer.dimension(canonicalTag);
-        AnswerEvaluation evaluation = log.getEvaluation();
-        if (evaluation != null && evaluation.getEvaluationDetail() != null) {
-            AnswerEvaluation.DimensionEvaluation detail =
-                    evaluation.getEvaluationDetail().get(targetDimension);
-            if (detail != null && detail.getScore() != null
-                    && detail.getScore() < evaluation.getPassThreshold()) {
-                return true;
-            }
-        }
-        return weaknessTagNormalizer.sameDimension(log.getTag(), canonicalTag);
-    }
-
-    private String singleFailedDimension(AnswerEvaluation evaluation) {
-        if (evaluation.getEvaluationDetail() == null) {
-            return null;
-        }
-        List<String> failed = evaluation.getEvaluationDetail().entrySet().stream()
-                .filter(entry -> entry.getValue() != null
-                        && entry.getValue().getScore() != null
-                        && entry.getValue().getScore() < evaluation.getPassThreshold())
-                .map(Map.Entry::getKey)
-                .toList();
-        return failed.size() == 1 ? failed.get(0) : null;
-    }
-
-    private WeaknessTagResponse.Occurrence buildWeaknessOccurrence(
-            Long userId,
-            String canonicalTag,
-            List<com.example.jobpuzzle.evaluation.entity.WeaknessTagLog> originLogs,
-            List<com.example.jobpuzzle.evaluation.entity.WeaknessRemediationAttempt> allAttempts,
-            Map<Long, com.example.jobpuzzle.evaluation.dto.SessionScoreSummary> scoreCache
-    ) {
-        var representative = originLogs.get(0);
-        Set<Long> originLogIds = originLogs.stream()
-                .map(com.example.jobpuzzle.evaluation.entity.WeaknessTagLog::getTagLogId)
-                .collect(Collectors.toSet());
-        Map<Long, List<com.example.jobpuzzle.evaluation.entity.WeaknessRemediationAttempt>> attemptsBySession =
-                allAttempts.stream()
-                        .filter(attempt -> originLogIds.contains(attempt.getOriginTagLog().getTagLogId()))
-                        .filter(attempt -> isCompletedSession(attempt.getSession()))
-                        .collect(Collectors.groupingBy(
-                                attempt -> attempt.getSession().getSessionId(),
-                                LinkedHashMap::new,
-                                Collectors.toList()
-                        ));
-        List<WeaknessTagResponse.Attempt> attempts = attemptsBySession.values().stream()
-                .map(sessionAttempts -> buildWeaknessAttempt(
-                        userId, canonicalTag, sessionAttempts, scoreCache))
-                .sorted(Comparator.comparing(
-                        WeaknessTagResponse.Attempt::getOccurredAt,
-                        Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
-        String status = attempts.isEmpty()
-                ? "PENDING"
-                : attempts.get(attempts.size() - 1).getStatus();
-        Long sessionId = representative.getSession().getSessionId();
-        return WeaknessTagResponse.Occurrence.builder()
-                .sessionId(sessionId)
-                .evaluationId(representative.getEvaluation() == null
-                        ? null : representative.getEvaluation().getEvaluationId())
-                .mode(representative.getSession().getMode() == null
-                        ? null : representative.getSession().getMode().name())
-                .score(dimensionScore(userId, sessionId, canonicalTag, scoreCache,
-                        representative.getEvaluation() == null ? null : representative.getEvaluation().getScore()))
-                .occurredAt(completedAtOf(representative.getSession()))
-                .status(status)
-                .resultLabel(resultLabel(representative.getSession()))
-                .diagnostics(diagnosticsForLogs(originLogs, canonicalTag))
-                .attempts(attempts)
-                .build();
-    }
-
-    private WeaknessTagResponse.Attempt buildWeaknessAttempt(
-            Long userId,
-            String canonicalTag,
-            List<com.example.jobpuzzle.evaluation.entity.WeaknessRemediationAttempt> sessionAttempts,
-            Map<Long, com.example.jobpuzzle.evaluation.dto.SessionScoreSummary> scoreCache
-    ) {
-        var representative = sessionAttempts.get(0);
-        Long sessionId = representative.getSession().getSessionId();
-        Integer score = dimensionScore(userId, sessionId, canonicalTag, scoreCache,
-                sessionAttempts.stream()
-                        .map(attempt -> attempt.getEvaluation().getScore())
-                        .filter(Objects::nonNull)
-                        .mapToInt(Integer::intValue)
-                        .average()
-                        .stream()
-                        .mapToObj(value -> (int) Math.round(value))
-                        .findFirst()
-                        .orElse(null));
-        return WeaknessTagResponse.Attempt.builder()
-                .sessionId(sessionId)
-                .evaluationId(representative.getEvaluation().getEvaluationId())
-                .score(score)
-                .occurredAt(completedAtOf(representative.getSession()))
-                .status(score != null && score >= 70 ? "RESOLVED" : "UNRESOLVED")
-                .resultLabel(resultLabel(representative.getSession()))
-                .diagnostics(diagnosticsForEvaluations(sessionAttempts.stream()
-                        .map(com.example.jobpuzzle.evaluation.entity.WeaknessRemediationAttempt::getEvaluation)
-                        .toList(), canonicalTag))
-                .build();
-    }
-
-    private Integer dimensionScore(
-            Long userId,
-            Long sessionId,
-            String canonicalTag,
-            Map<Long, com.example.jobpuzzle.evaluation.dto.SessionScoreSummary> scoreCache,
-            Integer fallback
-    ) {
-        try {
-            var summary = scoreCache.computeIfAbsent(
-                    sessionId,
-                    ignored -> sessionScoreAggregationService.aggregate(userId, sessionId));
-            return summary.getCategoryScores().getOrDefault(
-                    weaknessTagNormalizer.dimension(canonicalTag), fallback);
-        } catch (RuntimeException ignored) {
-            return fallback;
-        }
-    }
-
-    private List<String> diagnosticsForLogs(
-            List<com.example.jobpuzzle.evaluation.entity.WeaknessTagLog> logs,
-            String canonicalTag
-    ) {
-        List<AnswerEvaluation> evaluations = logs.stream()
-                .map(com.example.jobpuzzle.evaluation.entity.WeaknessTagLog::getEvaluation)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-        List<String> diagnostics = diagnosticsForEvaluations(evaluations, canonicalTag);
-        if (!diagnostics.isEmpty()) {
-            return diagnostics;
-        }
-        // 구형 데이터는 관점별 진단 컬럼이 없으므로 기존 태그를 표시용으로만 해석한다.
-        return logs.stream()
-                .map(com.example.jobpuzzle.evaluation.entity.WeaknessTagLog::getTag)
-                .map(weaknessTagNormalizer::diagnosticDisplayName)
-                .filter(value -> value != null && !value.isBlank())
-                .distinct()
-                .toList();
-    }
-
-    private List<String> diagnosticsForEvaluations(
-            List<AnswerEvaluation> evaluations,
-            String canonicalTag
-    ) {
-        String dimension = weaknessTagNormalizer.dimension(canonicalTag);
-        return evaluations.stream()
-                .flatMap(evaluation -> {
-                    Map<String, List<String>> values = evaluation.getWeaknessDiagnostics();
-                    if (values == null) {
-                        return java.util.stream.Stream.<String>empty();
-                    }
-                    return values.getOrDefault(dimension, List.of()).stream();
-                })
-                .filter(value -> value != null && !value.isBlank())
-                .distinct()
-                .toList();
-    }
-
-    private boolean isCompletedSession(InterviewSession session) {
-        return session != null && session.getStatus() == InterviewSessionStatus.COMPLETED;
-    }
-
-    private LocalDateTime completedAtOf(InterviewSession session) {
-        if (session == null) return null;
-        return session.getCompletedAt() == null ? session.getCreatedAt() : session.getCompletedAt();
-    }
-
-    private String resultLabel(InterviewSession session) {
-        if (session == null) {
-            return "결과 보기";
-        }
-        String mode = session.getMode() == InterviewSessionMode.WEAKNESS_REVIEW
-                ? "약점 보완" : "맞춤 면접";
-        return session.getStatus() == InterviewSessionStatus.COMPLETED
-                ? mode + " 리포트 보기"
-                : mode + " 중간 결과 보기";
-    }
-
-    @Transactional(readOnly = true)
-    public SessionResponse getActiveSession(Long userId) {
-        return interviewSessionRepository
-                .findByUser_UserIdAndStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(
-                        userId, UNFINISHED_STATUSES)
-                .stream()
-                .filter(session -> !isReviewReady(session))
-                .sorted(latestActivityFirst())
-                .findFirst()
-                .map(session -> SessionResponse.from(
-                        session,
-                        Math.toIntExact(sessionQuestionRepository.countBySession_SessionId(session.getSessionId())),
-                        hasAnyAnswer(session.getSessionId())
-                ))
-                .orElse(null);
-    }
 
     @Transactional(readOnly = true)
     public List<SessionResponse> getActiveSessions(Long userId) {
@@ -459,10 +130,6 @@ public class InterviewSessionService {
             throw new CustomException(ErrorCode.INVALID_QUESTION_SELECTION);
         }
 
-        if (questionSet.getInterviewMode() == InterviewSessionMode.COMPANY_FIT) {
-            validateCompanyFitSelection(userId, questionSet, selectedIds);
-        }
-
         List<InterviewQuestion> selectedQuestions =
                 interviewQuestionRepository.findByQuestionSet_QuestionSetIdAndQuestionIdIn(
                         questionSet.getQuestionSetId(),
@@ -474,7 +141,7 @@ public class InterviewSessionService {
         }
         selectedQuestions.sort(Comparator.comparingInt(InterviewQuestion::getDisplayOrder));
 
-        // 분석 결과로 만든 묶음(v1 공고 맞춤, v2 기초 지식·자료 기반)은 그 분석 결과를 세션에 고정한다.
+        // 분석 결과로 만든 묶음(기초 지식·자료 기반)은 그 분석 결과를 세션에 고정한다.
         InterviewSession session = interviewSessionRepository.save(
                 questionSet.getSnapshot() != null
                         ? InterviewSession.create(
@@ -491,7 +158,7 @@ public class InterviewSessionService {
         return SessionResponse.from(session, selectedQuestions.size());
     }
 
-    // COMPANY_FIT 세션 생성 당시 스냅샷에 연결된 분석 결과를 고정해서 저장한다.
+    // 세션 생성 당시 스냅샷에 연결된 분석 결과를 고정해서 저장한다.
     private JobPostingAnalysis jobPostingAnalysisOf(QuestionSet questionSet) {
         return jobPostingAnalysisRepository
                 .findBySnapshot_SnapshotId(questionSet.getSnapshot().getSnapshotId())
@@ -595,16 +262,6 @@ public class InterviewSessionService {
         return getSessionQuestions(userId, sessionId);
     }
 
-    public SessionResponse startSession(Long userId, Long sessionId) {
-        InterviewSession session = getOwnedSession(userId, sessionId);
-        validateEditable(session);
-        session.start();
-        return SessionResponse.from(
-                session,
-                Math.toIntExact(sessionQuestionRepository.countBySession_SessionId(sessionId))
-        );
-    }
-
     @Transactional(readOnly = true)
     public SessionQuestionResponse getNextQuestion(Long userId, Long sessionId) {
         getOwnedSession(userId, sessionId);
@@ -697,8 +354,8 @@ public class InterviewSessionService {
                     .build();
         }
 
-        AnswerEvaluationService.EvaluationOutcome outcome =
-                answerEvaluationService.evaluateAnswer(answer);
+        AnswerEvaluationV2Service.EvaluationOutcome outcome =
+                answerEvaluationService.evaluate(answer);
         if (outcome.evaluationFailed()) {
             answer.markEvaluationFailed();
             if (attemptsExhausted) {
@@ -724,33 +381,6 @@ public class InterviewSessionService {
                     .nextQuestion(attemptsExhausted
                             ? getNextQuestion(userId, session.getSessionId())
                             : SessionQuestionResponse.from(sessionQuestion))
-                    .build();
-        }
-        if (outcome.retryAnswerRequired()) {
-            answer.rejectAnswer();
-            if (attemptsExhausted) {
-                sessionQuestion.complete();
-            }
-            SessionQuestionResponse nextQuestion = attemptsExhausted
-                    ? getNextQuestion(userId, session.getSessionId())
-                    : SessionQuestionResponse.from(sessionQuestion);
-            return AnswerSubmitResponse.builder()
-                    .answerMessageId(answer.getMessageId())
-                    .summary(attemptsExhausted
-                            ? "답변을 평가할 수 없어 이 질문을 미평가로 종료합니다."
-                            : outcome.retryAnswerMessage())
-                    .evaluationFailed(attemptsExhausted)
-                    .retryAnswerRequired(!attemptsExhausted)
-                    .answerAttemptsExhausted(attemptsExhausted)
-                    .remainingAnswerRetries((int) Math.max(
-                            0,
-                            MAX_ADDITIONAL_ANSWER_RETRIES - previousAnswerAttempts
-                    ))
-                    .retryAnswerMessage(attemptsExhausted
-                            ? null
-                            : "질문과 관련된 경험이나 생각을 다시 답변해 주세요.")
-                    .sessionStatus(session.getStatus())
-                    .nextQuestion(nextQuestion)
                     .build();
         }
         if (outcome.followUpMessage() == null) {
@@ -800,7 +430,6 @@ public class InterviewSessionService {
             }
         });
         session.complete();
-        resolveWeaknessIfEligible(session, sessionQuestions);
 
         // 면접 기능 추가: 정상 완료된 QuestionSet은 미선택 질문까지 더 이상 재사용하지 않는다.
         session.getQuestionSet().archive();
@@ -808,22 +437,6 @@ public class InterviewSessionService {
                 session,
                 Math.toIntExact(sessionQuestionRepository.countBySession_SessionId(sessionId))
         );
-    }
-
-    public SessionResponse finishSelectedQuestions(Long userId, Long sessionId) {
-        InterviewSession session = getOwnedSession(userId, sessionId);
-        validateEditable(session);
-        List<InterviewSessionQuestion> questions =
-                sessionQuestionRepository.findBySession_SessionIdOrderByDisplayOrderAsc(sessionId);
-        questions.forEach(question -> {
-            if (hasOriginalAnswer(question.getSessionQuestionId())) {
-                question.complete();
-            } else {
-                question.defer();
-            }
-        });
-        session.touch();
-        return SessionResponse.from(session, questions.size(), hasAnyAnswer(sessionId));
     }
 
     // 면접 중 건너뛰기: 첫 답변을 내지 않은 질문만 SKIPPED로 빼고, 평가 비용은 들지 않는다.
@@ -863,57 +476,6 @@ public class InterviewSessionService {
         return toSessionQuestionResponse(question);
     }
 
-    private void resolveWeaknessIfEligible(
-            InterviewSession session,
-            List<InterviewSessionQuestion> sessionQuestions
-    ) {
-        if (session.getMode() != InterviewSessionMode.WEAKNESS_REVIEW
-                || session.getTargetWeaknessTag() == null
-                || session.getTargetDimension() == null) {
-            return;
-        }
-        List<com.example.jobpuzzle.evaluation.entity.WeaknessTagLog> origins =
-                weaknessTagLogRepository.findByUser_UserIdOrderByTagLogIdDesc(
-                                session.getUser().getUserId())
-                        .stream()
-                        .filter(origin -> weaknessTagNormalizer.sameDimension(
-                                origin.getTag(), session.getTargetWeaknessTag()))
-                        .toList();
-        boolean allOriginsResolved = !origins.isEmpty() && origins.stream().allMatch(origin ->
-                weaknessRemediationAttemptRepository
-                        .findFirstByOriginTagLog_TagLogIdOrderByAttemptIdDesc(origin.getTagLogId())
-                        .map(attempt -> attempt.getStatus()
-                                == com.example.jobpuzzle.evaluation.entity.WeaknessRemediationStatus.RESOLVED)
-                        .orElse(false));
-        if (!allOriginsResolved) {
-            return;
-        }
-        weaknessTagStatusRepository
-                .findByUser_UserIdAndTag(
-                        session.getUser().getUserId(),
-                        session.getTargetWeaknessTag())
-                .filter(status -> status.getStatus() == WeaknessTagResolveStatus.UNRESOLVED)
-                .ifPresent(status -> status.resolve(session));
-    }
-
-    private boolean passesTargetDimension(
-            InterviewSessionQuestion question,
-            String targetDimension
-    ) {
-        List<Integer> scores = answerEvaluationRepository
-                .findBySessionQuestion_SessionQuestionIdOrderByEvaluationIdAsc(
-                        question.getSessionQuestionId())
-                .stream()
-                .map(AnswerEvaluation::getEvaluationDetail)
-                .map(details -> details.get(targetDimension))
-                .filter(Objects::nonNull)
-                .map(AnswerEvaluation.DimensionEvaluation::getScore)
-                .filter(Objects::nonNull)
-                .toList();
-        return !scores.isEmpty()
-                && scores.stream().mapToInt(Integer::intValue).average().orElse(0) >= 70;
-    }
-
     public SessionResponse cancelSession(Long userId, Long sessionId) {
         InterviewSession session = getOwnedSession(userId, sessionId);
         validateEditable(session);
@@ -933,31 +495,6 @@ public class InterviewSessionService {
                 session,
                 Math.toIntExact(sessionQuestionRepository.countBySession_SessionId(sessionId))
         );
-    }
-
-    private void validateCompanyFitSelection(
-            Long userId,
-            QuestionSet questionSet,
-            List<Long> selectedIds
-    ) {
-        if (questionSet.getSnapshot() == null || questionSet.getSnapshot().getAnalysisCase() == null) {
-            throw new CustomException(ErrorCode.QUESTION_SET_NOT_READY);
-        }
-        CompanyFitQuestionSetResponse response =
-                companyFitQuestionSetQueryService.getCompanyFitQuestionSet(
-                        userId,
-                        questionSet.getSnapshot().getAnalysisCase().getAnalysisCaseId()
-                );
-        if (!response.isCanGenerateQuestions()
-                || !Objects.equals(response.getQuestionSetId(), questionSet.getQuestionSetId())) {
-            throw new CustomException(ErrorCode.QUESTION_SET_NOT_READY);
-        }
-        Set<Long> availableIds = response.getQuestions().stream()
-                .map(CompanyFitQuestionSetResponse.Question::getQuestionId)
-                .collect(Collectors.toSet());
-        if (!availableIds.containsAll(selectedIds)) {
-            throw new CustomException(ErrorCode.INVALID_QUESTION_SELECTION);
-        }
     }
 
     private InterviewMessage resolveParentQuestion(
@@ -1070,30 +607,6 @@ public class InterviewSessionService {
         return questions.stream().noneMatch(question ->
                 question.getStatus() == InterviewSessionQuestionStatus.PENDING
                         || question.getStatus() == InterviewSessionQuestionStatus.IN_PROGRESS);
-    }
-
-    private String displayWeaknessTag(String tag) {
-        if (tag == null) return "확인이 필요한 답변";
-        return switch (tag) {
-            case "requirementConnection_weak", "requirementConnection_insufficient", "요구사항 연결부족" ->
-                    "공고 요구사항 연결 부족";
-            case "specificity_weak", "specificity_insufficient", "구체성 부족" ->
-                    "경험 구체성 부족";
-            case "ownRole_weak", "ownRole_insufficient" -> "본인 역할 설명 부족";
-            case "problemSolving_weak", "problemSolving_insufficient" -> "문제 해결 과정 부족";
-            case "resultExpression_weak", "resultExpression_insufficient" -> "성과·결과 표현 부족";
-            case "guideAlignment_weak", "guideAlignment_insufficient" -> "직무 가이드 연결 부족";
-            case "deliveryClarity_weak", "deliveryClarity_insufficient" -> "답변 전달력 부족";
-            case "intentMatch_weak", "intentMatch_insufficient", "질문의도미파악" -> "질문 의도 파악 부족";
-            case "기술스택 언급없음" -> "필요 기술 경험 설명 부족";
-            case "경험연결부족" -> "관련 경험 연결 부족";
-            default -> tag.replace("#", "").replace("_weak", "").replace("_insufficient", "");
-        };
-    }
-
-    private String weaknessDescription(String tag) {
-        String name = displayWeaknessTag(tag);
-        return name + "이 반복해서 확인되었습니다. 최근 평가를 바탕으로 집중 연습합니다.";
     }
 
     private SessionQuestionResponse toSessionQuestionResponse(

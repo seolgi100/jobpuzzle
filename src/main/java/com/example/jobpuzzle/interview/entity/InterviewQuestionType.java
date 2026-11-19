@@ -10,6 +10,5 @@ public enum InterviewQuestionType {
     MOTIVATION,
     STRENGTH_WEAKNESS,
     FAILURE_CONFLICT,
-    JOB_GENERAL,
-    WEAKNESS_FOLLOWUP
+    JOB_GENERAL
 }

@@ -116,7 +116,7 @@ body, body.app {
 .mbadge--basic { background: #EEF1F5; color: var(--text-2); }
 .mbadge--custom { background: var(--ink); color: #fff; }
 .mbadge--persona { background: var(--point-soft); color: var(--point); }
-.mbadge--weak, .mbadge--tag { background: var(--paper); border: 1px solid var(--line); color: var(--caution); }
+.mbadge--tag { background: var(--paper); border: 1px solid var(--line); color: var(--caution); }
 
 /* ── 입력 */
 .input, select.input, textarea.input { border-radius: 2px; border-color: var(--line-strong); font-size: 16px; }

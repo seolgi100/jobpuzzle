@@ -58,11 +58,6 @@ class TicketServiceTest {
     }
 
     @Test
-    void companyFitCostIsFixedRegardlessOfMaterials() {
-        assertThat(service.cost(TicketUsage.COMPANY_FIT)).isEqualTo(3);
-    }
-
-    @Test
     void v2CostsFollowTheSpecTable() {
         assertThat(service.cost(TicketUsage.ANALYSIS)).isEqualTo(1);
         assertThat(service.cost(TicketUsage.KNOWLEDGE)).isEqualTo(1);
@@ -85,9 +80,9 @@ class TicketServiceTest {
     }
 
     @Test
-    void basicCostsATicketFromTheFirstUse() {
+    void costsATicketFromTheFirstUse() {
         wallet.add(1);
-        service.use(1L, TicketUsage.BASIC, 1);
+        service.use(1L, TicketUsage.KNOWLEDGE, 1);
         assertThat(wallet.getBalance()).isZero();
         assertThat(saved.get(0).getAmount()).isEqualTo(-1);
         assertThat(saved.get(0).isFreeUse()).isFalse();
@@ -103,7 +98,7 @@ class TicketServiceTest {
 
     @Test
     void insufficientBalanceIsRejected() {
-        assertThatThrownBy(() -> service.use(1L, TicketUsage.COMPANY_FIT, 3))
+        assertThatThrownBy(() -> service.use(1L, TicketUsage.MATERIAL, 3))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.TICKET_INSUFFICIENT);
@@ -112,7 +107,7 @@ class TicketServiceTest {
     @Test
     void failedWorkRefundsOnceAndRethrows() {
         wallet.add(5);
-        assertThatThrownBy(() -> service.spend(1L, TicketUsage.COMPANY_FIT, 4, () -> {
+        assertThatThrownBy(() -> service.spend(1L, TicketUsage.MATERIAL, 4, () -> {
             throw new IllegalStateException("AI 오류");
         })).isInstanceOf(IllegalStateException.class);
         assertThat(wallet.getBalance()).isEqualTo(5);

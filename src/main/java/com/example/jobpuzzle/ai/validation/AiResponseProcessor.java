@@ -2,12 +2,9 @@ package com.example.jobpuzzle.ai.validation;
 
 import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult;
 import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
-import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
-import com.example.jobpuzzle.ai.dto.AnswerEvaluationResult;
 import com.example.jobpuzzle.ai.dto.SourceReference;
 import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
 import com.example.jobpuzzle.analysis.dto.AnalysisInputSnapshotContextSource;
-import com.example.jobpuzzle.analysis.synthesis.dto.CustomizedSynthesisProviderResult;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -22,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -253,45 +249,6 @@ public class AiResponseProcessor {
         }
     }
 
-    // Structured Output 전용 두 match 배열을 기존 JSON-05 DTO의 requirementMatches로 복원한다.
-    // Mock/fake와 기존 payload의 requirementMatches 배열은 그대로 허용한다.
-    private String normalizeCustomizedRequirementMatches(String rawJson) {
-        try {
-            JsonNode root = strictObjectMapper.readTree(extractSingleObject(rawJson, "JSON-05"));
-            if (!(root instanceof ObjectNode object)) throw parseFailure("JSON-05 must be a JSON object");
-            boolean evidenced = object.has("evidencedRequirementMatches");
-            boolean nonEvidenced = object.has("nonEvidencedRequirementMatches");
-            if (!evidenced && !nonEvidenced) return strictObjectMapper.writeValueAsString(object);
-            if (!evidenced || !nonEvidenced || object.has("requirementMatches")) {
-                throw parseFailure("JSON-05 match arrays must use evidencedRequirementMatches and nonEvidencedRequirementMatches together");
-            }
-            JsonNode evidenceValues = object.get("evidencedRequirementMatches");
-            JsonNode nonEvidenceValues = object.get("nonEvidencedRequirementMatches");
-            if (!evidenceValues.isArray() || !nonEvidenceValues.isArray()) {
-                throw parseFailure("JSON-05 match arrays must be arrays");
-            }
-            ArrayNode matches = strictObjectMapper.createArrayNode();
-            for (JsonNode value : evidenceValues) matches.add(value);
-            for (JsonNode value : nonEvidenceValues) {
-                if (!(value instanceof ObjectNode match)) throw parseFailure("JSON-05 non-evidenced match must be an object");
-                match.putNull("candidateEvidence");
-                match.set("candidateSourceRefs", strictObjectMapper.createArrayNode());
-                matches.add(match);
-            }
-            object.remove("evidencedRequirementMatches");
-            object.remove("nonEvidencedRequirementMatches");
-            object.set("requirementMatches", matches);
-            return strictObjectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException exception) {
-            throw parseFailure("JSON-05 match normalization failed: " + exception.getClass().getSimpleName());
-        }
-    }
-
-    // interview 추가: JSON-09/11도 기존 AI 응답과 동일하게 알 수 없는 필드를 거부한다.
-    public AnswerEvaluationResult parseAnswerEvaluation(String rawJson) {
-        return parse(normalizeAnswerEvaluation(rawJson), AnswerEvaluationResult.class, "JSON-06");
-    }
-
     // 평가 명세 v2 5장. 형식만 확인하고, 항목 구성·점수 범위는 AnswerEvaluationV2Validator가 본다.
     public com.example.jobpuzzle.ai.dto.AnswerEvaluationV2Result parseAnswerEvaluationV2(String rawJson) {
         return parse(rawJson, com.example.jobpuzzle.ai.dto.AnswerEvaluationV2Result.class, "JSON-06-V2");
@@ -299,85 +256,6 @@ public class AiResponseProcessor {
 
     public com.example.jobpuzzle.ai.dto.QuestionGenerationV2Result parseQuestionGenerationV2(String rawJson) {
         return parse(rawJson, com.example.jobpuzzle.ai.dto.QuestionGenerationV2Result.class, "JSON-12");
-    }
-
-    private ObjectNode weaknessFollowUp(int depth, String question) {
-        ObjectNode value = strictObjectMapper.createObjectNode();
-        value.put("depth", depth);
-        value.put("question", question);
-        value.put("type", "IMPROVEMENT_PLAN");
-        value.put("reason", "약점 보완 경험을 구체적으로 확인하기 위한 질문");
-        return value;
-    }
-
-    private String normalizeAnswerEvaluation(String rawJson) {
-        try {
-            ObjectNode root = (ObjectNode) strictObjectMapper.readTree(
-                    extractSingleObject(rawJson, "JSON-06")
-            );
-            JsonNode improvement = root.get("improvementDirection");
-            if (improvement != null && improvement.isTextual()) {
-                ArrayNode values = strictObjectMapper.createArrayNode();
-                if (!improvement.asText().isBlank()) {
-                    values.add(improvement.asText());
-                }
-                root.set("improvementDirection", values);
-            } else if (improvement != null && improvement.isObject()) {
-                ArrayNode values = strictObjectMapper.createArrayNode();
-                improvement.elements().forEachRemaining(value -> {
-                    if (value.isTextual() && !value.asText().isBlank()) {
-                        values.add(value.asText());
-                    }
-                });
-                root.set("improvementDirection", values);
-            }
-            JsonNode weaknessTags = root.get("weaknessTags");
-            if (weaknessTags != null && weaknessTags.isTextual()) {
-                ArrayNode values = strictObjectMapper.createArrayNode();
-                if (!weaknessTags.asText().isBlank()) {
-                    values.add(weaknessTags.asText());
-                }
-                root.set("weaknessTags", values);
-            }
-            JsonNode evaluationDetail = root.get("evaluationDetail");
-            if (evaluationDetail instanceof ObjectNode detail) {
-                detail.fieldNames().forEachRemaining(field -> {
-                    JsonNode dimension = detail.get(field);
-                    if (dimension != null && (dimension.isNumber()
-                            || dimension.isTextual() && dimension.asText().matches("\\d{1,3}"))) {
-                        ObjectNode value = strictObjectMapper.createObjectNode();
-                        value.put("score", dimension.asInt());
-                        value.put("comment", "AI가 점수만 반환하여 상세 의견은 생략되었습니다.");
-                        detail.set(field, value);
-                    }
-                });
-            }
-            JsonNode followUp = root.get("followUp");
-            if (followUp != null && followUp.isArray()) {
-                followUp = followUp.isEmpty() ? null : followUp.get(0);
-                if (followUp == null) {
-                    root.putNull("followUp");
-                } else {
-                    root.set("followUp", followUp);
-                }
-            }
-            if (followUp != null && followUp.isTextual()) {
-                if (followUp.asText().isBlank()) {
-                    root.putNull("followUp");
-                } else {
-                    ObjectNode value = strictObjectMapper.createObjectNode();
-                    value.put("depth", root.path("currentFollowUpDepth").asInt(0) + 1);
-                    value.put("question", followUp.asText());
-                    value.putNull("type");
-                    value.putNull("targetWeakness");
-                    value.put("reason", "답변의 구체적인 근거를 추가로 확인하기 위한 질문");
-                    root.set("followUp", value);
-                }
-            }
-            return strictObjectMapper.writeValueAsString(root);
-        } catch (JsonProcessingException | ClassCastException exception) {
-            return rawJson;
-        }
     }
 
     // 응답 전체가 json 코드 블록인 경우만 제거하고 그 밖의 복구는 하지 않는다.

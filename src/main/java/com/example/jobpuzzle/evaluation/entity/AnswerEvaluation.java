@@ -45,29 +45,9 @@ public class AnswerEvaluation extends BaseTimeEntity {
     @Column(name = "score", nullable = false)
     private int score;
 
-    @Column(name = "pass_threshold", nullable = false)
-    private int passThreshold;
-
-    @Column(name = "score_label", length = 100)
-    private String scoreLabel;
-
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "evaluation_detail", columnDefinition = "json")
     private Map<String, DimensionEvaluation> evaluationDetail;
-
-    @Column(name = "target_weakness_tag", length = 100)
-    private String targetWeaknessTag;
-
-    @Column(name = "target_dimension", length = 50)
-    private String targetDimension;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "weakness_tags", columnDefinition = "json")
-    private List<String> weaknessTags;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "weakness_diagnostics", columnDefinition = "json")
-    private Map<String, List<String>> weaknessDiagnostics;
 
     @Lob
     @Column(name = "summary", columnDefinition = "TEXT")
@@ -85,7 +65,7 @@ public class AnswerEvaluation extends BaseTimeEntity {
     @JoinColumn(name = "ai_call_log_id", nullable = false)
     private AiCallLog aiCallLog;
 
-    // 평가 명세 v2 (7장): 2 = v2 평가, null = v1 평가. 기존 데이터를 지울 때 이 값으로 구분한다.
+    // 평가 명세 v2 (7장): 평가 계약 버전 (지금은 2)
     @Column(name = "evaluation_version")
     private Integer evaluationVersion;
 
@@ -105,8 +85,7 @@ public class AnswerEvaluation extends BaseTimeEntity {
 
     /**
      * v2 평가 저장. score는 답변 점수(6개 항목 평균)를 100점으로 환산한 값, evaluationDetail은 항목 code → (1~5점, 근거).
-     * 잘한 점은 summary, 보완할 점은 improvementDirection 첫 칸에 둔다 (v1 칸을 같은 뜻으로 재사용).
-     * passThreshold 70은 꼬리질문 기준(3.5점)을 100점으로 나타낸 값.
+     * 잘한 점은 summary, 보완할 점은 improvementDirection 첫 칸에 둔다.
      */
     public static AnswerEvaluation createV2(
             InterviewMessage answerMessage,
@@ -121,70 +100,20 @@ public class AnswerEvaluation extends BaseTimeEntity {
             Map<String, String> comparison,
             AiCallLog aiCallLog
     ) {
-        AnswerEvaluation evaluation = create(answerMessage, sessionQuestion, mode, score, 70, null, evaluationDetail,
-                null, null, List.of(), Map.of(), strengths, List.of(improvements), aiCallLog);
+        AnswerEvaluation evaluation = new AnswerEvaluation();
+        evaluation.answerMessage = answerMessage;
+        evaluation.sessionQuestion = sessionQuestion;
+        evaluation.evaluationMode = mode;
+        evaluation.score = score;
+        evaluation.evaluationDetail = evaluationDetail == null ? Map.of() : Map.copyOf(evaluationDetail);
+        evaluation.summary = strengths;
+        evaluation.improvementDirection = List.of(improvements);
+        evaluation.aiCallLog = aiCallLog;
         evaluation.evaluationVersion = 2;
         evaluation.evasive = evasive;
         evaluation.recommendedAnswer = recommendedAnswer;
         evaluation.comparison = comparison;
         return evaluation;
-    }
-
-    public static AnswerEvaluation create(
-            InterviewMessage answerMessage,
-            InterviewSessionQuestion sessionQuestion,
-            InterviewSessionMode mode,
-            int score,
-            int passThreshold,
-            String scoreLabel,
-            Map<String, DimensionEvaluation> evaluationDetail,
-            String targetWeaknessTag,
-            String targetDimension,
-            List<String> weaknessTags,
-            Map<String, List<String>> weaknessDiagnostics,
-            String summary,
-            List<String> improvementDirection,
-            AiCallLog aiCallLog
-    ) {
-        AnswerEvaluation evaluation = new AnswerEvaluation();
-
-        evaluation.answerMessage = answerMessage;
-        evaluation.sessionQuestion = sessionQuestion;
-        evaluation.evaluationMode = mode;
-        evaluation.score = score;
-        evaluation.passThreshold = passThreshold;
-        evaluation.scoreLabel = scoreLabel;
-        evaluation.evaluationDetail = evaluationDetail == null
-                ? Map.of()
-                : Map.copyOf(evaluationDetail);
-        evaluation.targetWeaknessTag = targetWeaknessTag;
-        evaluation.targetDimension = targetDimension;
-        evaluation.weaknessTags = weaknessTags == null
-                ? List.of()
-                : List.copyOf(weaknessTags);
-        evaluation.weaknessDiagnostics = weaknessDiagnostics == null
-                ? Map.of()
-                : weaknessDiagnostics.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
-                        Map.Entry::getKey,
-                        entry -> List.copyOf(entry.getValue())
-                ));
-        evaluation.summary = summary;
-        evaluation.improvementDirection = improvementDirection == null
-                ? List.of()
-                : List.copyOf(improvementDirection);
-        evaluation.aiCallLog = aiCallLog;
-
-        return evaluation;
-    }
-
-    // 기존 면접·평가 코드에서 사용
-    public boolean passed() {
-        return score >= passThreshold;
-    }
-
-    // develop의 최종 리포트 코드와 이름을 맞추기 위한 호환 메서드
-    public boolean isPassed() {
-        return passed();
     }
 
     @Getter
