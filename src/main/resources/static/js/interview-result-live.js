@@ -5,7 +5,7 @@
   var U = window.JPUI, route = window.JobPuzzleRoutes.path, esc = U.esc;
   var sessionId = new URLSearchParams(window.location.search).get('sessionId');
   var DIMS = U.DIM_LABELS, DIM_KEYS = Object.keys(DIMS);
-  var COLOR = { good: '#16A34A', mid: '#2563C9', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' };
+  var COLOR = { good: '#12151B', mid: '#3A62A8', low: '#8A4B14', bad: '#8A4B14', none: '#B9C0CB' };
   var QUESTION_TYPE = {
     GENERAL: '일반', COMPANY_FIT: '회사 맞춤', EXPERIENCE: '경험', PROBLEM_SOLVING: '문제 해결', SKILL: '기술',
     SELF_INTRO: '자기소개', MOTIVATION: '지원 동기', STRENGTH_WEAKNESS: '강점·약점',
@@ -47,8 +47,8 @@
 
   function conversation(q) {
     var msgs = (q.conversation || []).filter(function (m) { return m.messageType !== 'ORIGINAL_QUESTION'; });
-    if (!msgs.length) return '<p style="margin-top:20px; color:var(--text-3)">이 질문에는 답하지 않았어요.</p>';
-    return '<div class="talk2"><h4>답변 과정</h4><small>점수에 반영된 실제 면접 대화예요</small>' + msgs.map(function (m, i) {
+    if (!msgs.length) return '<p style="margin-top:20px; color:var(--text-3)">이 질문에는 답하지 않았습니다.</p>';
+    return '<div class="talk2"><h4>답변 과정</h4><small>점수에 반영된 실제 면접 대화입니다</small>' + msgs.map(function (m, i) {
       var me = m.sender === 'USER';
       var failed = m.messageType === 'EVALUATION_FAILED_ANSWER' || m.messageType === 'REJECTED_ANSWER';
       var label = m.messageType === 'ORIGINAL_ANSWER' ? '첫 답변' : !me ? 'AI 추가 질문' : failed ? '평가 처리 실패 답변 · 점수 제외' : '추가 답변';
@@ -61,14 +61,14 @@
     var qs = s.questions, sc = s.score;
     document.getElementById('qlist').innerHTML = qs.length ? qs.map(function (q, i) {
       return '<button type="button" class="qr-item" data-q="' + i + '" aria-current="' + (i === s.cur) + '"><b>' + (i + 1) + '</b><span>' + esc(q.questionText) + '</span>' + badge(qScore(q), qLabel(q)) + '</button>';
-    }).join('') : '<p style="color:var(--text-3)">표시할 질문이 없어요.</p>';
+    }).join('') : '<p style="color:var(--text-3)">표시할 질문이 없습니다.</p>';
     var q = qs[s.cur], el = document.getElementById('qdetail');
     if (!q) { el.innerHTML = ''; return; }
     var x = s.byQuestion[q.sessionQuestionId] || {}, done = q.status === 'COMPLETED';
     var dims = done ? x.dimensionScores || {} : {}, counts = done ? x.dimensionEvaluationCounts || {} : {};
     var evalCount = Object.keys(counts).reduce(function (m, k) { return Math.max(m, counts[k] || 0); }, 0);
     el.innerHTML = '<div class="qr-head"><span class="score score--none">질문 ' + (Number(q.displayOrder) > 0 ? q.displayOrder : s.cur + 1) + '</span>' + badge(qScore(q), qLabel(q)) + '</div>' +
-      '<h2 class="qr-q">' + esc(q.questionText) + '</h2><p class="qr-intent">' + esc(q.intent || '질문 의도가 기록되지 않았어요.') + '</p>' +
+      '<h2 class="qr-q">' + esc(q.questionText) + '</h2><p class="qr-intent">' + esc(q.intent || '질문 의도가 기록되지 않았습니다.') + '</p>' +
       conversation(q) +
       '<div class="flow"><div>① 답변 분석<b>' + evalCount + '회</b></div><div>② 핵심 평가 기준<b>' + Object.keys(dims).length + '개</b></div><div>③ 질문 종합 점수<b>' + qLabel(q) + '</b></div></div>' +
       (Object.keys(dims).length ? '<div class="dims" style="margin-top:16px">' + Object.keys(dims).map(function (k) {
@@ -122,33 +122,33 @@
     var weak = r.weaknessTagSummary || [], recs = r.nextPracticeRecommendation || [], learn = r.learningDirection || [], sug = r.improvementSuggestion || {};
     var docKeys = Object.keys(DOC_TARGET).filter(function (k) { return sug[k] && sug[k].length; });
     var html = '<div class="rs-grid"><section class="dcard"><h2 class="rs-h">면접 종합 점수</h2>' +
-      '<p class="rs-sub">질문 ' + r.totalQuestionCount + '개 중 답한 ' + r.submittedQuestionCount + '개를 종합한 결과예요.</p>' +
-      '<div class="overall">' + U.ring(r.overallScore) + (entries.length ? '<p style="margin:0; font-size:14px; color:var(--text-2); line-height:1.7">' + entries.length + '가지 관점 중 <b style="color:var(--text)">' + over70 + '개</b>가 70점을 넘었어요.<br>가장 아쉬운 관점은 <b style="color:var(--text)">' + esc(DIMS[sorted[sorted.length - 1].k]) + '</b>이에요.</p>' : '') + '</div>' +
-      (assessment(r.overallAssessment) || '<p class="rs-sub">종합 평가 내용이 없어요.</p>') + '</section>' +
+      '<p class="rs-sub">질문 ' + r.totalQuestionCount + '개 중 답한 ' + r.submittedQuestionCount + '개를 종합한 결과입니다.</p>' +
+      '<div class="overall">' + U.ring(r.overallScore) + (entries.length ? '<p style="margin:0; font-size:14px; color:var(--text-2); line-height:1.7">' + entries.length + '가지 관점 중 <b style="color:var(--text)">' + over70 + '개</b>가 70점을 넘었습니다.<br>가장 아쉬운 관점은 <b style="color:var(--text)">' + esc(DIMS[sorted[sorted.length - 1].k]) + '</b>입니다.</p>' : '') + '</div>' +
+      (assessment(r.overallAssessment) || '<p class="rs-sub">종합 평가 내용이 없습니다.</p>') + '</section>' +
       '<section class="dcard"><h2 class="rs-h">관점별 점수</h2>' +
-      (entries.length ? '<p class="dim-sum">' + (sorted[0].v === sorted[sorted.length - 1].v ? '관점별 점수가 <b>' + sorted[0].v + '점</b>으로 고르게 나왔어요.'
-        : '가장 강한 관점은 <b>' + esc(DIMS[sorted[0].k]) + '(' + sorted[0].v + '점)</b>, 가장 약한 관점은 <b>' + esc(DIMS[sorted[sorted.length - 1].k]) + '(' + sorted[sorted.length - 1].v + '점)</b>이에요.') + '</p>' +
+      (entries.length ? '<p class="dim-sum">' + (sorted[0].v === sorted[sorted.length - 1].v ? '관점별 점수가 <b>' + sorted[0].v + '점</b>으로 고르게 나왔습니다.'
+        : '가장 강한 관점은 <b>' + esc(DIMS[sorted[0].k]) + '(' + sorted[0].v + '점)</b>, 가장 약한 관점은 <b>' + esc(DIMS[sorted[sorted.length - 1].k]) + '(' + sorted[sorted.length - 1].v + '점)</b>입니다.') + '</p>' +
         (entries.length >= 3 ? '<div class="radar-wrap"><div style="position:relative"><svg class="radar" id="radar" viewBox="-150 -130 300 260" role="img" aria-label="관점별 점수 레이더 차트">' + radar(entries) + '</svg><div class="tip" id="tip" hidden></div></div>' +
           '<div class="legend" aria-label="점수 색 기준"><span><i style="background:var(--score-good)"></i>70점 이상</span><span><i style="background:var(--score-mid)"></i>50점 이상</span><span><i style="background:var(--score-low)"></i>25점 이상</span><span><i style="background:var(--score-bad)"></i>25점 미만</span></div></div>' : '') +
         '<div class="reasons">' + entries.map(function (e) {
           var reason = r.categoryScoreReasons && r.categoryScoreReasons[e.k];
-          return '<details><summary>' + esc(DIMS[e.k]) + ' ' + badge(e.v) + '</summary><p>' + esc(reason || '아직 근거 설명이 없어요.') + '</p></details>';
+          return '<details><summary>' + esc(DIMS[e.k]) + ' ' + badge(e.v) + '</summary><p>' + esc(reason || '아직 근거 설명이 없습니다.') + '</p></details>';
         }).join('') + '</div>'
-        : '<p class="rs-sub">평가에 성공한 관점이 없어요.</p>') + '</section></div>' +
-      '<div class="rs-cols"><section class="dcard"><h2 class="rs-h">답변에서 발견한 약점</h2><p class="rs-sub">번호를 누르면 그 질문으로 이동해요</p>' +
+        : '<p class="rs-sub">평가에 성공한 관점이 없습니다.</p>') + '</section></div>' +
+      '<div class="rs-cols"><section class="dcard"><h2 class="rs-h">답변에서 발견한 약점</h2><p class="rs-sub">번호를 누르면 그 질문으로 이동합니다</p>' +
       (weak.length ? weak.map(function (w) {
         var idx = [];
         s.questions.forEach(function (q, i) { var x = s.byQuestion[q.sessionQuestionId]; if (x && (x.weaknessTags || []).indexOf(w.tag) >= 0) idx.push(i); });
         return '<div class="weakpt"><div class="weakpt__top"><span class="score score--low">' + esc(weaknessLabel(w.tag)) + '</span><small>' + w.count + '회</small></div>' +
           (w.reason ? '<p>' + esc(w.reason) + '</p>' : '') +
           (idx.length ? '<div class="weakpt__qs">나온 질문 ' + idx.map(function (i) { return '<button type="button" class="qchip" data-goq="' + i + '">' + (i + 1) + '</button>'; }).join('') + '</div>' : '') + '</div>';
-      }).join('') : '<p class="rs-sub">확인된 약점이 없어요.</p>') + '</section>' +
-      '<section class="dcard"><h2 class="rs-h">다음에 연습하면 좋은 것</h2><p class="rs-sub">이번 면접에서 약했던 부분을 바로 이어서 연습해요</p>' +
+      }).join('') : '<p class="rs-sub">확인된 약점이 없습니다.</p>') + '</section>' +
+      '<section class="dcard"><h2 class="rs-h">다음에 연습하면 좋은 것</h2><p class="rs-sub">이번 면접에서 약했던 부분을 바로 이어서 연습합니다</p>' +
       (recs.length ? recs.map(function (x) {
         return '<div class="next"><span class="mbadge">' + esc((QUESTION_TYPE[x.questionType] || x.questionType || '추천') + ' 질문') + '</span><p>' + esc(x.reason) + '</p></div>';
-      }).join('') : '<p class="rs-sub">추천 항목이 없어요.</p>') + '</section></div>' +
+      }).join('') : '<p class="rs-sub">추천 항목이 없습니다.</p>') + '</section></div>' +
       (docKeys.length || learn.length ? '<section class="dcard" style="margin-top:16px">' +
-        (docKeys.length ? '<h2 class="rs-h">서류 보완 제안</h2><p class="rs-sub">면접에서 드러난 약점을 서류에도 반영해 보세요</p><div class="docs">' + docKeys.map(function (k) {
+        (docKeys.length ? '<h2 class="rs-h">서류 보완 제안</h2><p class="rs-sub">면접에서 드러난 약점을 서류에도 반영해 보십시오</p><div class="docs">' + docKeys.map(function (k) {
           return '<section><h4>' + DOC_TARGET[k] + '</h4><ul>' + sug[k].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></section>';
         }).join('') + '</div>' : '') +
         (learn.length ? '<h2 class="rs-h" style="margin-top:' + (docKeys.length ? 22 : 0) + 'px">학습 방향</h2><ul class="learn" style="margin-top:8px">' + learn.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
@@ -172,13 +172,13 @@
 
   // AI 리포트를 기다리는 동안: 서버가 세부 진행률을 주지 않아서 100%는 표시하지 않는다
   function renderFinalLoading() {
-    var steps = [[18, '저장된 면접 답변을 모으고 있어요.'], [42, '답변별 평가 근거를 정리하고 있어요.'], [68, '강점과 보완 방향을 종합하고 있어요.'], [88, '최종 리포트를 마무리하고 있어요.']];
+    var steps = [[18, '저장된 면접 답변을 모으고 있습니다.'], [42, '답변별 평가 근거를 정리하고 있습니다.'], [68, '강점과 보완 방향을 종합하고 있습니다.'], [88, '최종 리포트를 마무리하고 있습니다.']];
     var i = 0, panel = document.getElementById('p-final');
     panel.setAttribute('aria-busy', 'true');
     panel.innerHTML = '<section class="dcard" role="status" style="text-align:center; padding:48px 24px"><span class="pill pill--active">AI 리포트 생성 중</span>' +
-      '<h2 class="rs-h" style="margin-top:14px; font-size:20px">면접 답변을 종합하고 있어요</h2><p class="rs-sub" id="final-loading-copy">' + steps[0][1] + '</p>' +
-      '<div class="an-bar" style="max-width:420px; margin:16px auto 0; height:8px; border-radius:99px; background:#EEF2F8; overflow:hidden"><i id="final-loading-bar" style="display:block; height:100%; width:' + steps[0][0] + '%; background:var(--sky); transition:width .6s"></i></div>' +
-      '<p class="rs-sub" style="margin-top:12px">응답이 오면 최종 리포트가 자동으로 표시돼요.</p></section>';
+      '<h2 class="rs-h" style="margin-top:14px; font-size:20px">면접 답변을 종합하고 있습니다</h2><p class="rs-sub" id="final-loading-copy">' + steps[0][1] + '</p>' +
+      '<div class="an-bar" style="max-width:420px; margin:16px auto 0; height:8px; border-radius:2px; background:#EEF1F5; overflow:hidden"><i id="final-loading-bar" style="display:block; height:100%; width:' + steps[0][0] + '%; background:var(--sky); transition:width .6s"></i></div>' +
+      '<p class="rs-sub" style="margin-top:12px">응답이 오면 최종 리포트가 자동으로 표시됩니다.</p></section>';
     return setInterval(function () {
       i = Math.min(i + 1, steps.length - 1);
       document.getElementById('final-loading-bar').style.width = steps[i][0] + '%';
@@ -192,13 +192,13 @@
     if (!s.info || s.info.status === 'COMPLETED') { el.hidden = true; return; }
     var canFinalize = s.questions.some(function (q) { return qScore(q) != null; });
     el.hidden = false;
-    el.innerHTML = '<span class="interim__label">중간 결과</span><h2>지금까지의 답변을 확인하고 다음 단계를 골라주세요</h2>' +
-      '<p>아직 리포트가 확정되지 않았어요. 남은 질문을 이어서 답할 수 있어요.</p><div class="interim__actions">' +
+    el.innerHTML = '<span class="interim__label">중간 결과</span><h2>지금까지의 답변을 확인하고 다음 단계를 골라 주십시오</h2>' +
+      '<p>아직 리포트가 확정되지 않았습니다. 남은 질문을 이어서 답할 수 있습니다.</p><div class="interim__actions">' +
       (s.pending.length ? '<a class="dbtn dbtn--line" style="height:40px" href="' + route('/interview?resumeSessionId=' + encodeURIComponent(sessionId)) + '">남은 질문 ' + s.pending.length + '개 이어서 답하기</a>' : '') +
       (s.remaining.length ? '<button type="button" class="dbtn dbtn--line" style="height:40px" data-open-remaining>남은 질문 ' + s.remaining.length + '개 추가</button>'
-        : s.pending.length ? '' : '<span class="rs-sub" style="align-self:center">준비된 질문을 모두 답했어요</span>') +
+        : s.pending.length ? '' : '<span class="rs-sub" style="align-self:center">준비된 질문을 모두 답했습니다</span>') +
       (canFinalize ? '<button type="button" class="dbtn dbtn--navy" data-finalize>면접 끝내고 리포트 확정</button>'
-        : '<span class="rs-sub" style="align-self:center">점수가 나온 질문이 1개 이상 있어야 리포트를 확정할 수 있어요.</span>') + '</div>';
+        : '<span class="rs-sub" style="align-self:center">점수가 나온 질문이 1개 이상 있어야 리포트를 확정할 수 있습니다.</span>') + '</div>';
   }
 
   // v2 면접(기초 지식·자료 기반·인성)은 새 보고서 화면에서 본다. 이 화면은 v1 기록용
@@ -210,7 +210,7 @@
       var focus = (q.evaluationFocus || []).map(function (k) { return DIMS[k] || weaknessLabel(k); }).join(' · ');
       return '<label class="qr-item" style="cursor:pointer"><input type="checkbox" value="' + q.questionId + '" checked style="margin-top:3px; accent-color:var(--sky)">' +
         '<span><b style="margin-right:6px">' + (i + 1) + '</b>' + esc(q.questionText) +
-        '<small style="display:block; margin-top:4px; color:var(--text-3)">' + esc(q.intent || '답변의 핵심 근거를 확인해요.') + (focus ? ' · ' + esc(focus) : '') + '</small></span></label>';
+        '<small style="display:block; margin-top:4px; color:var(--text-3)">' + esc(q.intent || '답변의 핵심 근거를 확인합니다.') + (focus ? ' · ' + esc(focus) : '') + '</small></span></label>';
     }).join('');
     m.hidden = false;
   }
@@ -233,14 +233,14 @@
     else if (t.hasAttribute('data-close')) t.closest('.modal').hidden = true;
     else if (t.hasAttribute('data-add-remaining')) {
       var ids = Array.prototype.map.call(document.querySelectorAll('#remaining-list input:checked'), function (i) { return Number(i.value); });
-      if (!ids.length) { notify('warning', '이어갈 질문을 하나 이상 골라주세요.'); return; }
+      if (!ids.length) { notify('warning', '이어갈 질문을 하나 이상 골라 주십시오.'); return; }
       t.disabled = true;
       get('/interview-sessions/' + sessionId + '/questions', { method: 'POST', json: { questionIds: ids } }).then(function () {
         window.location.href = route('/interview?resumeSessionId=' + encodeURIComponent(sessionId));
       }).catch(function (err) { notify('error', err.message); t.disabled = false; });
     }
     else if (t.hasAttribute('data-finalize')) {
-      if (!window.confirm('이 면접을 확정할까요?\n\n확정하면 고르지 않은 질문은 더 추가할 수 없고, 리포트를 만들어요.')) return;
+      if (!window.confirm('이 면접을 확정하시겠습니까?\n\n확정하면 고르지 않은 질문은 더 추가할 수 없고, 리포트를 만듭니다.')) return;
       t.disabled = true;
       get('/interview-sessions/' + sessionId + '/complete', { method: 'POST' }).then(function () {
         window.location.replace(route('/interview-results?sessionId=' + encodeURIComponent(sessionId)));

@@ -43,10 +43,10 @@
   // 종합 점수 원형 그래프
   function ring(n) {
     var r = 64, c = 2 * Math.PI * r;
-    var color = { good: '#16A34A', mid: '#2563C9', low: '#B45309', bad: '#DC2626', none: '#CBD5E1' }[tone(n)];
+    var color = { good: '#12151B', mid: '#3A62A8', low: '#8A4B14', bad: '#8A4B14', none: '#B9C0CB' }[tone(n)];
     var v = n == null ? 0 : Math.max(0, Math.min(100, n));
     return '<div class="ring" role="img" aria-label="종합 점수 ' + (n == null ? '없음' : n + '점') + '"><svg viewBox="0 0 160 160">' +
-      '<circle cx="80" cy="80" r="' + r + '" fill="none" stroke="#E2E8F3" stroke-width="14"/>' +
+      '<circle cx="80" cy="80" r="' + r + '" fill="none" stroke="#D6DBE3" stroke-width="14"/>' +
       '<circle cx="80" cy="80" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + (c * v / 100) + ' ' + c + '"/></svg>' +
       '<div class="ring__num"><b>' + (n == null ? '-' : n) + '</b><small>/ 100점</small></div></div>';
   }
@@ -76,7 +76,7 @@
     return fetch(path, init).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) {
         if (!response.ok || !body.success) {
-          var error = new Error(body.message || '요청을 처리하지 못했어요.');
+          var error = new Error(body.message || '요청을 처리하지 못했습니다.');
           error.status = response.status; error.code = body.code;
           throw error;
         }

@@ -27,7 +27,7 @@
 
       var email = emailInput.value.trim();
       if (!email) {
-        showError(errorEl, '이메일을 입력해주세요.');
+        showError(errorEl, '이메일을 입력해 주십시오.');
         return;
       }
 
@@ -45,7 +45,7 @@
         })
         .then(function (result) {
           if (result.ok && result.body.success) {
-            sendHint.textContent = '인증 코드를 보냈습니다. 이메일을 확인해주세요.';
+            sendHint.textContent = '인증 코드를 보냈습니다. 이메일을 확인해 주십시오.';
             sendHint.className = 'field-hint field-hint--ok';
             codeStep.hidden = false;
           } else {
@@ -53,7 +53,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         })
         .then(function () {
           sendBtn.disabled = false;
@@ -67,7 +67,7 @@
       var email = emailInput.value.trim();
       var code = codeInput.value.trim();
       if (!code) {
-        showError(errorEl, '인증 코드를 입력해주세요.');
+        showError(errorEl, '인증 코드를 입력해 주십시오.');
         return;
       }
 
@@ -91,7 +91,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         })
         .then(function () {
           verifyBtn.disabled = false;

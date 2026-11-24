@@ -11,18 +11,18 @@
     };
     // [상태 필드, 이름, 설명]
     var stages = [
-        ['jobPostingAnalysisStatus', '채용공고 분석', '필수·우대 요구사항을 뽑아요'],
-        ['candidateMaterialAnalysisStatus', '지원자 자료 분석', '이력서·자기소개서에서 근거가 될 경험을 찾아요'],
-        ['guideContextStatus', '직무 가이드 적용', '희망 직무에서 중요하게 보는 기준을 더해요'],
-        ['customizedAnalysisStatus', '맞춤 결과 생성', '요구사항별 연결 결과와 보완 과제를 정리해요']
+        ['jobPostingAnalysisStatus', '채용공고 분석', '필수·우대 요구사항을 뽑습니다'],
+        ['candidateMaterialAnalysisStatus', '지원자 자료 분석', '이력서·자기소개서에서 근거가 될 경험을 찾습니다'],
+        ['guideContextStatus', '직무 가이드 적용', '희망 직무에서 중요하게 보는 기준을 더합니다'],
+        ['customizedAnalysisStatus', '맞춤 결과 생성', '요구사항별 연결 결과와 보완 과제를 정리합니다']
     ];
     var errorText = {
-        ANALYSIS_002: '분석 작업을 찾을 수 없거나 접근 권한이 없어요.',
-        ANALYSIS_009: '분석을 시작할 준비가 아직 끝나지 않았어요.',
-        ANALYSIS_010: '분석 결과의 무결성을 확인하지 못했어요.',
-        ANALYSIS_011: '분석 자료의 색인을 준비하지 못했어요.',
-        AI_001: '분석 결과를 처리하지 못했어요. 잠시 후 다시 시도해 주세요.',
-        AI_002: '지금은 분석을 준비할 수 없어요. 관리자에게 문의해 주세요.'
+        ANALYSIS_002: '분석 작업을 찾을 수 없거나 접근 권한이 없습니다.',
+        ANALYSIS_009: '분석을 시작할 준비가 아직 끝나지 않았습니다.',
+        ANALYSIS_010: '분석 결과의 무결성을 확인하지 못했습니다.',
+        ANALYSIS_011: '분석 자료의 색인을 준비하지 못했습니다.',
+        AI_001: '분석 결과를 처리하지 못했습니다. 잠시 후 다시 시도해 주십시오.',
+        AI_002: '지금은 분석을 준비할 수 없습니다. 관리자에게 문의해 주십시오.'
     };
     var CHECK = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
     var INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>';
@@ -33,7 +33,7 @@
         var notice = sessionStorage.getItem('jobpuzzle_analysis_notice');
         if (!notice) return;
         sessionStorage.removeItem('jobpuzzle_analysis_notice');
-        if (window.showToast) window.showToast('success', notice + ' 이 화면에서 바로 분석을 시작할 수 있어요.');
+        if (window.showToast) window.showToast('success', notice + ' 이 화면에서 바로 분석을 시작할 수 있습니다.');
     }
 
     function api(path, options) {
@@ -41,7 +41,7 @@
         return fetch(path, { method: options.method || 'GET', credentials: 'same-origin' }).then(function (response) {
             return response.json().catch(function () { return {}; }).then(function (body) {
                 if (!response.ok || !body.success) {
-                    var error = new Error(body.message || '요청을 처리하지 못했어요.');
+                    var error = new Error(body.message || '요청을 처리하지 못했습니다.');
                     error.code = body.code; error.status = response.status;
                     throw error;
                 }
@@ -54,9 +54,9 @@
     function friendlyError(error) {
         if (typeof error === 'string') return error;
         if (error && error.code && errorText[error.code]) return errorText[error.code];
-        if (error && error.status === 401) return '로그인 후 이용해 주세요.';
-        if (error && error.status === 403) return '이 분석을 볼 권한이 없어요.';
-        return '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
+        if (error && error.status === 401) return '로그인 후 이용해 주십시오.';
+        if (error && error.status === 403) return '이 분석을 볼 권한이 없습니다.';
+        return '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주십시오.';
     }
 
     function done(status) { return stages.filter(function (s) { return status[s[0]] === 'SUCCEEDED'; }).length; }
@@ -82,16 +82,16 @@
         var n = done(status), running = stages.some(function (s) { return status[s[0]] === 'RUNNING'; });
         root.setAttribute('aria-busy', String(kind === 'running' || kind === 'preparing' || kind === 'recovery'));
         var title = {
-            ready: '분석을 시작할 준비가 됐어요', running: '지원 자료를 차근차근 읽고 있어요', preparing: '분석에 필요한 자료를 준비하고 있어요',
-            recovery: '분석 연결을 다시 확인하고 있어요', error: '분석 상태를 불러오지 못했어요',
-            failed: status.latestFailureStage ? stageName(status.latestFailureStage) + ' 단계에서 멈췄어요' : '분석이 중간에 멈췄어요'
+            ready: '분석을 시작할 준비가 되었습니다', running: '지원 자료를 차근차근 읽고 있습니다', preparing: '분석에 필요한 자료를 준비하고 있습니다',
+            recovery: '분석 연결을 다시 확인하고 있습니다', error: '분석 상태를 불러오지 못했습니다',
+            failed: status.latestFailureStage ? stageName(status.latestFailureStage) + ' 단계에서 멈췄습니다' : '분석이 중간에 멈췄습니다'
         }[kind];
         var sub = {
-            ready: '시작 버튼을 누르면 4단계로 분석이 진행돼요. 보통 1~2분 걸려요.',
+            ready: '시작 버튼을 누르면 4단계로 분석이 진행됩니다. 보통 1~2분 걸립니다.',
             running: '4단계 중 ' + Math.min(n + 1, 4) + '단계 진행 중',
-            preparing: '지원 자료의 색인을 확인한 뒤 AI 분석을 시작해요.',
-            recovery: '일시적인 응답 지연이 있어서 ' + (opts.delay || 0) + '초 뒤에 이어서 진행해요.',
-            failed: '4단계 중 ' + n + '단계까지 완료했어요',
+            preparing: '지원 자료의 색인을 확인한 뒤 AI 분석을 시작합니다.',
+            recovery: '일시적인 응답 지연이 있어서 ' + (opts.delay || 0) + '초 뒤에 이어서 진행합니다.',
+            failed: '4단계 중 ' + n + '단계까지 완료했습니다',
             error: friendlyError(opts.error)
         }[kind];
         var icon = kind === 'failed' || kind === 'error'
@@ -104,15 +104,15 @@
                 '<ol class="an-stages">' + stagesHtml(status, kind === 'recovery') + '</ol>';
         }
         if (kind === 'ready') {
-            html += '<div class="an-note">' + INFO + '<p>아직 AI 분석은 실행되지 않았어요. 오른쪽에서 고른 자료를 확인한 뒤 시작해주세요.</p></div>' +
+            html += '<div class="an-note">' + INFO + '<p>아직 AI 분석은 실행되지 않았습니다. 오른쪽에서 고른 자료를 확인한 뒤 시작해 주십시오.</p></div>' +
                 '<div class="an-actions"><button type="button" class="dbtn dbtn--navy" data-run' + (state.running ? ' disabled' : '') + '>분석 시작</button>' +
                 '<a href="' + route('/interview') + '" class="dbtn dbtn--ghost">자료 다시 고르기</a></div>';
         } else if (kind === 'running' || kind === 'preparing' || kind === 'recovery') {
-            html += '<div class="an-note">' + INFO + '<p>이 화면을 벗어나도 분석은 서버에서 계속돼요. 다른 메뉴를 쓰다가 대시보드에서 다시 들어올 수 있어요.</p></div>' +
+            html += '<div class="an-note">' + INFO + '<p>이 화면을 벗어나도 분석은 서버에서 계속됩니다. 다른 메뉴를 쓰다가 대시보드에서 다시 들어올 수 있습니다.</p></div>' +
                 '<div class="an-actions"><a href="' + route('/dashboard') + '" class="dbtn dbtn--ghost">대시보드로 가기</a></div>';
         } else if (kind === 'failed') {
             var message = opts.error ? friendlyError(opts.error) : status.userMessage;
-            html += '<div class="an-note an-note--fail">' + WARN + '<p>' + U.esc(message || '일시적인 오류로 분석이 멈췄어요.') + ' 고른 자료와 앞 단계 결과는 남아 있어서, 같은 자료로 이어서 다시 실행할 수 있어요.</p></div>' +
+            html += '<div class="an-note an-note--fail">' + WARN + '<p>' + U.esc(message || '일시적인 오류로 분석이 멈췄습니다.') + ' 고른 자료와 앞 단계 결과는 남아 있어서, 같은 자료로 이어서 다시 실행할 수 있습니다.</p></div>' +
                 '<div class="an-actions"><button type="button" class="dbtn dbtn--navy" data-run data-retry' + (state.running ? ' disabled' : '') + '>분석 다시 시도</button>' +
                 '<a href="' + route('/interview') + '" class="dbtn dbtn--ghost">면접 준비로 돌아가기</a></div>';
         }
@@ -221,14 +221,14 @@
     }
 
     if (!root || !caseId || !/^\d+$/.test(caseId) || Number(caseId) <= 0) {
-        if (root) root.innerHTML = '<div class="an-status"><div><h2>잘못된 분석 주소예요</h2><p>면접 준비에서 다시 시작해 주세요.</p></div></div>';
+        if (root) root.innerHTML = '<div class="an-status"><div><h2>잘못된 분석 주소입니다</h2><p>면접 준비에서 다시 시작해 주십시오.</p></div></div>';
         return;
     }
     root.addEventListener('click', function (e) {
         var b = e.target.closest('[data-run]');
         if (!b || b.disabled) return;
         var retry = b.hasAttribute('data-retry');
-        if (retry && !window.confirm('고른 자료와 앞 단계 결과는 그대로 둬요.\n\n다시 실행하면 AI 요청이 다시 발생할 수 있어요. 계속할까요?')) return;
+        if (retry && !window.confirm('고른 자료와 앞 단계 결과는 그대로 둡니다.\n\n다시 실행하면 AI 요청이 다시 발생할 수 있습니다. 계속하시겠습니까?')) return;
         runAnalysis(retry);
     });
     window.addEventListener('pagehide', function () {
@@ -236,7 +236,7 @@
     }, { once: true });
     showAcceptedNotice();
     api(route('/analysis-cases/' + caseId)).then(renderSources).catch(function () {
-        document.getElementById('analysis-sources').innerHTML = '<div><dt>자료</dt><dd>불러오지 못했어요</dd></div>';
+        document.getElementById('analysis-sources').innerHTML = '<div><dt>자료</dt><dd>불러오지 못했습니다</dd></div>';
     });
     loadStatus();
 })();

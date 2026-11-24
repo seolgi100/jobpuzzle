@@ -92,6 +92,20 @@
         }
     }
 
+    // 상단 메뉴의 "티켓 N장" (디자인 기준 5장). 못 불러오면 칸을 숨긴 채 둔다.
+    function loadTicketCount() {
+        var slot = document.getElementById('app-header-tickets');
+        if (!slot) return;
+        fetch(window.JobPuzzleRoutes.path('/tickets/me'), { credentials: 'same-origin' })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (body) {
+                if (!body || !body.success) return;
+                document.getElementById('app-header-ticket-count').textContent = body.data.balance;
+                slot.hidden = false;
+            })
+            .catch(function () { /* 잔액은 보조 정보라 실패해도 메뉴는 그대로 */ });
+    }
+
     function loadCurrentUser() {
         if (!document.getElementById('app-user-chip')) return;
         fetch(window.JobPuzzleRoutes.path('/user/me'), { credentials: 'same-origin' })
@@ -100,6 +114,7 @@
                 if (result.ok && result.body.success) {
                     document.dispatchEvent(new CustomEvent('app-user-loaded', { detail: result.body.data }));
                     renderUserDisplay(result.body.data);
+                    loadTicketCount();
                     return;
                 }
                 window.location.href = window.JobPuzzleRoutes.path('/login');
@@ -117,8 +132,7 @@
         });
     }
 
-    // landingHeader (guest/user 전환): 랜딩 페이지는 landing.js가 이미 처리하므로
-    // 여기서는 auth-guest가 있고 landing.js가 없는 페이지(로그인, 회원가입, 아이디/비번 찾기 등)만 다룬다.
+    // landingHeader (guest/user 전환): 로그인·회원가입·아이디/비밀번호 찾기 화면의 머리줄.
     function applyGuestHeaderState(user) {
         var authGuest = document.getElementById('auth-guest');
         var authUser = document.getElementById('auth-user');
@@ -141,7 +155,6 @@
     }
 
     function loadGuestHeaderAuthState() {
-        if (window.__jobPuzzleLandingHandlesAuthHeader) return;
         if (!document.getElementById('auth-guest')) return;
         fetch(window.JobPuzzleRoutes.path('/user/me'), { credentials: 'same-origin' })
             .then(function (response) { return response.json().then(function (body) { return { ok: response.ok, body: body }; }); })

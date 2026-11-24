@@ -131,7 +131,7 @@
           state.selectedJobCategoryId = match.jobCategoryId;
         }
       }
-    }).catch(function (e) { state.loadError = e.message || '자료를 불러오지 못했어요.'; });
+    }).catch(function (e) { state.loadError = e.message || '자료를 불러오지 못했습니다.'; });
   }
 
   function docListHtml(type) {
@@ -142,7 +142,7 @@
         var status = DF.statusLabel(null, d.latestVersionStatus);
         return '<li><div class="ms-doc is-disabled"><span class="ms-check" aria-hidden="true"></span>' +
           '<span class="ms-doc__name">' + esc(d.displayName) + '</span>' +
-          '<span class="ms-doc__meta">' + esc(status.text) + ' · 자료 관리에서 확정하면 고를 수 있어요</span></div></li>';
+          '<span class="ms-doc__meta">' + esc(status.text) + ' · 자료 관리에서 확정하면 고를 수 있습니다</span></div></li>';
       }
       // 문서 유형별 상한을 넘는 자료는 분석에 쓸 수 없어 목록에서 선택을 막는다 (document-flow.js charLimitFor와 동일 기준)
       var docLimit = DF.charLimitFor(d.documentType);
@@ -150,7 +150,7 @@
         return '<li><div class="ms-doc is-disabled"><span class="ms-check" aria-hidden="true"></span>' +
           '<span class="ms-doc__name">' + esc(d.displayName) + '</span>' +
           '<span class="ms-doc__meta is-error">' + d.contentLength.toLocaleString() + ' / ' + docLimit.toLocaleString() +
-          '자 · 글자 수가 넘어서 고를 수 없어요</span></div></li>';
+          '자 · 글자 수가 넘어서 고를 수 없습니다</span></div></li>';
       }
       var checked = !!state.selectedDocIds[d.documentId];
       return '<li><button type="button" class="ms-doc" aria-pressed="' + checked + '" data-toggle-doc="' + d.documentId + '">' +
@@ -159,7 +159,7 @@
         '<span class="ms-doc__meta">' + DF.versionLabel(d.latestMajorVersion, d.latestMinorVersion) + ' · 확정됨</span></button></li>';
     }).join('');
     return '<fieldset class="ms-cat"><legend>' + DF.CATEGORY_LABEL[type] + '</legend>' +
-      (items ? '<ul class="ms-docs">' + items + '</ul>' : '<p class="ms-empty">등록된 자료가 없어요</p>') +
+      (items ? '<ul class="ms-docs">' + items + '</ul>' : '<p class="ms-empty">등록된 자료가 없습니다</p>') +
       '<button type="button" class="ms-add" data-open-register="' + type + '">+ ' + DF.CATEGORY_LABEL[type] + ' 등록하기</button></fieldset>';
   }
 
@@ -174,8 +174,8 @@
     var t = state.tickets;
     if (!t) return '';
     var short = t.balance < t.costs.analysis;
-    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.analysis + '장</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
-      (short ? ' · 모자라요. <a class="fl-link" href="' + window.JobPuzzleRoutes.path('/tickets') + '">충전하기</a>' : '') + '</p>';
+    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.analysis + '장</b>이 듭니다 · 지금 <b>' + t.balance + '장</b>' +
+      (short ? ' · 모자랍니다. <a class="fl-link" href="' + window.JobPuzzleRoutes.path('/tickets') + '">충전하기</a>' : '') + '</p>';
   }
 
   function footHtml(summary, nextLabel) {
@@ -195,15 +195,15 @@
     }
     if (!state.docsLoaded) {
       return '<section class="fl-panel">' + back +
-        '<p class="fl-sub" role="status">자료를 불러오고 있어요.</p></section>';
+        '<p class="fl-sub" role="status">자료를 불러오고 있습니다.</p></section>';
     }
 
     if (state.materialStage === 'company') {
       var postings = selectedDocsOf(['JOB_POSTING']).length;
       var infos = selectedDocsOf(['COMPANY_INFO']).length;
       return '<section class="fl-panel" aria-labelledby="fl-title">' + back +
-        '<h1 class="fl-title" id="fl-title">어느 공고로 준비할까요?</h1>' +
-        '<p class="fl-sub">채용공고를 하나 이상 골라 주세요.</p>' +
+        '<h1 class="fl-title" id="fl-title">어느 공고로 준비하시겠습니까?</h1>' +
+        '<p class="fl-sub">채용공고를 하나 이상 골라 주십시오.</p>' +
         ticketLineHtml() +
         '<div class="ms-cols"><div class="ms-col">' + COMPANY_TYPES.map(docListHtml).join('') + '</div></div>' +
         footHtml('채용공고 <b>' + postings + '개</b> · 회사 정보 <b>' + infos + '개</b>', '다음: 내 자료 고르기') +
@@ -217,12 +217,12 @@
     var subCategories = state.selectedMainCategory
       ? uniqueInOrder(state.jobCategories.filter(function (c) { return c.mainCategory === state.selectedMainCategory; }).map(function (c) { return c.subCategory; }))
       : [];
-    var subOpts = '<option value="">' + (state.selectedMainCategory ? '중분류' : '대분류를 먼저 골라주세요') + '</option>' +
+    var subOpts = '<option value="">' + (state.selectedMainCategory ? '중분류' : '대분류를 먼저 골라 주십시오') + '</option>' +
       subCategories.map(function (s) { return '<option value="' + esc(s) + '"' + (s === state.selectedSubCategory ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('');
     var levelMatches = (state.selectedMainCategory && state.selectedSubCategory)
       ? state.jobCategories.filter(function (c) { return c.mainCategory === state.selectedMainCategory && c.subCategory === state.selectedSubCategory; })
       : [];
-    var levelOpts = '<option value="">' + (levelMatches.length ? '경력' : '중분류를 먼저 골라주세요') + '</option>' +
+    var levelOpts = '<option value="">' + (levelMatches.length ? '경력' : '중분류를 먼저 골라 주십시오') + '</option>' +
       levelMatches.map(function (c) {
         return '<option value="' + c.jobCategoryId + '"' + (String(c.jobCategoryId) === String(state.selectedJobCategoryId) ? ' selected' : '') + '>' + (CAREER_LEVEL_LABEL[c.careerLevel] || c.careerLevel) + '</option>';
       }).join('');
@@ -230,14 +230,14 @@
     var mine = selectedDocsOf(CANDIDATE_TYPES).length;
 
     return '<section class="fl-panel" aria-labelledby="fl-title">' + back +
-      '<h1 class="fl-title" id="fl-title">이 공고에 낼 내 자료를 골라 주세요</h1>' +
-      '<p class="fl-sub">' + (posting ? esc(posting.displayName) + ' · ' : '') + '확정된 자료만 고를 수 있어요.</p>' +
+      '<h1 class="fl-title" id="fl-title">이 공고에 낼 내 자료를 골라 주십시오</h1>' +
+      '<p class="fl-sub">' + (posting ? esc(posting.displayName) + ' · ' : '') + '확정된 자료만 고를 수 있습니다.</p>' +
       '<div class="ms-cols">' +
         '<div class="ms-col"><div class="ms-job"><h2 class="ms-h">희망 직무</h2><div class="ms-selects">' +
           '<select id="material-main-select" class="fl-select" aria-label="직무 대분류">' + mainOpts + '</select>' +
           '<select id="material-sub-select" class="fl-select" aria-label="직무 중분류"' + (state.selectedMainCategory ? '' : ' disabled') + '>' + subOpts + '</select>' +
           '<select id="material-level-select" class="fl-select" aria-label="경력"' + (levelMatches.length ? '' : ' disabled') + '>' + levelOpts + '</select>' +
-        '</div><p class="ms-note">고른 직무·경력을 면접 기준으로 써요. 공고의 요구 경력과 다르면 분석 결과에서 차이를 알려드려요.</p></div></div>' +
+        '</div><p class="ms-note">고른 직무·경력을 면접 기준으로 씁니다. 공고의 요구 경력과 다르면 분석 결과에서 차이를 알려 드립니다.</p></div></div>' +
         '<div class="ms-col"><h2 class="ms-h">내 지원 자료</h2>' + CANDIDATE_TYPES.map(docListHtml).join('') + '</div>' +
       '</div>' +
       footHtml('내 자료 <b>' + mine + '개</b>', '확인하고 분석 준비') +
@@ -246,7 +246,7 @@
 
   function goCandidateStage() {
     if (!selectedDocsOf(['JOB_POSTING']).length) {
-      state.materialError = '채용공고를 하나 이상 골라주세요.';
+      state.materialError = '채용공고를 하나 이상 골라 주십시오.';
       render();
       return;
     }
@@ -255,8 +255,8 @@
   }
 
   function goMaterialReview() {
-    var problem = !state.selectedJobCategoryId ? '희망 직무와 경력을 골라주세요.'
-      : !selectedDocsOf(CANDIDATE_TYPES).length ? '내 자료를 하나 이상 골라주세요.' : null;
+    var problem = !state.selectedJobCategoryId ? '희망 직무와 경력을 골라 주십시오.'
+      : !selectedDocsOf(CANDIDATE_TYPES).length ? '내 자료를 하나 이상 골라 주십시오.' : null;
     if (problem) { state.materialError = problem; render(); return; }
     var selectedIds = Object.keys(state.selectedDocIds);
 
@@ -295,9 +295,9 @@
     var box = window.JPLayer.open(
       '<p class="mr-mode"><span class="qs-mode is-fit">맞춤 면접</span></p>' +
       '<h2 class="tk-title" id="tk-title">분석 전 마지막 확인</h2>' +
-      '<p class="tk-what">이 구성으로 분석을 시작하면 나중에 바꿀 수 없어요.</p>' +
+      '<p class="tk-what">이 구성으로 분석을 시작하면 나중에 바꿀 수 없습니다.</p>' +
       materialReviewContent() +
-      '<div class="tk-scope tk-inline" id="material-review-ticket" role="status">티켓 잔액을 확인하고 있어요.</div>' +
+      '<div class="tk-scope tk-inline" id="material-review-ticket" role="status">티켓 잔액을 확인하고 있습니다.</div>' +
       '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>자료 다시 고르기</button>' +
       '<span id="material-review-action"><button type="button" class="ih-btn ih-btn--navy" id="material-review-confirm" disabled>이 구성으로 분석 시작</button></span></div>'
     );
@@ -314,8 +314,8 @@
       if (!document.getElementById('material-review-ticket')) return;
       var cost = tickets.costs.analysis;
       var short = cost - tickets.balance;
-      box.innerHTML = '<p class="tk-title">' + (short > 0 ? '티켓이 ' + short + '장 부족해요' : '분석에 티켓 ' + cost + '장을 사용해요') + '</p>' +
-        (short > 0 ? '' : '<p class="tk-what">분석이 실패하면 티켓은 돌려드려요.</p>') +
+      box.innerHTML = '<p class="tk-title">' + (short > 0 ? '티켓이 ' + short + '장 부족합니다' : '분석에 티켓 ' + cost + '장을 사용합니다') + '</p>' +
+        (short > 0 ? '' : '<p class="tk-what">분석이 실패하면 티켓은 돌려드립니다.</p>') +
         '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
         '<div><dt>' + (short > 0 ? '필요' : '분석 후') + '</dt><dd>' + (short > 0 ? cost : tickets.balance - cost) + '장</dd></div></dl>';
       if (short > 0) {
@@ -326,7 +326,7 @@
         btn.textContent = cost + '장 쓰고 분석 시작';
       }
     }).catch(function () {
-      box.textContent = '티켓 잔액을 확인하지 못했어요. 분석 화면에서 잔액이 모자라면 다시 알려드려요.';
+      box.textContent = '티켓 잔액을 확인하지 못했습니다. 분석 화면에서 잔액이 모자라면 다시 알려 드립니다.';
       var btn = document.getElementById('material-review-confirm');
       if (btn) btn.disabled = false;
     });
@@ -445,16 +445,16 @@
 
     document.getElementById('material-register-submit').addEventListener('click', function () {
       var name = document.getElementById('material-register-name').value.trim();
-      if (!name) { notify('warning', '자료명을 입력해주세요.'); return; }
+      if (!name) { notify('warning', '자료명을 입력해 주십시오.'); return; }
 
       var opts = { category: state.registerTargetType, name: name, method: state.materialRegisterMethod };
       if (state.materialRegisterMethod === 'file') {
         var files = document.getElementById('material-register-file').files;
-        if (!files.length) { notify('warning', '파일을 선택해주세요.'); return; }
+        if (!files.length) { notify('warning', '파일을 선택해 주십시오.'); return; }
         opts.files = files;
       } else {
         var content = document.getElementById('material-register-content').value.trim();
-        if (!content) { notify('warning', '내용을 입력해주세요.'); return; }
+        if (!content) { notify('warning', '내용을 입력해 주십시오.'); return; }
         opts.content = content;
       }
 

@@ -14,12 +14,12 @@
   }
 
   var ROLE_BADGE = {
-    ADMIN: { bg: '#F5F1FF', color: '#6B4FBB', label: 'ADMIN' },
-    USER: { bg: '#F6F8FB', color: '#5B6370', label: 'USER' }
+    ADMIN: { bg: '#EDF2FA', color: '#3A62A8', label: 'ADMIN' },
+    USER: { bg: '#F5F7FA', color: '#4F5764', label: 'USER' }
   };
   var STATUS_BADGE = {
-    ACTIVE: { bg: '#EAF7EF', color: '#1E8E5A', label: '활성' },
-    WITHDRAWN: { bg: '#FBEEEC', color: '#B5433D', label: '탈퇴' }
+    ACTIVE: { bg: '#EEF1F5', color: '#12151B', label: '활성' },
+    WITHDRAWN: { bg: '#F6EFE8', color: '#8A4B14', label: '탈퇴' }
   };
   var SOCIAL_ICON = {
     kakao: { bg: '#FEE500', color: '#3C1E1E', letter: 'K', title: '카카오 로그인' },
@@ -60,21 +60,21 @@
   function renderRows() {
     var users = (state.pageData && state.pageData.content) || [];
     var rows = users.map(function (u) {
-      var role = ROLE_BADGE[u.role] || { bg: '#F6F8FB', color: '#5B6370', label: u.role };
-      var status = STATUS_BADGE[u.status] || { bg: '#F6F8FB', color: '#5B6370', label: u.status };
+      var role = ROLE_BADGE[u.role] || { bg: '#F5F7FA', color: '#4F5764', label: u.role };
+      var status = STATUS_BADGE[u.status] || { bg: '#F5F7FA', color: '#4F5764', label: u.status };
       return '<div class="table-row" style="grid-template-columns:1fr 1fr 1.6fr 0.7fr 0.8fr 0.7fr 1fr;">' +
         '<span style="font-size:13px; font-weight:600; display:flex; align-items:center; flex-wrap:wrap; gap:5px; min-width:0;">' +
           socialIcon(u.socialProvider) + '<span style="overflow-wrap:anywhere;">' + esc(u.loginId) + '</span>' +
         '</span>' +
         '<span style="font-size:13px;">' + esc(u.name) + '</span>' +
-        '<span style="font-size:12.5px; color:#5B6370;">' + esc(u.email) + '</span>' +
+        '<span style="font-size:12.5px; color:#4F5764;">' + esc(u.email) + '</span>' +
         '<span>' + pill(role.label, role.bg, role.color) + '</span>' +
         '<span>' + pill(status.label, status.bg, status.color) + '</span>' +
-        '<span>' + (u.isLocked ? pill('잠김', '#FBEEEC', '#B5433D') : '<span style="font-size:12.5px; color:#8A93A3;">-</span>') + '</span>' +
-        '<span style="font-size:12.5px; color:#8A93A3;">' + (u.createdAt || '').slice(0, 10) + '</span>' +
+        '<span>' + (u.isLocked ? pill('잠김', '#F6EFE8', '#8A4B14') : '<span style="font-size:12.5px; color:#9BA3B0;">-</span>') + '</span>' +
+        '<span style="font-size:12.5px; color:#9BA3B0;">' + (u.createdAt || '').slice(0, 10) + '</span>' +
       '</div>';
     }).join('');
-    document.getElementById('admin-user-rows').innerHTML = rows || '<div class="table-empty">검색 결과가 없어요</div>';
+    document.getElementById('admin-user-rows').innerHTML = rows || '<div class="table-empty">검색 결과가 없습니다</div>';
   }
 
   function renderPagination() {

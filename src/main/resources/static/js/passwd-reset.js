@@ -69,7 +69,7 @@
         remaining -= 1;
         if (remaining <= 0) {
           stopCountdown();
-          codeHint.textContent = '인증 시간이 만료되었습니다. 인증코드를 다시 발송해주세요.';
+          codeHint.textContent = '인증 시간이 만료되었습니다. 인증코드를 다시 발송해 주십시오.';
           codeHint.classList.add('field-hint--error');
           verifyBtn.disabled = true;
           return;
@@ -84,7 +84,7 @@
       var loginId = loginIdInput.value.trim();
       var email = emailInput.value.trim();
       if (!loginId || !email) {
-        showError(errorEl, '아이디와 이메일을 입력해주세요.');
+        showError(errorEl, '아이디와 이메일을 입력해 주십시오.');
         return;
       }
 
@@ -102,9 +102,9 @@
         })
         .then(function (result) {
           if (result.ok && result.body.success) {
-            sendHint.textContent = '인증 코드를 보냈습니다. 이메일을 확인해주세요.';
+            sendHint.textContent = '인증 코드를 보냈습니다. 이메일을 확인해 주십시오.';
             sendHint.className = 'field-hint field-hint--ok';
-            codeHint.innerHTML = '이메일로 받은 6자리 코드를 <strong id="countdown"></strong> 안에 입력해주세요.';
+            codeHint.innerHTML = '이메일로 받은 6자리 코드를 <strong id="countdown"></strong> 안에 입력해 주십시오.';
             codeHint.classList.remove('field-hint--error');
             countdownEl = document.getElementById('countdown');
             codeStep.hidden = false;
@@ -116,7 +116,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         })
         .then(function () {
           sendBtn.disabled = false;
@@ -131,7 +131,7 @@
       var email = emailInput.value.trim();
       var code = codeInput.value.trim();
       if (!code) {
-        showError(errorEl, '인증 코드를 입력해주세요.');
+        showError(errorEl, '인증 코드를 입력해 주십시오.');
         return;
       }
 
@@ -155,7 +155,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         })
         .then(function () {
           verifyBtn.disabled = false;
@@ -170,7 +170,7 @@
       var code = codeInput.value.trim();
       var newPassword = newPasswordInput.value;
       if (!newPassword) {
-        showError(errorEl, '새 비밀번호를 입력해주세요.');
+        showError(errorEl, '새 비밀번호를 입력해 주십시오.');
         return;
       }
       if (newPassword !== newPasswordCheckInput.value) {
@@ -200,7 +200,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         })
         .then(function () {
           resetBtn.disabled = false;

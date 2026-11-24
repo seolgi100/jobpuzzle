@@ -25,7 +25,7 @@
     return fetch(R.path(path), { credentials: 'same-origin' }).then(function (response) {
       return response.json().then(function (body) {
         if (!response.ok || !body.success) {
-          var error = new Error(body.message || '요청에 실패했어요.');
+          var error = new Error(body.message || '요청에 실패했습니다.');
           error.status = response.status;
           throw error;
         }
@@ -268,14 +268,14 @@
     })[0];
     var fit = '<section class="ih-fit ih-box" aria-labelledby="ih-fit-title">' +
       '<h2 class="ih-fit__title" id="ih-fit-title">공고 맞춤 면접</h2>' +
-      '<p class="ih-fit__desc">채용공고와 내 자료를 맞춰, 그 공고에서 나올 질문으로 연습해요.</p>' +
+      '<p class="ih-fit__desc">채용공고와 내 자료를 맞춰, 그 공고에서 나올 질문으로 연습합니다.</p>' +
       '<div class="ih-fit__board">' + stepsHtml(['idle', 'idle', 'idle', 'idle'], true) +
       '<ol class="ih-fit__steps">' + STEPS.map(function (name) { return '<li>' + name + '</li>'; }).join('') + '</ol></div>' +
       '<div class="ih-fit__foot">' + (t ? fare(t.costs.analysis) : '') +
       '<button type="button" class="ih-btn ih-btn--ink ih-btn--lg" data-new-posting>공고 고르기</button></div></section>';
     var personality = quickRow({
       title: '인성 면접',
-      note: category ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') : '희망 직무를 먼저 정해 주세요',
+      note: category ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') : '희망 직무를 먼저 정해 주십시오',
       disabled: !category,
       fare: t ? fare(t.costs.personality) : '',
       button: category
@@ -317,7 +317,7 @@
   function ongoingPanel(items) {
     return items.length
       ? '<ul class="ih-list">' + items.join('') + '</ul>'
-      : '<p class="ih-empty">진행 중인 면접이 없어요.</p>';
+      : '<p class="ih-empty">진행 중인 면접이 없습니다.</p>';
   }
 
   function allPanel() {
@@ -331,7 +331,7 @@
     var loose = { key: 'loose', cases: [], sessions: data.looseSessions };
     return (postings.length
         ? '<h3 class="ih-h3">공고별</h3><ul class="ih-list">' + visible.map(postingRow).join('') + '</ul>' + more
-        : '<p class="ih-empty">공고로 준비한 면접이 아직 없어요.</p>') +
+        : '<p class="ih-empty">공고로 준비한 면접이 아직 없습니다.</p>') +
       (data.looseSessions.length
         ? '<h3 class="ih-h3 ih-h3--gap">공고 없이 한 연습</h3>' +
           '<ul class="ih-rec ih-rec--open">' + recordRows(loose) + '</ul>'
@@ -387,7 +387,7 @@
 
   function renderError(message) {
     home.querySelector('[data-ih-board]').innerHTML =
-      '<div class="ih-error" role="alert"><p>' + esc(message || '면접 준비 목록을 불러오지 못했어요.') + '</p>' +
+      '<div class="ih-error" role="alert"><p>' + esc(message || '면접 준비 목록을 불러오지 못했습니다.') + '</p>' +
       '<button type="button" class="ih-btn ih-btn--line" data-retry>다시 불러오기</button></div>';
     home.querySelector('[data-ih-modes]').innerHTML = '';
   }
@@ -478,7 +478,7 @@
       } else if (t.hasAttribute('data-start-personality')) {
         TicketConfirm.open({
           usage: 'PERSONALITY',
-          what: '희망 직무의 인성 질문 중에서 골라 바로 면접을 시작해요. 원치 않는 질문은 면접 중에 건너뛸 수 있어요.',
+          what: '희망 직무의 인성 질문 중에서 골라 바로 면접을 시작합니다. 원치 않는 질문은 면접 중에 건너뛸 수 있습니다.',
           confirmLabel: '질문 받기',
           onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startPersonality(); }
         });
@@ -579,9 +579,9 @@
       var cost = costFor(opts.usage, tickets, opts.cost);
       // shortage: 서버가 잔액 부족(402)을 돌려준 경우. 화면 잔액과 어긋나도 부족 상태로 보여준다.
       var short = opts.shortage ? Math.max(cost - tickets.balance, 1) : cost - tickets.balance;
-      var title = opts.shortage ? '티켓이 부족해요'
-        : short > 0 ? '티켓이 ' + short + '장 부족해요'
-          : '티켓 ' + cost + '장을 사용해요';
+      var title = opts.shortage ? '티켓이 부족합니다'
+        : short > 0 ? '티켓이 ' + short + '장 부족합니다'
+          : '티켓 ' + cost + '장을 사용합니다';
       var lines = '<p class="tk-what">' + esc(opts.what) + '</p>';
       lines += '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
         '<div><dt>' + (short > 0 ? '필요' : '사용 후') + '</dt><dd>' +
@@ -597,15 +597,15 @@
 
     // opts: usage, what, confirmLabel, onConfirm, cost(선택), note(선택), shortage(서버 402 때 true)
     function open(opts) {
-      var box = Layer.open('<p class="tk-loading" role="status">티켓 잔액을 확인하고 있어요.</p>', { onConfirm: opts.onConfirm });
+      var box = Layer.open('<p class="tk-loading" role="status">티켓 잔액을 확인하고 있습니다.</p>', { onConfirm: opts.onConfirm });
       api('/tickets/me').then(function (tickets) {
         if (!Layer.isOpen() || !document.contains(box)) return;
         box.innerHTML = body(opts, tickets);
         Layer.focusIn(box);
       }).catch(function (error) {
         if (!Layer.isOpen() || !document.contains(box)) return;
-        box.innerHTML = '<h2 class="tk-title" id="tk-title">티켓 잔액을 확인하지 못했어요</h2>' +
-          '<p class="tk-what">' + esc(error.message) + ' 잠시 후 다시 시도해 주세요.</p>' +
+        box.innerHTML = '<h2 class="tk-title" id="tk-title">티켓 잔액을 확인하지 못했습니다</h2>' +
+          '<p class="tk-what">' + esc(error.message) + ' 잠시 후 다시 시도해 주십시오.</p>' +
           '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>닫기</button></div>';
         Layer.focusIn(box);
       });

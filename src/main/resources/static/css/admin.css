@@ -18,7 +18,7 @@
   padding: 6px 11px;
   border: 2px solid currentColor;
   border-color: color-mix(in srgb, currentColor 64%, var(--jp-paper));
-  border-radius: 8px;
+  border-radius: 2px;
   background: var(--jp-paper) !important;
   background: color-mix(in srgb, currentColor 18%, var(--jp-paper)) !important;
   box-shadow: 2px 3px 0 rgba(38, 59, 75, 0.16);
@@ -30,7 +30,7 @@
 
 .jp-admin-page .btn-sm {
   border: 2px solid var(--jp-line-soft);
-  border-radius: 8px;
+  border-radius: 2px;
   background: var(--jp-paper);
   color: var(--jp-text-secondary);
   font-weight: 700;
@@ -51,7 +51,7 @@
 
 .jp-admin-page .btn-sm--danger:hover {
   border-color: #8E332D;
-  background: #B5433D;
+  background: #8A4B14;
   color: #FFFFFF;
   box-shadow: 2px 3px 0 rgba(92, 28, 24, 0.25);
 }

@@ -61,7 +61,7 @@
     return '<div class="ap-item' + (done(p) ? ' is-done' : '') + (String(state.highlight) === String(id) ? ' is-hl' : '') + '" data-plan="' + id + '">' +
       '<button type="button" class="ap-check" data-check="' + id + '" aria-pressed="' + done(p) + '" aria-label="' + (done(p) ? '완료 취소' : '완료') + '"' + (saving ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>' +
       '<div><p class="ap-item__title">' + U.esc(p.suggestion || '보완 과제') + '</p>' +
-      '<p class="ap-item__desc">' + U.esc(p.missingPoint || '보완이 필요한 내용을 확인해 주세요.') + '</p>' +
+      '<p class="ap-item__desc">' + U.esc(p.missingPoint || '보완이 필요한 내용을 확인해 주십시오.') + '</p>' +
       (tags ? '<div class="ap-item__tags">' + tags + '</div>' : '') +
       (state.errors[id] ? '<p class="ap-item__desc" style="color:var(--danger)">' + U.esc(state.errors[id]) + '</p>' : '') + '</div>' +
       '<div class="ap-item__side">' + dueControl(p) + '</div></div>';
@@ -74,9 +74,9 @@
 
   function renderList() {
     var el = document.getElementById('ap-list');
-    if (!state.loaded) { el.innerHTML = emptyBox('과제를 불러오고 있어요.'); return; }
-    if (state.error) { el.innerHTML = emptyBox('과제를 불러오지 못했어요.', state.error); return; }
-    if (!state.plans.length) { el.innerHTML = emptyBox('아직 과제가 없어요', '지원 분석을 마치면 부족한 근거를 채울 과제가 여기에 생겨요.', true); return; }
+    if (!state.loaded) { el.innerHTML = emptyBox('과제를 불러오고 있습니다.'); return; }
+    if (state.error) { el.innerHTML = emptyBox('과제를 불러오지 못했습니다.', state.error); return; }
+    if (!state.plans.length) { el.innerHTML = emptyBox('아직 과제가 없습니다', '지원 분석을 마치면 부족한 근거를 채울 과제가 여기에 생깁니다.', true); return; }
     var html = groups().map(function (g) {
       var items = g.plans.filter(show);
       if (!items.length) return '';
@@ -88,7 +88,7 @@
         '<a class="ap-group__link" href="' + route('/analysis-results/' + encodeURIComponent(g.id)) + '">분석 결과 보기</a></div></div>' +
         items.map(itemHtml).join('') + '</section>';
     }).join('');
-    el.innerHTML = html || emptyBox('해당하는 과제가 없어요');
+    el.innerHTML = html || emptyBox('해당하는 과제가 없습니다');
   }
 
   function renderCal() {
@@ -113,8 +113,8 @@
       (day.length ? day.map(function (p) {
         return '<button type="button" class="cal-side__item" data-goto="' + p.actionPlanId + '" style="width:100%; border:0; background:none; text-align:left; font:inherit; cursor:pointer"><p>' + U.esc(p.suggestion || '보완 과제') + '</p><small>' +
           U.esc([p.mainCategory, p.subCategory].filter(Boolean).join(' · ')) + ' · ' + (done(p) ? '완료' : over(p) ? '마감 지남' : '진행 중') + '</small></button>';
-      }).join('') : '<p style="margin:0; font-size:14px; color:var(--text-3)">이 날 마감인 과제가 없어요.</p>') +
-      (nodue ? '<p class="cal-side__nodue">마감일이 없는 과제 ' + nodue + '개는 달력에 안 보여요. 목록에서 마감일을 정해주세요.</p>' : '');
+      }).join('') : '<p style="margin:0; font-size:14px; color:var(--text-3)">이 날 마감인 과제가 없습니다.</p>') +
+      (nodue ? '<p class="cal-side__nodue">마감일이 없는 과제 ' + nodue + '개는 달력에 안 보입니다. 목록에서 마감일을 정해 주십시오.</p>' : '');
   }
 
   function render() {

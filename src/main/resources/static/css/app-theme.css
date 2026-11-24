@@ -40,7 +40,7 @@
   margin: 0 auto 12px;
   padding: 0 clamp(24px, 4vw, 54px);
   border: 2px solid var(--jp-line);
-  border-radius: 20px;
+  border-radius: 2px;
   background:
     linear-gradient(110deg, rgba(201, 222, 237, 0.36), transparent 34%),
     var(--jp-paper);
@@ -57,7 +57,7 @@
 .jp-app-theme .site-header__nav a {
   padding: 10px 13px;
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 .jp-app-theme .site-header__nav a:hover {
@@ -155,7 +155,7 @@
 .jp-app-theme .card,
 .jp-app-theme .table-wrap {
   border: 2px solid var(--jp-line);
-  border-radius: 16px;
+  border-radius: 2px;
   background:
     linear-gradient(135deg, rgba(201, 222, 237, 0.22), transparent 48%),
     var(--jp-paper);
@@ -165,7 +165,7 @@
 .jp-app-theme .btn {
   min-height: 40px;
   border: 2px solid var(--jp-line);
-  border-radius: 10px;
+  border-radius: 2px;
   box-shadow: var(--jp-shadow-small);
 }
 
@@ -196,7 +196,7 @@
   gap: 6px;
   padding: 4px;
   border: 2px solid var(--jp-line);
-  border-radius: 12px;
+  border-radius: 2px;
   background: var(--jp-paper);
   box-shadow: var(--jp-shadow-small);
 }
@@ -241,7 +241,7 @@
 .jp-app-theme .textarea-input,
 .jp-app-theme .select-input {
   border: 2px solid var(--jp-line-soft);
-  border-radius: 10px;
+  border-radius: 2px;
   background: var(--jp-paper);
   color: var(--jp-ink);
 }
@@ -327,7 +327,7 @@
     flex-wrap: wrap;
     row-gap: 8px;
     border-width: 0 0 2px;
-    border-radius: 0 0 18px 18px;
+    border-radius: 2px;
     box-shadow: 0 4px 0 rgba(38, 59, 75, 0.12);
   }
 

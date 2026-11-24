@@ -64,7 +64,7 @@
 
   function renderCards() {
     var el = document.getElementById('cards');
-    if (!state.loaded) { el.innerHTML = '<p class="nav-empty">자료를 불러오고 있어요.</p>'; return; }
+    if (!state.loaded) { el.innerHTML = '<p class="nav-empty">자료를 불러오고 있습니다.</p>'; return; }
     var list = filtered(), total = Math.max(1, Math.ceil(list.length / CARD_SIZE));
     state.cardPage = Math.min(state.cardPage, total - 1);
     el.innerHTML = list.slice(state.cardPage * CARD_SIZE, (state.cardPage + 1) * CARD_SIZE).map(function (d) {
@@ -84,7 +84,7 @@
     document.getElementById('nav-list').innerHTML = list.slice(state.navPage * state.navSize, (state.navPage + 1) * state.navSize).map(function (d) {
       return '<button type="button" data-select="' + d.documentId + '" aria-current="' + (d.documentId === state.selectedId) + '">' + ico(d.documentType) +
         '<div><p>' + esc(d.displayName) + '</p><small>' + docStatus(d)[0] + '</small></div></button>';
-    }).join('') || '<p class="nav-empty">이 카테고리에 자료가 없어요</p>';
+    }).join('') || '<p class="nav-empty">이 카테고리에 자료가 없습니다</p>';
     document.getElementById('nav-pager').innerHTML = pager(total, state.navPage, 'nav');
   }
 
@@ -93,7 +93,7 @@
   function renderDetail() {
     var el = document.getElementById('detail');
     var meta = state.detail && state.detail.document;
-    if (!meta) { el.innerHTML = '<p class="nav-empty">왼쪽 목록에서 확인할 자료를 골라주세요.</p>'; return; }
+    if (!meta) { el.innerHTML = '<p class="nav-empty">왼쪽 목록에서 확인할 자료를 골라 주십시오.</p>'; return; }
     var x = latest(), st = extractionStatus(x);
     var name = state.nameEdit
       ? '<input class="input" id="name-input" value="' + esc(meta.displayName) + '" maxlength="255" style="width:240px; height:36px"> <button type="button" class="dbtn dbtn--sky" data-name-save>저장</button> <button type="button" class="dbtn dbtn--line" data-name-cancel>취소</button>'
@@ -101,11 +101,11 @@
     var head = '<div class="extract-head"><div><h3>' + name + '</h3><p>' + label(meta.documentType) + ' · ' + (SOURCE[meta.sourceType] || '') + '</p></div>' +
       '<div class="extract-head__right">' + pill(st) + '</div></div>';
     if (!x) {
-      el.innerHTML = head + '<div class="extract-fail"><p><b>내용을 읽고 있어요</b></p><p>잠시 후 다시 확인해 주세요.</p></div>';
+      el.innerHTML = head + '<div class="extract-fail"><p><b>내용을 읽고 있습니다</b></p><p>잠시 후 다시 확인해 주십시오.</p></div>';
       return;
     }
     if (x.extractionStatus === 'FAILED') {
-      el.innerHTML = head + '<div class="extract-fail"><p><b>글자를 읽지 못했어요</b></p><p>' + esc(x.failureReason || '사진이 흐리거나 글자가 너무 작으면 실패할 수 있어요. 더 선명한 파일로 다시 시도해 주세요.') + '</p>' +
+      el.innerHTML = head + '<div class="extract-fail"><p><b>글자를 읽지 못했습니다</b></p><p>' + esc(x.failureReason || '사진이 흐리거나 글자가 너무 작으면 실패할 수 있습니다. 더 선명한 파일로 다시 시도해 주십시오.') + '</p>' +
         '<button type="button" class="dbtn dbtn--navy" data-retry>다시 시도</button></div>';
       return;
     }
@@ -117,7 +117,7 @@
     var hasVersion = state.versions.some(function (v) { return v.majorVersion != null; });
     var canConfirm = !editing && x.versionStatus === 'DRAFT';
     el.innerHTML = head +
-      (x.extractionStatus === 'PARTIAL' ? '<p class="extract-partial">' + esc(x.failureReason || '일부 페이지를 읽지 못했어요.') + ' · 실패한 페이지는 직접 입력해서 채울 수 있어요.</p>' : '') +
+      (x.extractionStatus === 'PARTIAL' ? '<p class="extract-partial">' + esc(x.failureReason || '일부 페이지를 읽지 못했습니다.') + ' · 실패한 페이지는 직접 입력해서 채울 수 있습니다.</p>' : '') +
       (editing
         ? '<textarea class="input page-view" id="page-editor" style="height:360px; font:inherit; resize:vertical">' + esc(pages[p]) + '</textarea>'
         : '<div class="page-view' + (expanded ? '' : ' is-collapsed') + '" id="page-view">' + esc(pages[p]) + '</div>' +
@@ -133,9 +133,9 @@
             '<button type="button" class="dbtn dbtn--line" style="height:40px" data-copy="' + meta.documentId + '">복사해서 새로 만들기</button>' +
             (canConfirm ? '<button type="button" class="dbtn dbtn--navy" data-confirm>확정하기</button>' : '')) + '</div>' +
       '</div>' +
-      (chars > limit ? '<p class="extract-confirm-note" style="color:var(--danger)">' + limit.toLocaleString() + '자가 넘으면 분석에 쓸 수 없어요.</p>' : '') +
-      '<p class="extract-confirm-note">' + (x.versionStatus === 'CONFIRMED' ? '확정됨 · 분석과 면접 질문에 쓰이고 있어요. 고치면 다시 확정해야 해요.'
-        : hasVersion ? '고친 내용은 다시 확정해야 분석에 쓰여요.' : '확정한 내용이 분석과 면접 질문에 쓰여요. 확정한 뒤에 고치면 다시 확정해야 해요.') + '</p>';
+      (chars > limit ? '<p class="extract-confirm-note" style="color:var(--danger)">' + limit.toLocaleString() + '자가 넘으면 분석에 쓸 수 없습니다.</p>' : '') +
+      '<p class="extract-confirm-note">' + (x.versionStatus === 'CONFIRMED' ? '확정됨 · 분석과 면접 질문에 쓰이고 있습니다. 고치면 다시 확정해야 합니다.'
+        : hasVersion ? '고친 내용은 다시 확정해야 분석에 쓰입니다.' : '확정한 내용이 분석과 면접 질문에 쓰입니다. 확정한 뒤에 고치면 다시 확정해야 합니다.') + '</p>';
     if (editing) return;
     var view = document.getElementById('page-view'), note = view.previousElementSibling;
     if (note && note.classList.contains('extract-partial')) view.style.setProperty('--note', (note.getBoundingClientRect().height + 14) + 'px');
@@ -213,12 +213,12 @@
     var x = latest();
     var withMarkers = DF.hasPageMarkers(x.content) || state.editPages.length > 1;
     var content = DF.joinPages(state.editPages, withMarkers).trim();
-    if (!content) { notify('warning', '내용을 입력해주세요.'); return; }
+    if (!content) { notify('warning', '내용을 입력해 주십시오.'); return; }
     var hasVersion = state.versions.some(function (v) { return v.majorVersion != null; });
     var payload = { content: content };
     if (hasVersion) payload.changeType = 'MINOR';   // 버전 화면은 없앴고, 수정은 늘 작은 수정으로 저장
     api('/document-extractions/' + x.extractionId + '/versions', { method: 'POST', json: payload }).then(function () {
-      state.editPages = null; notify('success', '고친 내용을 저장했어요. 확정해야 분석에 쓰여요.');
+      state.editPages = null; notify('success', '고친 내용을 저장했습니다. 확정해야 분석에 쓰입니다.');
       return Promise.all([loadDetail(state.selectedId), loadDocs()]);
     }).catch(function (e) { notify('error', e.message); });
   }
@@ -248,19 +248,19 @@
   }
   function submitRegister(btn) {
     var name = document.getElementById('register-name').value.trim();
-    if (!name) { notify('warning', '자료명을 입력해주세요.'); return; }
+    if (!name) { notify('warning', '자료명을 입력해 주십시오.'); return; }
     var opts = { method: state.regMethod, category: state.regCat, name: name };
     if (state.regMethod === 'file') {
-      if (!state.regFiles.length) { notify('warning', '올릴 파일을 골라주세요.'); return; }
+      if (!state.regFiles.length) { notify('warning', '올릴 파일을 골라 주십시오.'); return; }
       opts.files = state.regFiles; opts.keepOriginal = document.getElementById('register-keep').checked;
     } else {
       opts.content = document.getElementById('register-content').value.trim();
-      if (!opts.content) { notify('warning', '내용을 입력해주세요.'); return; }
+      if (!opts.content) { notify('warning', '내용을 입력해 주십시오.'); return; }
     }
     btn.disabled = true;
     DF.registerDocument(opts).then(function (doc) {
       document.getElementById('register').hidden = true;
-      notify('success', state.regMethod === 'file' ? '자료를 올렸어요. 내용을 읽는 중이에요.' : '자료를 등록했어요.');
+      notify('success', state.regMethod === 'file' ? '자료를 올렸습니다. 내용을 읽는 중입니다.' : '자료를 등록했습니다.');
       return loadDocs().then(function () {
         select(doc.documentId);
         if (state.regMethod === 'file') DF.pollExtraction(doc.documentId, function () { loadDetail(doc.documentId); loadDocs(); });
@@ -273,21 +273,21 @@
     var d = findDoc(id);
     if (!d) return;
     state.copySource = d;
-    document.getElementById('copy-from').innerHTML = ico(d.documentType) + '<span><b>' + esc(d.displayName) + '</b>를 복사해요</span>';
+    document.getElementById('copy-from').innerHTML = ico(d.documentType) + '<span><b>' + esc(d.displayName) + '</b>를 복사합니다</span>';
     document.getElementById('copy-name').value = d.displayName + '_복사본';
     document.getElementById('copy').hidden = false;
   }
   function submitCopy(btn) {
     var d = state.copySource, name = document.getElementById('copy-name').value.trim();
-    if (!name) { notify('warning', '새 자료명을 입력해주세요.'); return; }
+    if (!name) { notify('warning', '새 자료명을 입력해 주십시오.'); return; }
     btn.disabled = true;
     api('/documents/' + d.documentId + '/extractions').then(function (versions) {
       var src = (versions || []).filter(function (v) { return v.extractionStatus !== 'FAILED' && v.content; })[0];
-      if (!src) throw new Error('복사할 내용이 없어요. 원본의 추출 결과를 먼저 확인해 주세요.');
+      if (!src) throw new Error('복사할 내용이 없습니다. 원본의 추출 결과를 먼저 확인해 주십시오.');
       return DF.registerDocument({ method: 'text', category: d.documentType, name: name, content: src.content });
     }).then(function (doc) {
       document.getElementById('copy').hidden = true;
-      notify('success', '복사본을 만들었어요. 고친 뒤 확정해 주세요.');
+      notify('success', '복사본을 만들었습니다. 고친 뒤 확정해 주십시오.');
       return loadDocs().then(function () { select(doc.documentId); });
     }).catch(function (e) { notify('error', e.message); }).then(function () { btn.disabled = false; });
   }
@@ -332,7 +332,7 @@
       api('/documents/' + state.deleteId, { method: 'DELETE' }).then(function () {
         document.getElementById('delete').hidden = true;
         if (state.selectedId === state.deleteId) { state.selectedId = null; state.detail = null; }
-        notify('success', '자료를 삭제했어요.');
+        notify('success', '자료를 삭제했습니다.');
         return loadDocs();
       }).catch(function (err) { notify('error', err.message); }).then(function () { t.disabled = false; });
     }
@@ -340,7 +340,7 @@
     else if (t.hasAttribute('data-name-cancel')) { state.nameEdit = false; renderDetail(); }
     else if (t.hasAttribute('data-name-save')) {
       var value = document.getElementById('name-input').value.trim();
-      if (!value) { notify('warning', '자료명을 입력해주세요.'); return; }
+      if (!value) { notify('warning', '자료명을 입력해 주십시오.'); return; }
       api('/documents/' + state.selectedId + '/name', { method: 'PATCH', json: { displayName: value } }).then(function () {
         state.detail.document.displayName = value; state.nameEdit = false;
         var doc = findDoc(state.selectedId); if (doc) doc.displayName = value;
@@ -355,14 +355,14 @@
     else if (t.hasAttribute('data-confirm')) {
       t.disabled = true;
       api('/document-extractions/' + latest().extractionId + '/confirm', { method: 'POST' }).then(function () {
-        notify('success', '확정했어요. 이제 분석과 면접 질문에 쓰여요.');
+        notify('success', '확정했습니다. 이제 분석과 면접 질문에 쓰입니다.');
         return Promise.all([loadDetail(state.selectedId), loadDocs()]);
       }).catch(function (err) { notify('error', err.message); t.disabled = false; });
     }
     else if (t.hasAttribute('data-retry')) {
       var id = state.selectedId;
       api('/documents/' + id + '/extractions', { method: 'POST' }).then(function () {
-        notify('success', '다시 읽는 중이에요.');
+        notify('success', '다시 읽는 중입니다.');
         state.versions = []; renderDetail();
         DF.pollExtraction(id, function () { loadDetail(id); loadDocs(); });
       }).catch(function (err) { notify('error', err.message); });

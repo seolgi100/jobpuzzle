@@ -16,7 +16,7 @@
     <div class="auth-card">
       <div class="auth-card__logo"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt=""></div>
       <h1 class="auth-card__title">아이디 찾기</h1>
-      <p class="auth-card__subtitle">가입할 때 쓴 이메일로 인증 코드를 보내드려요</p>
+      <p class="auth-card__subtitle">가입할 때 쓴 이메일로 인증 코드를 보내 드립니다</p>
 
       <div class="auth-form" id="find-id-form">
         <div class="auth-error" id="find-id-error" role="alert"></div>
@@ -34,14 +34,14 @@
             <input class="auth-input" type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="6자리 숫자" required>
             <button class="auth-sub-btn" type="button" id="verify-btn">확인</button>
           </div>
-          <span class="auth-hint">이메일로 받은 6자리 코드를 3분 안에 입력해주세요.</span>
+          <span class="auth-hint">이메일로 받은 6자리 코드를 3분 안에 입력해 주십시오.</span>
         </div>
       </div>
 
       <div id="find-id-result" hidden>
         <div class="auth-result">
           <span class="auth-result__icon"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
-          <p>가입한 아이디예요</p>
+          <p>가입한 아이디입니다</p>
           <strong id="result-login-id"></strong>
         </div>
         <div class="auth-actions">
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <p class="auth-foot auth-foot--sub"><a href="/jobpuzzle/passwd-reset" th:href="@{/passwd-reset}">비밀번호를 잊으셨나요?</a> · <a href="/jobpuzzle/login" th:href="@{/login}">로그인으로 돌아가기</a></p>
+      <p class="auth-foot auth-foot--sub"><a href="/jobpuzzle/passwd-reset" th:href="@{/passwd-reset}">비밀번호를 잊으셨습니까?</a> · <a href="/jobpuzzle/login" th:href="@{/login}">로그인으로 돌아가기</a></p>
     </div>
   </section>
 </main>

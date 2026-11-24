@@ -1,12 +1,17 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
   <head>
-    <!-- 새 디자인 공통 스타일: 글꼴 · 토큰(preview) · 헤더 · 서비스 공통(app). 페이지 전용 CSS는 각 템플릿에서 뒤에 붙인다. -->
+    <!-- 공통 스타일: 글꼴(Pretendard Variable 본문 · 빛의 계승자체 제목, @font-face는 v2/base.css) · 예전 토큰(preview) · 상단 메뉴 · 서비스 공통(app)
+         · 새 디자인 바탕(v2/base, DESIGN-SYSTEM.md). 화면 전용 CSS는 각 템플릿에서 뒤에 붙인다. -->
     <th:block th:fragment="dsCss">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
       <link rel="stylesheet" href="/css/ds/preview.css" th:href="@{/css/ds/preview.css}">
       <link rel="stylesheet" href="/css/ds/header.css" th:href="@{/css/ds/header.css}">
       <link rel="stylesheet" href="/css/ds/app.css" th:href="@{/css/ds/app.css}">
+      <link rel="stylesheet" href="/css/v2/base.css" th:href="@{/css/v2/base.css}">
     </th:block>
   </head>
 </html>

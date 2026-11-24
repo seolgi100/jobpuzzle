@@ -56,11 +56,11 @@
   }
 
   function statusLabel(extractionStatus, versionStatus) {
-    if (extractionStatus === 'FAILED') return { text: '추출 실패', color: '#B5433D' };
-    if (versionStatus === 'CONFIRMED') return { text: '확정됨', color: '#1E8E5A' };
-    if (versionStatus === 'SUPERSEDED') return { text: '이전 버전', color: '#8A93A3' };
-    if (extractionStatus === 'PARTIAL') return { text: '일부만 추출됨', color: '#8A5A22' };
-    return { text: '검토 필요', color: '#8A5A22' };
+    if (extractionStatus === 'FAILED') return { text: '추출 실패', color: '#8A4B14' };
+    if (versionStatus === 'CONFIRMED') return { text: '확정됨', color: '#12151B' };
+    if (versionStatus === 'SUPERSEDED') return { text: '이전 버전', color: '#9BA3B0' };
+    if (extractionStatus === 'PARTIAL') return { text: '일부만 추출됨', color: '#8A4B14' };
+    return { text: '검토 필요', color: '#8A4B14' };
   }
 
   // [N페이지] 마커를 기준으로 원문을 페이지 단위로 쪼갠다 (백엔드 DocumentExtractionAsyncRunner 참고)
@@ -127,12 +127,12 @@
       overlay.className = 'modal-overlay';
       overlay.innerHTML =
         '<div class="modal-box modal-box--sm">' +
-          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B5433D" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8A4B14" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
           '<p style="font-size:15px; font-weight:700; margin:14px 0 6px;">' + esc(title) + '</p>' +
-          '<p style="font-size:12.5px; color:#8A93A3; margin:0 0 20px;">' + esc(desc) + '</p>' +
+          '<p style="font-size:12.5px; color:#9BA3B0; margin:0 0 20px;">' + esc(desc) + '</p>' +
           '<div class="flex-row gap-10" style="justify-content:center;">' +
-            '<button class="btn btn--ghost" style="border:1px solid #E3E7ED;" data-confirm-cancel>취소</button>' +
-            '<button class="btn" style="background:#B5433D; color:#fff;" data-confirm-ok>삭제하기</button>' +
+            '<button class="btn btn--ghost" style="border:1px solid #D6DBE3;" data-confirm-cancel>취소</button>' +
+            '<button class="btn" style="background:#8A4B14; color:#fff;" data-confirm-ok>삭제하기</button>' +
           '</div>' +
         '</div>';
       document.body.appendChild(overlay);
@@ -195,7 +195,7 @@
     return '<div class="extract-page-nav">' +
       '<button class="btn-sm" data-panel-action="first"' + (isFirst ? ' disabled' : '') + '>처음</button>' +
       '<button class="btn-sm" data-panel-action="prev"' + (isFirst ? ' disabled' : '') + '>이전</button>' +
-      '<span style="font-size:12.5px; color:#8A93A3; display:inline-flex; align-items:center; gap:5px;">' +
+      '<span style="font-size:12.5px; color:#9BA3B0; display:inline-flex; align-items:center; gap:5px;">' +
         '<input type="number" class="text-input" data-panel-jump min="1" max="' + pageCount + '" value="' + (pageIndex + 1) + '" style="width:44px; padding:4px 6px; font-size:12.5px; text-align:center;">' +
         ' / ' + pageCount + label +
       '</span>' +
@@ -245,12 +245,12 @@
     }
 
     function render() {
-      if (!state.documentId || !state.documentMeta) { container.innerHTML = '<p class="text-faint">불러올 자료가 없어요</p>'; return; }
+      if (!state.documentId || !state.documentMeta) { container.innerHTML = '<p class="text-faint">불러올 자료가 없습니다</p>'; return; }
 
       var doc = state.documentMeta;
       var versions = state.versions;
       var extraction = versions.filter(function (v) { return v.extractionId === state.selectedExtractionId; })[0];
-      if (!extraction) { container.innerHTML = '<p class="text-faint">아직 추출된 내용이 없어요. 잠시 후 다시 확인해주세요.</p>'; onRendered(container); return; }
+      if (!extraction) { container.innerHTML = '<p class="text-faint">아직 추출된 내용이 없습니다. 잠시 후 다시 확인해 주십시오.</p>'; onRendered(container); return; }
 
       var isFailed = extraction.extractionStatus === 'FAILED';
       var isLatest = versions.length > 0 && versions[0].extractionId === extraction.extractionId;
@@ -272,9 +272,9 @@
 
       var html = '<div class="flex-row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:8px;">' +
         '<div>' + nameHtml +
-        '<p style="font-size:12px; color:#8A93A3; margin:4px 0 0;">' + CATEGORY_LABEL[doc.documentType] + ' · ' + doc.sourceType + '</p></div>' +
+        '<p style="font-size:12px; color:#9BA3B0; margin:4px 0 0;">' + CATEGORY_LABEL[doc.documentType] + ' · ' + doc.sourceType + '</p></div>' +
         '<div class="flex-row gap-8" style="flex-wrap:wrap;">' +
-          '<span class="badge-pill" style="background:#F5F1FF; color:' + status.color + ';">' + status.text + '</span>' +
+          '<span class="badge-pill" style="background:#EDF2FA; color:' + status.color + ';">' + status.text + '</span>' +
           '<select class="select-input" style="width:auto; padding:6px 10px; font-size:12.5px;" data-panel-el="version-select">' +
             versions.map(function (v) {
               var s = statusLabel(v.extractionStatus, v.versionStatus);
@@ -286,7 +286,7 @@
 
       if (isFailed) {
         html += '<div class="extract-fail"><p style="font-size:14px; font-weight:600; margin:0;">텍스트를 추출할 수 없습니다</p>' +
-          '<p style="font-size:12.5px; color:#8A93A3; margin:0;">' + esc(extraction.failureReason || '파일을 다시 확인해주세요.') + '</p>' +
+          '<p style="font-size:12.5px; color:#9BA3B0; margin:0;">' + esc(extraction.failureReason || '파일을 다시 확인해 주십시오.') + '</p>' +
           (isLatest ? '<button class="btn btn--primary" data-panel-action="retry">다시 추출 시도</button>' : '') +
           '</div>';
       } else if (state.editMode) {
@@ -301,7 +301,7 @@
           '</div>' +
           charCountHtml(totalContentLength(editPages), charLimitFor(doc.documentType)) +
           '</div><div class="extract-body__actions">' +
-          '<button class="btn btn--ghost" style="border:1px solid #E3E7ED;" data-panel-action="edit-cancel">취소</button>' +
+          '<button class="btn btn--ghost" style="border:1px solid #D6DBE3;" data-panel-action="edit-cancel">취소</button>' +
           '<button class="btn btn--primary" data-panel-action="edit-save">저장</button>' +
           '</div></div>';
       } else {
@@ -363,7 +363,7 @@
       if (jumpInput) jumpInput.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter') return;
         var target = parseInt(jumpInput.value, 10);
-        if (!target || target < 1 || target > pageCount) { notify('warning', '1~' + pageCount + ' 사이의 페이지 번호를 입력해주세요.'); return; }
+        if (!target || target < 1 || target > pageCount) { notify('warning', '1~' + pageCount + ' 사이의 페이지 번호를 입력해 주십시오.'); return; }
         captureCurrentEditingPage();
         state.pageIndex = target - 1;
         render();
@@ -388,9 +388,9 @@
         render();
       });
       bindPanelAction('delete-page', function () {
-        if (state.editingPages.length <= 1) { notify('warning', '최소 한 페이지는 남아있어야 해요.'); return; }
+        if (state.editingPages.length <= 1) { notify('warning', '최소 한 페이지는 남아있어야 합니다.'); return; }
         var targetPage = state.pageIndex + 1;
-        confirmModal(targetPage + '페이지를 삭제할까요?', '삭제하면 되돌릴 수 없습니다.').then(function (ok) {
+        confirmModal(targetPage + '페이지를 삭제하시겠습니까?', '삭제하면 되돌릴 수 없습니다.').then(function (ok) {
           if (!ok) return;
           state.editingPages.splice(state.pageIndex, 1);
           if (state.pageIndex >= state.editingPages.length) state.pageIndex = state.editingPages.length - 1;
@@ -412,7 +412,7 @@
         captureCurrentEditingPage();
         var withMarkers = state.editingHasMarkers || state.editingPages.length > 1;
         var content = joinPages(state.editingPages, withMarkers).trim();
-        if (!content) { notify('warning', '내용을 입력해주세요.'); return; }
+        if (!content) { notify('warning', '내용을 입력해 주십시오.'); return; }
         if (hasAnyVersion && options.openScaleModal) {
           options.openScaleModal(function (changeType) { submitEdit(extraction.extractionId, content, changeType); });
         } else if (hasAnyVersion) {
@@ -442,7 +442,7 @@
       function saveName() {
         var input = container.querySelector('[data-panel-el="name-input"]');
         var value = input.value.trim();
-        if (!value) { notify('warning', '자료명을 입력해주세요.'); return; }
+        if (!value) { notify('warning', '자료명을 입력해 주십시오.'); return; }
         api('/documents/' + state.documentId + '/name', { method: 'PATCH', json: { displayName: value } })
           .then(function () {
             state.documentMeta.displayName = value;

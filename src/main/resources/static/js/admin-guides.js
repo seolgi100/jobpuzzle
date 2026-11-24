@@ -14,9 +14,9 @@
   }
 
   var STATUS_BADGE = {
-    DRAFT: { bg: '#F6F8FB', color: '#5B6370', label: '임시저장' },
-    ACTIVE: { bg: '#EAF7EF', color: '#1E8E5A', label: '사용중' },
-    INACTIVE: { bg: '#FBEEEC', color: '#B5433D', label: '비활성' }
+    DRAFT: { bg: '#F5F7FA', color: '#4F5764', label: '임시저장' },
+    ACTIVE: { bg: '#EEF1F5', color: '#12151B', label: '사용중' },
+    INACTIVE: { bg: '#F6EFE8', color: '#8A4B14', label: '비활성' }
   };
   var SCOPE_LABEL = {
     CATEGORY: '특정 직무분류',
@@ -68,7 +68,7 @@
 
   function renderRows() {
     var rows = state.guides.map(function (g) {
-      var status = STATUS_BADGE[g.status] || { bg: '#F6F8FB', color: '#5B6370', label: g.status };
+      var status = STATUS_BADGE[g.status] || { bg: '#F5F7FA', color: '#4F5764', label: g.status };
       var scope = SCOPE_LABEL[g.scopeType] || g.scopeType;
       var scopeDetail = g.scopeType === 'CATEGORY'
         ? (g.mainCategory ? ' (' + esc(g.mainCategory) + ' · ' + esc(g.subCategory) + ')' : '')
@@ -76,13 +76,13 @@
       return '<div class="table-row" style="grid-template-columns:1fr 1.6fr 1fr 0.8fr 0.6fr 1fr; cursor:pointer;" data-guide="' + g.guideId + '">' +
         '<span style="font-size:12.5px; font-weight:600;">' + esc(g.guideCode) + '</span>' +
         '<span class="guide-list-title"><strong>' + esc(g.title) + '</strong>' + pipelineBadge(g) + '</span>' +
-        '<span style="font-size:12px; color:#5B6370;">' + esc(scope) + scopeDetail + '</span>' +
+        '<span style="font-size:12px; color:#4F5764;">' + esc(scope) + scopeDetail + '</span>' +
         '<span>' + pill(status.label, status.bg, status.color) + '</span>' +
-        '<span style="font-size:12.5px; color:#8A93A3;">' + esc(g.version) + '</span>' +
-        '<span style="font-size:12.5px; color:#8A93A3;">' + (g.createdAt || '').slice(0, 10) + '</span>' +
+        '<span style="font-size:12.5px; color:#9BA3B0;">' + esc(g.version) + '</span>' +
+        '<span style="font-size:12.5px; color:#9BA3B0;">' + (g.createdAt || '').slice(0, 10) + '</span>' +
       '</div>';
     }).join('');
-    document.getElementById('guide-rows').innerHTML = rows || '<div class="table-empty">등록된 가이드가 없어요</div>';
+    document.getElementById('guide-rows').innerHTML = rows || '<div class="table-empty">등록된 가이드가 없습니다</div>';
 
     document.querySelectorAll('[data-guide]').forEach(function (row) {
       row.addEventListener('click', function () {
@@ -151,16 +151,16 @@
     };
 
     if (!request.guideCode || !request.title) {
-      notice('error', '가이드 코드와 제목은 필수예요.');
+      notice('error', '가이드 코드와 제목은 필수입니다.');
       return;
     }
     var fileInput = document.getElementById('guide-file');
     if (request.sourceType === 'PDF' && !fileInput.files[0]) {
-      notice('error', '전처리할 PDF 파일을 선택해 주세요.');
+      notice('error', '전처리할 PDF 파일을 선택해 주십시오.');
       return;
     }
     if (request.sourceType === 'DIRECT_INPUT' && !request.sourceText) {
-      notice('error', '전처리할 가이드 원문을 입력해 주세요.');
+      notice('error', '전처리할 가이드 원문을 입력해 주십시오.');
       return;
     }
 

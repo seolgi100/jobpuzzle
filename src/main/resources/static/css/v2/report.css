@@ -1,65 +1,4 @@
-/* 면접 보고서 v2 — 기준: jobpuzzle-impeccable/design-test/DESIGN-SYSTEM.md, app.css, report.html (도록 컨셉).
-   기존 앱 스타일(ds/app.css)과 이름이 겹치지 않게 .r2 안에서만 쓴다. 상단 메뉴·푸터는 전체 디자인 적용 때 바꾼다. */
-
-.r2 {
-  --ink: #12151B;
-  --wall: #F5F7FA;
-  --paper: #FFFFFF;
-  --text: #12151B;
-  --text-2: #4F5764;
-  --line: #D6DBE3;
-  --point: #3A62A8;
-  --point-soft: #EDF2FA;
-  --accent: #3A62A8;
-  --caution: #8A4B14;
-  --serif: "Noto Serif KR", serif;
-  --sans: "Pretendard Variable", Pretendard, sans-serif;
-  --wrap: min(1200px, calc(100% - 48px));
-  --ease: cubic-bezier(.16, 1, .3, 1);
-  --float: 0 1px 2px rgba(18, 24, 38, .04), 0 28px 56px -28px rgba(18, 24, 38, .2), 0 72px 96px -72px rgba(18, 24, 38, .3);
-  color: var(--text); font-family: var(--sans); font-size: 17px; line-height: 1.75;
-  word-break: keep-all; overflow-wrap: break-word; -webkit-font-smoothing: antialiased;
-}
-body.r2-body { background: #F5F7FA; }
-@media (max-width: 760px) { .r2 { --wrap: calc(100% - 32px); font-size: 16px; } }
-.r2 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.r2 h1, .r2 h2, .r2 h3, .r2 p, .r2 dl, .r2 dd, .r2 ul, .r2 ol { margin: 0; }
-.r2 ul, .r2 ol { padding: 0; list-style: none; }
-.r2 .wrap { width: var(--wrap); margin-inline: auto; }
-.r2 .num { font-variant-numeric: tabular-nums lining-nums; }
-.r2 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-/* 글자 */
-.r2 .title { font-family: var(--serif); font-weight: 600; font-size: 40px; line-height: 1.35; letter-spacing: -0.02em; text-wrap: balance; }
-.r2 .h2 { font-family: var(--serif); font-weight: 600; font-size: 28px; line-height: 1.4; letter-spacing: -0.015em; }
-.r2 .h3 { font-family: var(--serif); font-weight: 600; font-size: 21px; line-height: 1.5; letter-spacing: -0.01em; }
-.r2 .meta { font-size: 16px; color: var(--text-2); }
-@media (max-width: 760px) { .r2 .title { font-size: 28px; } .r2 .h2 { font-size: 23px; } .r2 .h3 { font-size: 19px; } }
-
-/* 버튼: 모서리 2px, 높이 48px. 주요 = 먹색 (hover 때 델프트 블루) */
-.r2 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 0 22px;
-  font: 600 16px/1.3 var(--sans); text-decoration: none; text-align: center;
-  border: 1px solid transparent; border-radius: 2px; background: none; color: inherit; cursor: pointer;
-  transition: background-color .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease);
-}
-.r2 .btn:disabled { opacity: .55; cursor: not-allowed; }
-.r2 .btn-primary { background: var(--ink); color: #fff; }
-.r2 .btn-primary:hover:not(:disabled) { background: var(--point); }
-.r2 .btn-ghost { color: var(--text); border-color: var(--line); background: var(--paper); }
-.r2 .btn-ghost:hover:not(:disabled) { border-color: var(--ink); }
-.r2 .btn .arrow { width: 16px; height: 16px; flex: none; transition: transform .45s var(--ease); }
-.r2 .btn:hover .arrow { transform: translateX(4px); }
-.r2 .btn small { font-weight: 500; opacity: .8; }
-
-/* 머리말 */
-.r2.page { padding-block: 56px 120px; }
-.r2 .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; color: var(--text-2); text-decoration: none; }
-.r2 .crumb:hover { color: var(--text); text-decoration: underline; }
-.r2 .crumb svg { width: 14px; height: 14px; }
-.r2 .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-top: 28px; padding-bottom: 32px; border-bottom: 1px solid var(--ink); }
-.r2 .head .meta { margin-top: 12px; }
-@media (max-width: 760px) { .r2.page { padding-block: 32px 96px; } .r2 .head { margin-top: 20px; padding-bottom: 24px; } }
+/* 면접 보고서 v2 — 기준: jobpuzzle-impeccable/design-test/report.html. 공통 부품(.r2 토큰·글자·버튼·머리말·종이·조각)은 v2/base.css에 있다. */
 
 /* 왼쪽 목차 + 오른쪽 보고서 한 부 */
 .r2 .layout { display: grid; grid-template-columns: 220px 1fr; gap: 64px; margin-top: 48px; align-items: start; }
@@ -71,16 +10,12 @@ body.r2-body { background: #F5F7FA; }
 .r2 .toc .actions { margin-top: 36px; display: grid; gap: 10px; }
 .r2 .toc .actions .btn { width: 100%; }
 
-.r2 .paper { background: var(--paper); border: 1px solid var(--line); border-top: 2px solid var(--ink); box-shadow: var(--float); }
 .r2 .doc { padding: 56px 64px 64px; }
 .r2 .doc > section + section { margin-top: 64px; padding-top: 48px; border-top: 1px solid var(--line); }
 .r2 .doc .h2 + * { margin-top: 24px; }
 .r2 .interim { margin-bottom: 40px; padding: 18px 22px; background: var(--point-soft); font-size: 16px; }
 .r2 .interim b { font-weight: 600; }
 
-/* 퍼즐 조각: 채움 = 평가됨, 점선 = 건너뜀·평가 실패 (상태는 색이 아니라 모양으로) */
-.r2 .piece { width: 22px; height: 22px; flex: none; fill: var(--ink); overflow: visible; }
-.r2 .piece.is-empty { fill: none; stroke: var(--text-2); stroke-width: 6; stroke-dasharray: 10 9; }
 
 /* 1. 종합 */
 .r2 .overview { display: grid; grid-template-columns: auto 1fr; gap: 64px; align-items: end; }

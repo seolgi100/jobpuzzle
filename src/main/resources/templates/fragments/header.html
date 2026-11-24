@@ -4,7 +4,7 @@
     <!-- 손님용 헤더(메인·로그인·회원가입 등): 로그인 상태면 header.js가 이름 칩으로 바꾼다. -->
     <header th:fragment="landingHeader" class="site-header" id="header" data-dynamic-header>
       <div class="site-header__inner">
-        <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt="">JobPuzzle</a>
+        <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand" aria-label="JobPuzzle 처음으로"><span class="site-header__mark" aria-hidden="true"></span><span>JobPuzzle</span></a>
         <nav class="site-header__nav" aria-label="주요 메뉴">
           <a href="/jobpuzzle/dashboard" th:href="@{/dashboard}">대시보드</a>
           <a href="/jobpuzzle/my-data" th:href="@{/my-data}">자료 관리</a>
@@ -37,7 +37,7 @@
     <!-- 로그인 후 서비스 헤더. 이름·관리자 메뉴는 header.js가 /user/me 응답으로 채운다. -->
     <header th:fragment="appHeader(activePage)" class="site-header" data-dynamic-header>
       <div class="site-header__inner">
-        <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand"><img src="/images/logo-j-white.png" th:src="@{/images/logo-j-white.png}" alt="">JobPuzzle</a>
+        <a href="/jobpuzzle/" th:href="@{/}" class="site-header__brand" aria-label="JobPuzzle 처음으로"><span class="site-header__mark" aria-hidden="true"></span><span>JobPuzzle</span></a>
         <nav class="site-header__nav" aria-label="주요 메뉴">
           <a href="/jobpuzzle/dashboard" th:href="@{/dashboard}" th:classappend="${activePage == 'dashboard'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'dashboard'} ? 'page' : null">대시보드</a>
           <a href="/jobpuzzle/my-data" th:href="@{/my-data}" th:classappend="${activePage == 'mydata'} ? 'is-active' : ''" th:attr="aria-current=${activePage == 'mydata'} ? 'page' : null">자료 관리</a>
@@ -47,6 +47,7 @@
           <a href="/jobpuzzle/admin/users" th:href="@{/admin/users}" th:classappend="${activePage == 'admin'} ? 'is-active' : ''" id="app-admin-nav-link" hidden>관리자</a>
         </nav>
         <div class="site-header__actions">
+          <a class="site-header__tickets" href="/jobpuzzle/tickets" th:href="@{/tickets}" id="app-header-tickets" hidden>티켓 <b id="app-header-ticket-count"></b>장</a>
           <div class="auth-user">
             <button class="user-chip" id="app-user-chip" type="button" data-user-menu-trigger="app-user-menu" aria-controls="app-user-menu" aria-expanded="false">
               <span class="user-chip__avatar" id="app-user-avatar">김</span><span id="app-user-name">김지원님</span>

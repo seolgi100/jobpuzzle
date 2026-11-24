@@ -77,10 +77,10 @@
         var mainCategories = uniqueInOrder(jobCategories.map(function (c) { return c.mainCategory; }));
         fillOptions(mainCategorySelect, mainCategories.map(function (m) {
           return { value: m, label: m };
-        }), '선택해주세요');
+        }), '선택해 주십시오');
       })
       .catch(function () {
-        jobCategoryHint.textContent = '직무 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.';
+        jobCategoryHint.textContent = '직무 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주십시오.';
         jobCategoryHint.classList.add('field-hint--error');
       });
 
@@ -91,8 +91,8 @@
       if (!mainCategory) {
         subCategorySelect.disabled = true;
         careerLevelSelect.disabled = true;
-        fillOptions(subCategorySelect, [], '대분류를 먼저 선택해주세요');
-        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해주세요');
+        fillOptions(subCategorySelect, [], '대분류를 먼저 선택해 주십시오');
+        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해 주십시오');
         return;
       }
 
@@ -102,11 +102,11 @@
       );
       fillOptions(subCategorySelect, subCategories.map(function (s) {
         return { value: s, label: s };
-      }), '선택해주세요');
+      }), '선택해 주십시오');
       subCategorySelect.disabled = false;
 
       careerLevelSelect.disabled = true;
-      fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해주세요');
+      fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해 주십시오');
     });
 
     subCategorySelect.addEventListener('change', function () {
@@ -116,7 +116,7 @@
 
       if (!subCategory) {
         careerLevelSelect.disabled = true;
-        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해주세요');
+        fillOptions(careerLevelSelect, [], '중분류를 먼저 선택해 주십시오');
         return;
       }
 
@@ -125,7 +125,7 @@
       });
       fillOptions(careerLevelSelect, matches.map(function (c) {
         return { value: c.jobCategoryId, label: CAREER_LEVEL_LABEL[c.careerLevel] || c.careerLevel };
-      }), '선택해주세요');
+      }), '선택해 주십시오');
       careerLevelSelect.disabled = false;
     });
 
@@ -138,11 +138,11 @@
       hideError(errorEl);
 
       if (!selectedJobCategoryId) {
-        showError(errorEl, '관심 직무를 선택해주세요.');
+        showError(errorEl, '관심 직무를 선택해 주십시오.');
         return;
       }
       if (!currentUser) {
-        showError(errorEl, '내 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        showError(errorEl, '내 정보를 불러오는 중입니다. 잠시 후 다시 시도해 주십시오.');
         return;
       }
 
@@ -169,7 +169,7 @@
           }
         })
         .catch(function () {
-          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          showError(errorEl, '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오.');
         });
     });
   });

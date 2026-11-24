@@ -1,72 +1,95 @@
-/* 공통 헤더 — 메인과 서비스 페이지 모두 같은 남색 헤더 하나
-   손님: 로그인 / 회원가입, 로그인 사용자: 이름 칩. 현재 페이지 메뉴는 스카이 블루 밑줄 */
+/* 공통 상단 메뉴 — 기준: DESIGN-SYSTEM.md 5장 "상단 메뉴" (벽 바탕 + 아래 1px 선, 지금 있는 메뉴만 먹색 + 델프트 블루 밑줄)
+   손님: 로그인 / 회원가입, 로그인 사용자: 티켓 N장 · {이름}님. 메인 첫 화면(어두운 전시실) 위에서는 header--dark */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(15, 30, 51, .9);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(147, 197, 253, .12);
-  color: #fff;
+  background: #F5F7FA;
+  border-bottom: 1px solid #D6DBE3;
+  color: #12151B;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, "Malgun Gothic", sans-serif;
 }
 .site-header__inner {
   max-width: 1200px;
-  height: 60px;
+  height: 72px;
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 48px;
 }
-.site-header__brand { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; text-decoration: none; }
-.site-header__brand img { height: 24px; width: auto; }
-.site-header__nav { display: flex; gap: 4px; flex: 1; }
+.site-header__brand { display: inline-flex; align-items: center; gap: 10px; flex: none; color: inherit; text-decoration: none; }
+.site-header__brand span:last-child { font-family: "HeirofLight", "Noto Serif KR", serif; font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
+/* Jpen 로고: 글자색을 따라 칠함 (밝은 바탕 먹색, 어두운 바탕 흰색) */
+.site-header__mark { width: 19px; height: 31px; flex: none; background: currentColor;
+  -webkit-mask: url(../../images/jpen-logo.png) center / contain no-repeat; mask: url(../../images/jpen-logo.png) center / contain no-repeat; }
+.site-header__nav { display: flex; gap: 32px; flex: 1; font-size: 16px; font-weight: 500; }
 .site-header__nav a {
   position: relative;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(226, 236, 250, .72);
+  padding: 8px 0;
+  color: #4F5764;
   text-decoration: none;
-  transition: color .2s;
+  transition: color .3s;
 }
-.site-header__nav a:hover { color: #fff; }
-.site-header__nav a.is-active { color: #fff; font-weight: 700; }
-.site-header__nav a.is-active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px; background: #60A5FA; }
-.site-header__nav a:focus-visible, .site-header__actions :focus-visible { outline: 2px solid #93C5FD; outline-offset: 2px; border-radius: 6px; }
-.site-header__actions { display: flex; align-items: center; gap: 8px; }
-.hbtn { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: background .2s; }
-.hbtn--ghost { color: rgba(226, 236, 250, .85); }
-.hbtn--ghost:hover { background: rgba(255, 255, 255, .08); color: #fff; }
-.hbtn--solid { background: #fff; color: #0F1E33; }
-.hbtn--solid:hover { background: #E8F0FD; }
-.user-chip { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px 0 4px; border: 1px solid rgba(147, 197, 253, .2); border-radius: 999px; background: rgba(255, 255, 255, .04); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.user-chip:hover { background: rgba(255, 255, 255, .08); }
-.user-chip__avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #60A5FA, #3B82F6); font-size: 12px; font-weight: 700; }
-.user-chip svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; opacity: .7; }
-@media (max-width: 900px) {
-  .site-header__nav { display: none; }
-  .site-header__inner { justify-content: space-between; }
+.site-header__nav a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #3A62A8;
+  transform: scaleX(0); transform-origin: left; transition: transform .45s cubic-bezier(.16, 1, .3, 1);
 }
+.site-header__nav a:hover { color: #12151B; }
+.site-header__nav a:hover:not(.is-active)::after { background: #D6DBE3; transform: scaleX(1); }
+.site-header__nav a.is-active { color: #12151B; font-weight: 600; }
+.site-header__nav a.is-active::after { transform: scaleX(1); }
+.site-header :focus-visible { outline: 2px solid #3A62A8; outline-offset: 3px; }
+.site-header__actions { display: flex; align-items: center; gap: 20px; margin-left: auto; font-size: 16px; }
+.site-header__tickets { display: inline-flex; align-items: center; gap: 6px; color: #4F5764; text-decoration: none; }
+.site-header__tickets b { color: #12151B; font-weight: 600; font-variant-numeric: tabular-nums; }
+.site-header__tickets:hover { color: #12151B; }
+.hbtn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border: 1px solid transparent; border-radius: 2px; font-size: 16px; font-weight: 600; text-decoration: none; transition: background-color .35s, color .35s; }
+.hbtn--ghost { padding: 0 8px; font-weight: 500; color: inherit; }
+.hbtn--ghost:hover { text-decoration: underline; text-underline-offset: .25em; }
+.hbtn--solid { background: #12151B; color: #fff; }
+.hbtn--solid:hover { background: #3A62A8; }
+.user-chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px; border: 0; background: none; color: inherit; font: inherit; font-weight: 500; cursor: pointer; }
+.user-chip__avatar { display: none; }
+.user-chip svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.user-chip:hover span:not(.user-chip__avatar) { text-decoration: underline; text-underline-offset: .25em; }
+@media (max-width: 960px) {
+  .site-header__nav, .site-header__tickets { display: none; }
+  .site-header__inner { justify-content: space-between; gap: 16px; }
+}
+@media (max-width: 760px) {
+  .site-header__inner { height: 60px; padding: 0 16px; }
+}
+/* 어두운 첫 화면 위 (메인) */
+.site-header.header--dark { background: #0B0D11; border-bottom-color: rgba(255, 255, 255, .12); color: #fff; }
+.site-header.header--dark .site-header__nav a { color: rgba(255, 255, 255, .72); }
+.site-header.header--dark .site-header__nav a:hover, .site-header.header--dark .site-header__nav a.is-active { color: #fff; }
+.site-header.header--dark .hbtn--solid { background: #fff; color: #12151B; }
+.site-header.header--dark .hbtn--solid:hover { background: #3A62A8; color: #fff; }
+.site-header.header--dark :focus-visible { outline-color: #fff; }
 
-/* ── 앱 연결용: 사용자 메뉴 · 푸터 (시안에 없는 공통 요소) ── */
+/* ── 사용자 메뉴 · 푸터 */
 .site-header__actions { position: relative; }
 .site-header .auth-user { position: relative; }
-.user-menu { position: absolute; top: 44px; right: 0; width: 180px; padding: 6px; border: 1px solid var(--card-line, #E2E8F3); border-radius: 12px; background: #fff; box-shadow: 0 16px 36px -12px rgba(15,30,51,.25); z-index: 40; }
+.user-menu { position: absolute; top: 48px; right: 0; width: 184px; padding: 6px; border: 1px solid #D6DBE3; border-top: 2px solid #12151B; border-radius: 0; background: #fff; box-shadow: 0 1px 2px rgba(18,24,38,.04), 0 28px 56px -28px rgba(18,24,38,.2); z-index: 40; }
 .user-menu[hidden] { display: none !important; }
-.user-menu__item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: var(--text); font-size: 13.5px; text-decoration: none; cursor: pointer; }
-.user-menu__item:hover { background: #F1F5FB; }
-.user-menu__item--danger { color: #DC2626; }
-.user-menu__item--danger:hover { background: #FEF2F2; }
-.user-menu__divider { height: 1px; margin: 4px; background: #E2E8F3; }
-.site-footer { padding: 28px 24px; border-top: 1px solid #E2E8F3; }
-.site-footer__inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.site-footer__brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
-.site-footer__legal { margin: 0; font-size: 12px; color: var(--text-3); }
+.user-menu__item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 2px; color: #12151B; font-size: 15px; text-decoration: none; cursor: pointer; }
+.user-menu__item:hover { background: #EDF2FA; }
+.user-menu__item--danger { color: #8A4B14; }
+.user-menu__item--danger:hover { background: #F6EFE8; }
+.user-menu__divider { height: 1px; margin: 4px; background: #D6DBE3; }
+.site-footer { padding: 28px 24px 36px; border-top: 1px solid #D6DBE3; font-size: 15px; color: #4F5764; }
+.site-footer__inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; flex-wrap: wrap; gap: 28px; }
+.site-footer__brand { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; color: #12151B; text-decoration: none; }
+.site-footer__brand svg { width: 16px; height: 22px; }
+.site-footer__brand span { font-family: "HeirofLight", "Noto Serif KR", serif; font-weight: 600; font-size: 16px; }
+.site-footer a { color: inherit; text-decoration: none; }
+@media (max-width: 760px) {
+  .site-footer { padding: 24px 16px 32px; }
+  .site-footer__inner { gap: 8px 20px; }
+  .site-footer__brand { flex-basis: 100%; margin-bottom: 4px; }
+}
+.site-footer a:hover { color: #12151B; text-decoration: underline; text-underline-offset: .25em; }
 [hidden] { display: none !important; }
 /* =========================================================
    10. 공통 입체형 토스트 알림
