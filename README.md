@@ -95,7 +95,7 @@ flowchart TD
 | 임베딩 | OpenAI Embedding |
 | 문서 처리 | Apache PDFBox |
 | 템플릿 엔진 | Thymeleaf |
-| 결제 | 토스페이먼츠 *(개인 개선)* |
+| 결제 | 토스페이먼츠 |
 | 테스트 | JUnit5, Mockito, Testcontainers |
 
 ## 프로젝트 구조
