@@ -9,7 +9,6 @@ import com.example.jobpuzzle.document.dto.DocumentUploadRequest;
 import com.example.jobpuzzle.document.dto.ExtractionEditRequest;
 import com.example.jobpuzzle.document.dto.ExtractionJobResponse;
 import com.example.jobpuzzle.document.dto.ExtractionVersionResponse;
-import com.example.jobpuzzle.document.dto.OriginalFileRetentionRequest;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.example.jobpuzzle.document.service.DocumentExtractionService;
 import com.example.jobpuzzle.document.service.DocumentService;
@@ -128,18 +127,6 @@ public class DocumentController {
             @AuthenticationPrincipal(expression = "user") User user
     ) {
         documentService.updateDisplayName(user.getUserId(), documentId, request.getDisplayName());
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    // 원본 파일 보관 여부 변경
-    // PATCH /jobpuzzle/documents/{documentId}/retention { keepOriginal }
-    @PatchMapping("/documents/{documentId}/retention")
-    public ResponseEntity<ApiResponse<Void>> updateOriginalFileRetention(
-            @PathVariable Long documentId,
-            @RequestBody OriginalFileRetentionRequest request,
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        documentService.updateOriginalFileRetention(user.getUserId(), documentId, request.isKeepOriginal());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

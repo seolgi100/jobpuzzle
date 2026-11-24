@@ -1,6 +1,5 @@
 package com.example.jobpuzzle.ai.validation;
 
-import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult;
 import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
 import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
 import com.example.jobpuzzle.ai.dto.SourceReference;
@@ -11,8 +10,6 @@ import com.example.jobpuzzle.analysis.entity.RequirementType;
 import com.example.jobpuzzle.analysis.rag.dto.RetrievedEvidenceContextDto;
 import com.example.jobpuzzle.guide.entity.GuideMatchType;
 import com.example.jobpuzzle.interview.entity.InterviewQuestionReviewStatus;
-import com.example.jobpuzzle.interview.entity.InterviewQuestionEvaluationFocus;
-import com.example.jobpuzzle.interview.entity.InterviewQuestionType;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -250,27 +247,6 @@ public class CustomizedAnalysisResponseValidator {
         }
     }
 
-    // sourceRefs는 JSON-01·02에 이미 저장된 동일 식별 조합과 발췌문만 echo할 수 있다.
-    private void validateReferences(List<SourceReference> values, List<SourceReference> allowed, String field, boolean required) {
-        if (values == null) fail(field + " must not be null");
-        if (required && values.isEmpty()) source(field + " must not be empty");
-        for (SourceReference value : values) {
-            if (value == null || value.getExtractionId() == null || value.getDocumentId() == null || value.getDocumentType() == null)
-                source(field + " missing required source identity");
-            SourceReference original = allowed.stream().filter(candidate -> sameIdentity(candidate, value)).findFirst().orElse(null);
-            // 모델이 retrieval 원문을 정확히 선택했지만 위치 숫자를 잘못 echo한 경우에는, 유일한 권위 원문으로만 identity를 복원한다.
-            if (original == null) original = uniquelyMatchingEvidence(allowed, value.getEvidenceText());
-            if (original == null) source(field + " unknown source identity");
-            // 모델은 근거 identity만 선택한다. 발췌 원문은 JSON-01·02/retrieval 권위값으로 결정적으로 복원한다.
-            value.setExtractionId(original.getExtractionId());
-            value.setDocumentId(original.getDocumentId());
-            value.setDocumentType(original.getDocumentType());
-            value.setPageNumber(original.getPageNumber());
-            value.setSegmentId(original.getSegmentId());
-            value.setEvidenceText(original.getEvidenceText());
-        }
-    }
-
     private SourceReference uniquelyMatchingEvidence(List<SourceReference> allowed, String evidenceText) {
         String requested = normalize(evidenceText);
         if (requested.length() < 8) return null;
@@ -394,10 +370,6 @@ public class CustomizedAnalysisResponseValidator {
 
     private void fail(String message) {
         throw new AiProcessingException(AiCallLogErrorType.RESPONSE_VALIDATION_FAILED, message);
-    }
-
-    private void source(String message) {
-        throw new AiProcessingException(AiCallLogErrorType.SOURCE_REFERENCE_INVALID, message);
     }
 
     private record RequirementInput(RequirementType type, String requirement, List<SourceReference> sourceRefs) {

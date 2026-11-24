@@ -61,7 +61,7 @@ class AnthropicClientTest {
 
         assertThat(client.analyzeJobPosting("JSON-01 prompt")).isEqualTo("{}");
         assertThat(client.analyzeCandidateMaterial("JSON-02 prompt")).isEqualTo("{}");
-        assertThat(client.generateCustomizedAnalysis("JSON-05 prompt")).isEqualTo("{}");
+        assertThat(client.generateCustomizedAnalysisV18("JSON-05 prompt", new ObjectMapper().createObjectNode())).isEqualTo("{}");
         server.verify();
     }
 
@@ -119,23 +119,7 @@ class AnthropicClientTest {
     }
 
     @Test
-    void addsStructuredOutputForJson05WithoutChangingJson01RequestBody() {
-        server.expect(once(), requestTo(BASE_URL + "/v1/messages"))
-                .andExpect(jsonPath("$.output_config").doesNotExist())
-                .andRespond(withSuccess("{\"content\":[{\"type\":\"text\",\"text\":\"{}\"}]}", MediaType.APPLICATION_JSON));
-        server.expect(once(), requestTo(BASE_URL + "/v1/messages"))
-                .andExpect(jsonPath("$.output_config.format.type").value("json_schema"))
-                .andExpect(jsonPath("$.output_config.format.schema.properties.questions.items.properties.reviewStatus.enum[0]").value("PASS"))
-                .andExpect(jsonPath("$.output_config.format.schema.$defs.sourceReference.additionalProperties").value(false))
-                .andRespond(withSuccess("{\"content\":[{\"type\":\"text\",\"text\":\"{}\"}]}", MediaType.APPLICATION_JSON));
-
-        assertThat(client.analyzeJobPosting("JSON-01 prompt")).isEqualTo("{}");
-        assertThat(client.generateCustomizedAnalysis("JSON-05 prompt")).isEqualTo("{}");
-        server.verify();
-    }
-
-    @Test
-    void usesCallerSuppliedV13SchemaWithoutLegacyPromptSchemaInference() {
+    void usesCallerSuppliedJson05Schema() {
         var schema = new ObjectMapper().createObjectNode()
                 .put("type", "object")
                 .put("additionalProperties", false);
@@ -148,7 +132,7 @@ class AnthropicClientTest {
                 .andExpect(jsonPath("$.output_config.format.schema.$defs").doesNotExist())
                 .andRespond(withSuccess("{\"content\":[{\"type\":\"text\",\"text\":\"{}\"}]}", MediaType.APPLICATION_JSON));
 
-        assertThat(client.generateCustomizedAnalysisV13("v1.3 prompt", schema)).isEqualTo("{}");
+        assertThat(client.generateCustomizedAnalysisV18("v1.3 prompt", schema)).isEqualTo("{}");
         server.verify();
     }
 

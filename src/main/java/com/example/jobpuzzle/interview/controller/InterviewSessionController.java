@@ -25,15 +25,6 @@ public class InterviewSessionController {
     private final com.example.jobpuzzle.evaluation.service.SessionReportV2Service sessionReportV2Service;
     private final SessionScoreAggregationService sessionScoreAggregationService;
 
-    @GetMapping("/interview-modes/availability")
-    public ResponseEntity<ApiResponse<InterviewModeAvailabilityResponse>> getAvailableModes(
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                questionGenerationV2Service.availability(user.getUserId())
-        ));
-    }
-
     @PostMapping("/interview-sessions")
     public ResponseEntity<ApiResponse<SessionResponse>> createSession(
             @AuthenticationPrincipal(expression = "user") User user,
@@ -56,16 +47,6 @@ public class InterviewSessionController {
         ));
     }
 
-    @PostMapping("/interview-sessions/{sessionId}/start")
-    public ResponseEntity<ApiResponse<SessionResponse>> startSession(
-            @AuthenticationPrincipal(expression = "user") User user,
-            @PathVariable Long sessionId
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.startSession(user.getUserId(), sessionId)
-        ));
-    }
-
     @GetMapping("/interview-sessions/{sessionId}/questions")
     public ResponseEntity<ApiResponse<List<SessionQuestionResponse>>> getQuestions(
             @AuthenticationPrincipal(expression = "user") User user,
@@ -73,16 +54,6 @@ public class InterviewSessionController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 interviewSessionService.getSessionQuestions(user.getUserId(), sessionId)
-        ));
-    }
-
-    @GetMapping("/interview-sessions/{sessionId}/questions/next")
-    public ResponseEntity<ApiResponse<SessionQuestionResponse>> getNextQuestion(
-            @AuthenticationPrincipal(expression = "user") User user,
-            @PathVariable Long sessionId
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.getNextQuestion(user.getUserId(), sessionId)
         ));
     }
 
@@ -141,16 +112,6 @@ public class InterviewSessionController {
         ));
     }
 
-    @PostMapping("/interview-sessions/{sessionId}/questions/finish-selected")
-    public ResponseEntity<ApiResponse<SessionResponse>> finishSelectedQuestions(
-            @AuthenticationPrincipal(expression = "user") User user,
-            @PathVariable Long sessionId
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.finishSelectedQuestions(user.getUserId(), sessionId)
-        ));
-    }
-
     @PostMapping("/interview-session-questions/{sessionQuestionId}/finish-current")
     public ResponseEntity<ApiResponse<SessionQuestionResponse>> finishCurrentQuestion(
             @AuthenticationPrincipal(expression = "user") User user,
@@ -196,43 +157,6 @@ public class InterviewSessionController {
                         sessionId,
                         request.getQuestionIds()
                 )
-        ));
-    }
-
-    @GetMapping("/interview-weakness-tags")
-    public ResponseEntity<ApiResponse<List<String>>> getUnresolvedWeaknessTags(
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.getUnresolvedWeaknessTags(user.getUserId())
-        ));
-    }
-
-    @GetMapping("/interview-weakness-tags/details")
-    public ResponseEntity<ApiResponse<List<WeaknessTagResponse>>> getUnresolvedWeaknessTagDetails(
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.getUnresolvedWeaknessTagDetails(user.getUserId())
-        ));
-    }
-
-    @GetMapping("/interview-sessions/active")
-    public ResponseEntity<ApiResponse<SessionResponse>> getActiveSession(
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.getActiveSession(user.getUserId())
-        ));
-    }
-
-    // 대시보드 '해결된 약점 태그' 목록
-    @GetMapping("/interview-weakness-tags/resolved")
-    public ResponseEntity<ApiResponse<List<WeaknessTagResponse>>> getResolvedWeaknessTags(
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(
-                interviewSessionService.getResolvedWeaknessTags(user.getUserId())
         ));
     }
 

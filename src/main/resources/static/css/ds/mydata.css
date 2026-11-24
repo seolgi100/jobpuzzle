@@ -6,7 +6,6 @@
 .review-note p { margin: 0; flex: 1; font-size: 14px; color: var(--text-2); }
 .review-note b { color: var(--text); }
 
-
 /* 문서 종류 아이콘 (카테고리별 색) */
 .doc-ico { width: 38px; height: 38px; flex: none; border-radius: 2px; display: grid; place-items: center; font-size: 12px; font-weight: 800; }
 .doc-ico--job { background: #EDF2FA; color: #3A62A8; }

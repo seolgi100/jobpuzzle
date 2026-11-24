@@ -2,8 +2,6 @@ package com.example.jobpuzzle.ai.client;
 
 import com.example.jobpuzzle.ai.dto.CandidateMaterialAnalysisResult;
 import com.example.jobpuzzle.ai.dto.JobPostingAnalysisResult;
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult.*;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.ai.validation.AnalysisSourceMarkerParser;
 import com.example.jobpuzzle.analysis.entity.ActionPlanMatchLevel;
@@ -63,45 +61,4 @@ public class MockAiClientTest {
         assertThat(provider).isEqualTo(AiProvider.MOCK);
     }
 
-    @Test
-    @DisplayName("과제(Task)에는 HIGH 등급이 존재하지 않는다")
-    void tasks에_HIGH가_없다() {
-        QuestionGenerationResult result = mockAiClient.generateQuestions("테스트용 프롬프트");
-
-        List<String> matchLevelNames = result.getTasks().stream()
-                .map(task -> task.getMatchLevel().name())
-                .collect(Collectors.toList());
-
-        assertThat(matchLevelNames).doesNotContain("HIGH");
-    }
-
-    @Test
-    @DisplayName("과제의 relatedRequirement는 적합도 목록에 실제로 존재한다")
-    void 과제가_적합도_목록에_연결된다() {
-        QuestionGenerationResult result = mockAiClient.generateQuestions("테스트용 프롬프트");
-
-        List<String> requirementList = result.getRequirementMatches().stream()
-                .map(RequirementMatch::getRequirement)
-                .collect(Collectors.toList());
-
-        assertThat(result.getTasks()).isNotEmpty();
-        result.getTasks().forEach(task ->
-                assertThat(requirementList).contains(task.getRelatedRequirement())
-        );
-    }
-
-    @Test
-    @DisplayName("질문은 관련 요구사항에 연결된다")
-    void 질문이_적합도_목록에_연결된다() {
-        QuestionGenerationResult result = mockAiClient.generateQuestions("테스트용 프롬프트");
-
-        List<String> requirementList = result.getRequirementMatches().stream()
-                .map(RequirementMatch::getRequirement)
-                .collect(Collectors.toList());
-
-        assertThat(result.getQuestions()).isNotEmpty();
-        result.getQuestions().forEach(question ->
-                assertThat(requirementList).contains(question.getRelatedRequirement())
-        );
-    }
 }

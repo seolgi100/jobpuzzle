@@ -199,15 +199,6 @@ public class AnalysisCaseService {
         return AnalysisInputSnapshotResponse.of(snapshot, savedSnapshotSources);
     }
 
-    public AnalysisInputSnapshotResponse getSnapshot(Long userId, Long analysisCaseId) {
-        AnalysisInputSnapshot snapshot = analysisInputSnapshotRepository
-                .findByAnalysisCase_AnalysisCaseIdAndUser_UserId(analysisCaseId, userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.SNAPSHOT_NOT_FOUND));
-        List<AnalysisInputSnapshotSource> sources = analysisInputSnapshotSourceRepository
-                .findBySnapshot_SnapshotIdOrderBySnapshotSourceIdAsc(snapshot.getSnapshotId());
-        return AnalysisInputSnapshotResponse.of(snapshot, sources);
-    }
-
     // JSON-03: AI 실행 직전에만 조립하는 서버 내부 컨텍스트. 공개 스냅샷 응답과 분리된 별도 DTO이며
     // 아직 마스킹은 적용하지 않고 원문을 그대로 담는다(1단계, 마스킹은 후속 작업)
     public AnalysisInputSnapshotContext getAnalysisContext(Long userId, Long analysisCaseId) {

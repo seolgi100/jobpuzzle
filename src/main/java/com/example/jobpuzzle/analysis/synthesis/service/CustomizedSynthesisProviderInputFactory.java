@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /** 서버 권위 catalog와 JSON-02·04의 필요한 부분만 JSON-05 v1.3 provider 입력으로 투영한다. */
 @Component

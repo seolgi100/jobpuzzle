@@ -75,9 +75,6 @@
 .r2 .status.is-live { color: var(--accent); font-weight: 600; }
 
 /* 약점 태그 줄 */
-.r2 .weak li { grid-template-columns: 22px minmax(0, 1fr) 140px 210px; }
-.r2 .weak .count { font-size: 16px; text-align: right; color: var(--text-2); }
-.r2 .weak .count b { color: var(--text); font-weight: 600; }
 
 /* 과제 */
 .r2 .view { display: inline-flex; border: 1px solid var(--line); background: var(--paper); }
@@ -113,8 +110,8 @@
 @media (max-width: 1100px) {
   .r2 .now { grid-template-columns: 1fr; }
   .r2 .steps { border-left: 1px solid var(--line); border-top: 0; }
-  .r2 .sessions li, .r2 .weak li, .r2 .tasks li { grid-template-columns: minmax(0, 1fr) auto; }
-  .r2 .sessions .mini, .r2 .weak .count, .r2 .sessions li > :nth-child(3), .r2 .tasks li .check, .r2 .weak li > svg { display: none; }
+  .r2 .sessions li, .r2 .tasks li { grid-template-columns: minmax(0, 1fr) auto; }
+  .r2 .sessions .mini, .r2 .sessions li > :nth-child(3), .r2 .tasks li .check { display: none; }
 }
 @media (max-width: 760px) {
   .r2 .job { text-align: left; }
@@ -134,7 +131,6 @@
   .r2 .tabs button { font-size: 19px; white-space: nowrap; }
   .r2 .rows li { grid-template-columns: 1fr; gap: 10px; }
   .r2 .rows .act { justify-self: start; }
-  .r2 .score, .r2 .status, .r2 .due, .r2 .weak .count { text-align: left; }
-  .r2 .cal-grid > * { min-height: 64px; padding: 6px; }
+  .r2 .score, .r2 .status, .r2 .due, .r2 .cal-grid > * { min-height: 64px; padding: 6px; }
   .r2 .cal-grid .task { font-size: 0; padding: 0; height: 4px; }
 }

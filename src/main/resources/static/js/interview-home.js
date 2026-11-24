@@ -49,8 +49,7 @@
   }
 
   var MODE_LABEL = {
-    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
-    BASIC: '기본 질문', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완'
+    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접'
   };
 
   function modeLabel(mode) {
@@ -109,7 +108,7 @@
     if (active) {
       action = { label: '이어서 하기', href: '/interview?resumeSessionId=' + active.sessionId };
     } else if (review) {
-      action = { label: '중간 결과 확인', href: '/interview-results?sessionId=' + review.sessionId };
+      action = { label: '중간 결과 확인', href: '/interview-report?sessionId=' + review.sessionId };
     } else if (running) {
       action = { label: '분석 상태 확인', href: '/analysis/' + latest.analysisCaseId };
     } else if (completedCase) {
@@ -174,7 +173,7 @@
       var label = { active: '진행 중', review: '결과 확인 전', done: '완료' }[s.bucket];
       var href = s.bucket === 'active'
         ? '/interview?resumeSessionId=' + s.sessionId
-        : '/interview-results?sessionId=' + s.sessionId;
+        : '/interview-report?sessionId=' + s.sessionId;
       rows.push({
         at: time(s.lastActivityAt || s.completedAt || s.createdAt),
         html: '<li><span class="ih-rec__what">' + esc(modeLabel(s.mode)) + ' · 질문 ' + esc(s.questionCount) + '개</span>' +
@@ -289,7 +288,7 @@
   // ───────────────── 진행 중 / 전체 기록 ─────────────────
   function looseRow(s) {
     var active = s.bucket === 'active';
-    var href = active ? '/interview?resumeSessionId=' + s.sessionId : '/interview-results?sessionId=' + s.sessionId;
+    var href = active ? '/interview?resumeSessionId=' + s.sessionId : '/interview-report?sessionId=' + s.sessionId;
     return '<li class="ih-row is-busy">' +
       '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(modeLabel(s.mode)) + '</h3>' +
       '<p class="ih-row__meta">' + esc(day(s.lastActivityAt || s.createdAt)) + ' 시작</p></div>' +

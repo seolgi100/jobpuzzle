@@ -73,7 +73,6 @@ public class SecurityConfig {
             "/user/join/**",
             "/user/login",
             "/user/check-id",
-            "/user/check-email",
             "/user/find-id/**",
             "/user/passwd-reset/**",
             "/user/unlock/**",

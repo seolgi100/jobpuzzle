@@ -1,6 +1,6 @@
 /* 면접 준비 — 홈·면접 진행 밖의 흐름: 약점 고르기(wk), 새 공고 자료 고르기(ms), 분석 전 확인(mr),
    질문 고르기·등록 창(qs/rg), 생성·오류 상태(fl-state), 등록 창 안의 추출 패널(document-flow.js 공용 마크업)
-   interview-home.css 맨 위 토큰만 쓴다. 옛 CSS(common/app/app-theme/mydata/interview.css)는 이 화면에서 더 이상 불러오지 않는다. */
+   interview-home.css 맨 위 토큰만 쓴다. */
 body.app { accent-color: var(--iv-primary); }
 
 /* ── 공통 조각 ── */
@@ -33,33 +33,6 @@ body.app { accent-color: var(--iv-primary); }
 @keyframes fl-spin { to { transform: rotate(360deg); } }
 
 /* ── 약점 고르기 ── */
-.wk-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-.wk { border: 1px solid var(--iv-box-line); border-radius: 2px; background: var(--iv-surface); }
-.wk.is-open { border-color: var(--iv-line-strong); }
-.wk-toggle { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; width: 100%; padding: 18px 24px; border: 0; border-radius: 2px; background: none; font: inherit; text-align: left; color: inherit; cursor: pointer; }
-.wk-toggle:hover { background: var(--iv-canvas); }
-.wk-name { font-size: 16px; font-weight: 700; }
-.wk-desc { grid-column: 1; font-size: 14px; line-height: 1.6; color: var(--iv-text-2); }
-.wk-count { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 14px; font-weight: 700; color: var(--iv-warn); white-space: nowrap; }
-.wk-body { padding: 0 24px 22px; }
-.wk-group { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--iv-line); }
-.wk-group h3 { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--iv-text-2); }
-.wk-group h3 b { margin-left: 4px; color: var(--iv-text); }
-.wk-occ { padding: 12px 0; border-bottom: 1px solid var(--iv-sub); }
-.wk-occ:last-child { border-bottom: 0; }
-.wk-att { margin: 10px 0 0 18px; padding-left: 14px; border-left: 2px solid var(--iv-line); }
-.wk-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
-.wk-sum b { font-variant-numeric: tabular-nums; }
-.wk-sum span { color: var(--iv-text-2); }
-.wk-sum strong { font-variant-numeric: tabular-nums; }
-.wk-state { font-size: 13px; font-style: normal; font-weight: 700; }
-.wk-state.is-ok { color: var(--iv-ok); }
-.wk-state.is-open { color: var(--iv-warn); }
-.wk-diag { margin: 6px 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--iv-text-2); }
-.wk-diag i { padding: 2px 8px; border-radius: 2px; background: var(--iv-sub); font-style: normal; color: var(--iv-text); }
-.wk-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
-.wk-empty { margin: 0; padding: 20px 24px; border: 1px dashed var(--iv-line-strong); border-radius: 2px; font-size: 15px; line-height: 1.6; color: var(--iv-text-2); }
-.wk-body .wk-empty { padding: 14px 0 0; border: 0; }
 
 /* ── 새 공고 자료 고르기 ── */
 .ms-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
@@ -90,7 +63,6 @@ body.app { accent-color: var(--iv-primary); }
 .ms-foot { position: sticky; bottom: 0; z-index: 5; margin-top: 20px; padding: 14px 0 calc(14px + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: flex-end; gap: 16px; background: var(--iv-canvas); box-shadow: 0 -1px 0 var(--iv-line); }
 .ms-summary { margin-right: auto; }
 .ms-error { margin: 0; font-size: 14px; font-weight: 600; color: var(--iv-danger); }
-.ms-stage { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--iv-text-2); font-variant-numeric: tabular-nums; }
 .ms-ticket { margin: 0 0 20px; font-size: 14px; color: var(--iv-text-2); }
 .ms-ticket b { color: var(--iv-text); font-variant-numeric: tabular-nums; }
 .ms-load { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -105,8 +77,7 @@ body.app { accent-color: var(--iv-primary); }
 .qs-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 28px 16px; }
 .qs-head h2 { margin: 6px 0 0; font-size: 19px; font-weight: 800; letter-spacing: -0.02em; }
 .qs-head p { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--iv-text-2); }
-.qs-mode, .qs-tag { font-size: 13px; font-weight: 700; color: var(--iv-text-2); }
-.qs-tag { color: var(--iv-warn); }
+.qs-mode { font-size: 13px; font-weight: 700; color: var(--iv-text-2); }
 .qs-x { flex: none; width: 44px; height: 44px; border: 0; border-radius: 2px; background: var(--iv-sub); font-size: 22px; line-height: 1; color: var(--iv-text-2); cursor: pointer; }
 .qs-x:hover { background: var(--iv-line); color: var(--iv-text); }
 .qs-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 16px 28px; border-top: 1px solid var(--iv-line); background: var(--iv-surface); }
@@ -175,10 +146,7 @@ body.app { accent-color: var(--iv-primary); }
 @media (max-width: 560px) {
   .fl-title { font-size: 24px; }
   .ms-col { padding: 18px; }
-  .wk-toggle { padding: 16px 18px; grid-template-columns: minmax(0, 1fr); }
-  .wk-count { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 4px; }
-  .wk-body { padding: 0 18px 18px; }
-  .wk-actions .fl-btn, .ms-foot .fl-btn { width: 100%; }
+  .ms-foot .fl-btn { width: 100%; }
   .ms-foot { flex-direction: column; align-items: stretch; text-align: center; }
   .qs-layer { padding: 0; align-items: end; }
   .qs-box { max-height: 92vh; border-radius: 2px; }

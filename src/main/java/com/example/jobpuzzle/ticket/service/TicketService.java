@@ -41,9 +41,6 @@ public class TicketService {
 
     public int cost(TicketUsage usage) {
         return switch (usage) {
-            case BASIC -> properties.getBasicCost();
-            case WEAKNESS_REVIEW -> throw new IllegalArgumentException("약점 보완은 v2에서 없어졌습니다");
-            case COMPANY_FIT -> properties.getCompanyFitCost();
             case ANALYSIS -> properties.getAnalysisCost();
             case KNOWLEDGE -> properties.getKnowledgeCost();
             case MATERIAL -> properties.getMaterialCost();

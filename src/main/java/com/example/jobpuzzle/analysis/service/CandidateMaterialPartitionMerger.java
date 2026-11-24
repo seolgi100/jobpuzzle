@@ -5,7 +5,6 @@ import com.example.jobpuzzle.ai.dto.SourceReference;
 import com.example.jobpuzzle.ai.validation.AiResponseProcessor;
 import com.example.jobpuzzle.analysis.dto.AnalysisInputSnapshotContextSource;
 import com.example.jobpuzzle.analysis.entity.CandidateMaterialPartition;
-import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;

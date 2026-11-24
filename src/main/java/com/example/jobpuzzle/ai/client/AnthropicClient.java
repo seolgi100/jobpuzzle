@@ -1,7 +1,5 @@
 package com.example.jobpuzzle.ai.client;
 
-import com.example.jobpuzzle.ai.dto.FinalReportResult;
-import com.example.jobpuzzle.ai.dto.QuestionGenerationResult;
 import com.example.jobpuzzle.ai.config.AiGenerationProperties;
 import com.example.jobpuzzle.ai.log.AiCallLogErrorType;
 import com.example.jobpuzzle.ai.log.AiFailureKind;
@@ -9,7 +7,6 @@ import com.example.jobpuzzle.ai.log.AiExecutionStage;
 import com.example.jobpuzzle.ai.log.AiProvider;
 import com.example.jobpuzzle.ai.validation.AiProcessingException;
 import com.example.jobpuzzle.analysis.service.CandidateMaterialPartitionSchemaFactory;
-import com.example.jobpuzzle.analysis.service.CustomizedSynthesisSchemaFactory;
 import com.example.jobpuzzle.document.entity.UserDocumentType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -30,7 +27,6 @@ import org.springframework.web.client.RestClientResponseException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -47,7 +43,6 @@ public class AnthropicClient implements AiClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final CandidateMaterialPartitionSchemaFactory partitionSchemas;
-    private final CustomizedSynthesisSchemaFactory customizedSynthesisSchema;
     private final ThreadLocal<AiProviderCompletionMetadata> completionMetadata = new ThreadLocal<>();
 
     public AnthropicClient(
@@ -57,8 +52,7 @@ public class AnthropicClient implements AiClient {
                 properties,
                 restClient,
                 objectMapper,
-                new CandidateMaterialPartitionSchemaFactory(objectMapper),
-                new CustomizedSynthesisSchemaFactory(objectMapper)
+                new CandidateMaterialPartitionSchemaFactory(objectMapper)
         );
     }
 
@@ -66,14 +60,12 @@ public class AnthropicClient implements AiClient {
     public AnthropicClient(
             AiGenerationProperties properties,
             @Qualifier("anthropicRestClient") RestClient restClient,
-            ObjectMapper objectMapper, CandidateMaterialPartitionSchemaFactory partitionSchemas,
-            CustomizedSynthesisSchemaFactory customizedSynthesisSchema
+            ObjectMapper objectMapper, CandidateMaterialPartitionSchemaFactory partitionSchemas
     ) {
         this.properties = properties;
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.partitionSchemas = partitionSchemas;
-        this.customizedSynthesisSchema = customizedSynthesisSchema;
     }
 
     @Override
@@ -92,11 +84,6 @@ public class AnthropicClient implements AiClient {
     }
 
     @Override
-    public String generateCustomizedAnalysis(String renderedPrompt) {
-        return message(AiExecutionStage.CUSTOMIZED_SYNTHESIS, renderedPrompt);
-    }
-
-    @Override
     public String generateQuestionsV2(String renderedPrompt) {
         return message(AiExecutionStage.QUESTION_GENERATION, renderedPrompt);
     }
@@ -107,21 +94,11 @@ public class AnthropicClient implements AiClient {
     }
 
     @Override
-    public String generateCustomizedAnalysisV13(String renderedPrompt, com.fasterxml.jackson.databind.JsonNode outputSchema) {
+    public String generateCustomizedAnalysisV18(String renderedPrompt, com.fasterxml.jackson.databind.JsonNode outputSchema) {
         if (outputSchema == null || !outputSchema.isObject()) {
-            throw new IllegalArgumentException("JSON-05 v1.3 output schema is required");
+            throw new IllegalArgumentException("JSON-05 output schema is required");
         }
         return message(AiExecutionStage.CUSTOMIZED_SYNTHESIS, renderedPrompt, null, outputSchema);
-    }
-
-    @Override
-    public QuestionGenerationResult generateQuestions(String prompt) {
-        return null;
-    }
-
-    @Override
-    public FinalReportResult finalReport(String prompt) {
-        return parseJson(message(AiExecutionStage.FINAL_REPORT, prompt), FinalReportResult.class);
     }
 
     @Override
@@ -132,11 +109,6 @@ public class AnthropicClient implements AiClient {
     @Override
     public String getModel() {
         return properties.getAnthropic().getModel();
-    }
-
-    @Override
-    public String call(String prompt) {
-        return message(AiExecutionStage.JOB_POSTING_ANALYSIS, prompt);
     }
 
     /**
@@ -166,8 +138,6 @@ public class AnthropicClient implements AiClient {
                         ? new OutputConfig(new Format("json_schema", explicitOutputSchema))
                         : stage == AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS && documentType != null
                         ? new OutputConfig(new Format("json_schema", partitionSchemas.schema(documentType)))
-                        : stage == AiExecutionStage.CUSTOMIZED_SYNTHESIS
-                        ? new OutputConfig(new Format("json_schema", customizedSynthesisSchema.schemaForPrompt(prompt)))
                         : null
         );
 
@@ -370,46 +340,6 @@ public class AnthropicClient implements AiClient {
                            @JsonProperty("output_config") OutputConfig outputConfig) { }
     private record OutputConfig(Format format) { }
     private record Format(String type, com.fasterxml.jackson.databind.JsonNode schema) { }
-    // finalReport()처럼 typed 반환 메서드용 - message()가 돌려준 텍스트를 JSON으로 파싱
-    // Provider가 앞뒤에 설명 문장이나 ```json 코드블록을 붙이는 경우를 대비해 코드블록만 제거함
-    private <T> T parseJson(String text, Class<T> type) {
-        String normalized = stripCodeFence(text.trim());
-        try {
-            return objectMapper.readValue(normalized, type);
-        } catch (JsonProcessingException exception) {
-            // 코드펜스가 명확하지 않거나 앞뒤에 설명 문장이 붙는 경우를 대비해, 첫 '{'~마지막 '}' 구간만 다시 시도한다.
-            String extracted = extractJsonObject(normalized);
-            if (extracted != null) {
-                try {
-                    return objectMapper.readValue(extracted, type);
-                } catch (JsonProcessingException retryException) {
-                    throw debugFailure(normalized, retryException);
-                }
-            }
-            throw debugFailure(normalized, exception);
-        }
-    }
-
-    private String stripCodeFence(String text) {
-        Matcher matcher = JSON_CODE_BLOCK.matcher(text);
-        return matcher.matches() ? matcher.group(1).trim() : text;
-    }
-
-    private String extractJsonObject(String text) {
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start < 0 || end <= start) {
-            return null;
-        }
-        return text.substring(start, end + 1);
-    }
-
-    // TEMP-DEBUG: 원인 확인되면 이 로그 라인 제거 예정. DB error_message에는 원문을 남기지 않고 서버 로그에만 전체 원문을 남긴다.
-    private AiProcessingException debugFailure(String normalized, JsonProcessingException exception) {
-        log.warn("JSON 파싱 실패 [{}] 원문 전체:\n{}", exception.getClass().getSimpleName(), normalized);
-        return failure(AiCallLogErrorType.JSON_PARSE_FAIL, "Claude 응답 JSON 파싱 실패: " + exception.getClass().getSimpleName());
-    }
-
     private record Message(String role, String content) { }
     private record Thinking(String type) { }
     @JsonIgnoreProperties(ignoreUnknown = true)

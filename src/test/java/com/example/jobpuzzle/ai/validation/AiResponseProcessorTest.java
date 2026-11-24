@@ -27,34 +27,6 @@ class AiResponseProcessorTest {
     );
 
     @Test
-    void parsesV15FixedSlotsAndRejectsUnknownFields() {
-        String valid = """
-                {"readiness":{"reason":"준비","limitations":[]},"requirementMatchesById":{},
-                "primaryQuestion":null,"tasksByRequirementId":{}}
-                """;
-
-        assertThat(processor.parseCustomizedAnalysisV15(valid).getRequirementMatchesById()).isEmpty();
-        assertFailure(() -> processor.parseCustomizedAnalysisV15(
-                valid.replaceFirst("\\{", "{\"unexpected\":true,")),
-                AiCallLogErrorType.RESPONSE_PARSE_FAILED);
-    }
-
-    @Test
-    void parsesV16FlatMapsAndRejectsUnknownFields() {
-        String valid = """
-                {"readiness":{"reason":"준비","limitations":[]},"matchLevelsById":{},
-                "matchReasonsById":{},"missingPointsById":{},"candidateEvidenceById":{},
-                "candidateEvidenceIdById":{},"primaryQuestion":null,"taskApplicableById":{},
-                "taskMissingPointsById":{},"taskSuggestionsById":{}}
-                """;
-
-        assertThat(processor.parseCustomizedAnalysisV16(valid).getMatchLevelsById()).isEmpty();
-        assertFailure(() -> processor.parseCustomizedAnalysisV16(
-                valid.replaceFirst("\\{", "{\"unexpected\":true,")),
-                AiCallLogErrorType.RESPONSE_PARSE_FAILED);
-    }
-
-    @Test
     void parsesFullJsonCodeBlockAndValidatesEchoedSourceReference() {
         JobPostingAnalysisResult result = processor.parseJobPosting("""
                 ```json
@@ -228,42 +200,6 @@ class AiResponseProcessorTest {
                 """;
         assertThat(processor.parseCandidateMaterial(candidate, List.of(resume)).getAvailableDocumentTypes())
                 .containsExactly(UserDocumentType.RESUME);
-    }
-
-    @Test
-    void normalizesCommonJson06CollectionAndFollowUpShapeMistakes() {
-        String response = """
-                {
-                  "interviewMode":"BASIC",
-                  "currentFollowUpDepth":0,
-                  "score":18,
-                  "scoreLabel":"미흡",
-                  "passThreshold":70,
-                  "evaluationDetail":{
-                    "intentMatch":{"score":20,"comment":"관련성 부족"},
-                    "specificity":10,
-                    "ownRole":null,
-                    "problemSolving":{"score":15,"comment":"과정 부족"},
-                    "resultExpression":null,
-                    "requirementConnection":null,
-                    "guideAlignment":null,
-                    "deliveryClarity":{"score":30,"comment":"짧음"}
-                  },
-                  "weaknessTags":"질문의도파악",
-                  "summary":"보완 필요",
-                  "improvementDirection":{"first":"구체적인 사례를 설명하세요."},
-                  "followUp":["약점과 보완 노력을 구체적으로 설명해 주세요."]
-                }
-                """;
-
-        var result = processor.parseAnswerEvaluation(response);
-
-        assertThat(result.getImprovementDirection())
-                .containsExactly("구체적인 사례를 설명하세요.");
-        assertThat(result.getWeaknessTags()).containsExactly("질문의도파악");
-        assertThat(result.getEvaluationDetail().getSpecificity().getScore()).isEqualTo(10);
-        assertThat(result.getFollowUp().getQuestion())
-                .isEqualTo("약점과 보완 노력을 구체적으로 설명해 주세요.");
     }
 
     private void assertFailure(org.assertj.core.api.ThrowableAssert.ThrowingCallable callable, AiCallLogErrorType expected) {

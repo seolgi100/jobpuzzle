@@ -48,19 +48,6 @@
     return text;
   }
 
-  function weaknessOriginHtml(question) {
-    if (!question.originSessionId) return '';
-    var mode = question.originMode === 'WEAKNESS_REVIEW' ? '약점 보완' : '맞춤 면접';
-    var diagnostics = Array.isArray(question.originDiagnostics)
-      ? question.originDiagnostics.map(function (item) {
-          return esc(koreanizeEvaluationTerms(weaknessLabel(item)));
-        }).join(' · ')
-      : '';
-    return '<dt>질문 출처</dt><dd>' + mode + ' · ' +
-      (question.originScore == null ? '미평가' : question.originScore + '점') +
-      (diagnostics ? ' · ' + diagnostics : '') + '</dd>';
-  }
-
   // 면접실 화면(design-test/interview-live.html)에서 쓰는 도형
   var SPRITE = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' +
     '<symbol id="pc" viewBox="34 6 160 160"><path d="M46,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H154 Q160,40 160,46 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V154 Q160,160 154,160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H46 Q40,160 40,154 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 V46 Q40,40 46,40 Z"/></symbol>' +
@@ -122,31 +109,11 @@
   }
 
   var MODE_LABEL = {
-    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
-    BASIC: '기본 질문', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완'
+    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접'
   };
 
   function modeLabel(mode) {
     return MODE_LABEL[mode] || '면접';
-  }
-
-  function weaknessLabel(tag) {
-    var value = String(tag || '').toLowerCase();
-    var compact = value.replace(/[_\-\s]/g, '');
-    if (compact.indexOf('lackofspecificdetail') >= 0) return '구체성 부족';
-    if (compact.indexOf('lackoftechnicaldepth') >= 0) return '기술적 깊이 부족';
-    if (compact.indexOf('insufficientcloudexperience') >= 0) return '클라우드 경험 부족';
-    if (compact.indexOf('vaguerole') >= 0) return '역할 설명 부족';
-    if (compact.indexOf('limitedownership') >= 0) return '주도성 부족';
-    if (value.indexOf('requirementconnection') >= 0) return '공고 요구사항 연결 부족';
-    if (value.indexOf('specificity') >= 0) return '경험 구체성 부족';
-    if (value.indexOf('ownrole') >= 0) return '본인 역할 설명 부족';
-    if (value.indexOf('problemsolving') >= 0) return '문제 해결 과정 부족';
-    if (value.indexOf('resultexpression') >= 0) return '성과·결과 표현 부족';
-    if (value.indexOf('guidealignment') >= 0) return '직무 기준 연결 부족';
-    if (value.indexOf('deliveryclarity') >= 0) return '답변 전달력 부족';
-    if (value.indexOf('intentmatch') >= 0) return '질문 의도 파악 부족';
-    return tag || '';
   }
 
   function focusLabels(value) {
@@ -166,7 +133,7 @@
         ? Object.keys(value).map(function (key) { return value[key]; })
         : value ? [value] : [];
     return items.length
-      ? items.map(function (item) { return labels[item] || weaknessLabel(item) || '평가 기준'; }).join(' · ')
+      ? items.map(function (item) { return labels[item] || '평가 기준'; }).join(' · ')
       : '질문의 의도와 답변 근거';
   }
 
@@ -411,7 +378,7 @@
   function resumeSession(active) {
     if (active.status === 'COMPLETED') {
       window.location.replace(window.JobPuzzleRoutes.path(
-        '/interview-results?sessionId=' + encodeURIComponent(active.sessionId)
+        '/interview-report?sessionId=' + encodeURIComponent(active.sessionId)
       ));
       return;
     }
@@ -563,7 +530,7 @@
       (question.competencyTags && question.competencyTags.length
         ? '<dt>확인하는 역량</dt><dd>' + esc(question.competencyTags.join(' · ')) + '</dd>'
         : '<dt>집중 평가 기준</dt><dd>' + esc(koreanizeEvaluationTerms(focusLabels(question.evaluationFocus))) + '</dd>') +
-      weaknessOriginHtml(question) + '</dl></details>' +
+      '</dl></details>' +
       '</aside></div></div></div>';
     loadRoomName();
 
@@ -809,7 +776,7 @@
     if (!session) return;
     stopSpeechInput();
     allowLiveNavigation = true;
-    window.location.href = window.JobPuzzleRoutes.path('/interview-results?sessionId=' +
+    window.location.href = window.JobPuzzleRoutes.path('/interview-report?sessionId=' +
       encodeURIComponent(session.sessionId) + '&interim=true');
   }
 
@@ -855,7 +822,7 @@
             clearDraft();
             allowLiveNavigation = true;
             localStorage.removeItem('jobpuzzle_interview_session_id');
-            window.location.href = window.JobPuzzleRoutes.path('/interview-results?sessionId=' + encodeURIComponent(session.sessionId));
+            window.location.href = window.JobPuzzleRoutes.path('/interview-report?sessionId=' + encodeURIComponent(session.sessionId));
           })
           .catch(function (error) { notify('error', error.message); });
       }

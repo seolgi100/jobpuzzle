@@ -31,38 +31,4 @@ class CustomizedSynthesisProviderResultContractTest {
         assertThat(fields).doesNotContainAnyElementsOf(FORBIDDEN_PROVIDER_FIELDS);
     }
 
-    @Test
-    void v15ProviderContractContainsNoServerOwnedIdentityOrSourceFields() {
-        Set<String> fields = Set.of(
-                        CustomizedSynthesisV15ProviderResult.class,
-                        CustomizedSynthesisV15ProviderResult.Readiness.class,
-                        CustomizedSynthesisV15ProviderResult.MatchSlot.class,
-                        CustomizedSynthesisV15ProviderResult.QuestionSlot.class,
-                        CustomizedSynthesisV15ProviderResult.TaskSlot.class).stream()
-                .flatMap(type -> java.util.Arrays.stream(type.getDeclaredFields()))
-                .map(Field::getName)
-                .collect(Collectors.toSet());
-
-        assertThat(fields).doesNotContainAnyElementsOf(FORBIDDEN_PROVIDER_FIELDS);
-    }
-
-    @Test
-    void v16ProviderContractContainsNoServerOwnedIdentityOrSourceFields() {
-        Set<String> fields = Set.of(
-                        CustomizedSynthesisV16ProviderResult.class,
-                        CustomizedSynthesisV16ProviderResult.Readiness.class,
-                        CustomizedSynthesisV16ProviderResult.QuestionSlot.class).stream()
-                .flatMap(type -> java.util.Arrays.stream(type.getDeclaredFields()))
-                .map(Field::getName)
-                .collect(Collectors.toSet());
-
-        assertThat(fields).doesNotContainAnyElementsOf(FORBIDDEN_PROVIDER_FIELDS);
-    }
-
-    @Test
-    void v17ProviderContractContainsNoServerOwnedIdentityOrSourceFields() {
-        Set<String> fields = java.util.Arrays.stream(CustomizedSynthesisV17ProviderResult.class.getDeclaredFields())
-                .map(Field::getName).collect(Collectors.toSet());
-        assertThat(fields).doesNotContainAnyElementsOf(FORBIDDEN_PROVIDER_FIELDS);
-    }
 }

@@ -41,19 +41,6 @@ class PromptTemplateDeploymentArtifactTest {
                 .isEqualTo(prompt("json-05-v1.10.txt"));
     }
 
-    @Test
-    void latestJson07SqlContainsTheCurrentReportContract() throws IOException {
-        // Seeder용 v1.0 리소스와 구분해 JSON-07 최신 v1.9 배포 계약을 직접 검증한다.
-        String sql = Files.readString(MANUAL_SQL.resolve("activate-json-07-v1.9.sql"));
-
-        assertThat(sql).contains(
-                "PT-REPORT-001",
-                "'v1.9'",
-                "categoryScoreReasons",
-                "overallAssessment 섹션 제목에 점수 숫자 표기 금지"
-        );
-    }
-
     private String prompt(String filename) throws IOException {
         // UTF-8 정본의 마지막 줄바꿈 차이는 SQL literal 비교에서 제거한다.
         return Files.readString(Path.of("src/main/resources/prompts", filename))

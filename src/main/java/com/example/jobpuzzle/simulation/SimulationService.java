@@ -1,7 +1,6 @@
 package com.example.jobpuzzle.simulation;
 
 import com.example.jobpuzzle.analysis.entity.AnalysisCase;
-import com.example.jobpuzzle.analysis.entity.AnalysisCaseSource;
 import com.example.jobpuzzle.analysis.entity.AnalysisCaseStatus;
 import com.example.jobpuzzle.analysis.repository.AnalysisCaseRepository;
 import com.example.jobpuzzle.analysis.repository.AnalysisCaseSourceRepository;

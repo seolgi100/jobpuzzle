@@ -148,15 +148,4 @@ public class AnalysisCaseController {
         return ResponseEntity.noContent().build();
     }
 
-    // 확정된 분석 입력 스냅샷 읽기 전용 조회
-    // GET /jobpuzzle/analysis-cases/{analysisCaseId}/snapshot
-    @GetMapping("/analysis-cases/{analysisCaseId}/snapshot")
-    public ResponseEntity<ApiResponse<AnalysisInputSnapshotResponse>> getSnapshot(
-            @PathVariable Long analysisCaseId,
-            @AuthenticationPrincipal(expression = "user") User user
-    ) {
-        AnalysisInputSnapshotResponse response =
-                analysisCaseService.getSnapshot(user.getUserId(), analysisCaseId);
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
 }

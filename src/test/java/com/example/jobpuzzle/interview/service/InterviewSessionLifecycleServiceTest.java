@@ -1,12 +1,7 @@
 package com.example.jobpuzzle.interview.service;
 
-import com.example.jobpuzzle.evaluation.entity.WeaknessTagResolveStatus;
 import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessTagLogRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessTagStatusRepository;
-import com.example.jobpuzzle.evaluation.service.AnswerEvaluationService;
-import com.example.jobpuzzle.evaluation.service.WeaknessTagNormalizer;
-import com.example.jobpuzzle.analysis.service.CompanyFitQuestionSetQueryService;
+import com.example.jobpuzzle.evaluation.service.AnswerEvaluationV2Service;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.interview.dto.SessionCreateRequest;
@@ -55,12 +50,8 @@ class InterviewSessionLifecycleServiceTest {
     @Mock private InterviewSessionQuestionRepository sessionQuestionRepository;
     @Mock private InterviewMessageRepository interviewMessageRepository;
     @Mock private FollowUpQuestionRepository followUpQuestionRepository;
-    @Mock private CompanyFitQuestionSetQueryService companyFitQuestionSetQueryService;
-    @Mock private AnswerEvaluationService answerEvaluationService;
+    @Mock private AnswerEvaluationV2Service answerEvaluationService;
     @Mock private AnswerEvaluationRepository answerEvaluationRepository;
-    @Mock private WeaknessTagStatusRepository weaknessTagStatusRepository;
-    @Mock private WeaknessTagLogRepository weaknessTagLogRepository;
-    @Mock private WeaknessTagNormalizer weaknessTagNormalizer;
 
     @InjectMocks private InterviewSessionService service;
 
@@ -82,19 +73,6 @@ class InterviewSessionLifecycleServiceTest {
                 .isEqualTo(ErrorCode.INTERVIEW_SESSION_ALREADY_EXISTS);
 
         verify(interviewSessionRepository).existsByQuestionSet_QuestionSetId(41L);
-    }
-
-    @Test
-    void completedSessionCannotBeStartedAgain() {
-        InterviewSession completed = mock(InterviewSession.class);
-        when(completed.isEditable()).thenReturn(false);
-        when(interviewSessionRepository.findBySessionIdAndUser_UserIdAndDeletedAtIsNull(90L, 7L))
-                .thenReturn(Optional.of(completed));
-
-        assertThatThrownBy(() -> service.startSession(7L, 90L))
-                .isInstanceOf(CustomException.class)
-                .extracting(error -> ((CustomException) error).getErrorCode())
-                .isEqualTo(ErrorCode.SESSION_NOT_EDITABLE);
     }
 
     @Test
@@ -130,7 +108,7 @@ class InterviewSessionLifecycleServiceTest {
 
         assertThat(response.isRetryAnswerRequired()).isTrue();
         assertThat(response.isEvaluationRetryRequired()).isFalse();
-        verify(answerEvaluationService, never()).evaluateAnswer(org.mockito.ArgumentMatchers.any());
+        verify(answerEvaluationService, never()).evaluate(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -160,8 +138,8 @@ class InterviewSessionLifecycleServiceTest {
         )).thenReturn(false);
         when(interviewMessageRepository.save(org.mockito.ArgumentMatchers.any(InterviewMessage.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        when(answerEvaluationService.evaluateAnswer(org.mockito.ArgumentMatchers.any()))
-                .thenReturn(new AnswerEvaluationService.EvaluationOutcome(null, null, true, "trace"));
+        when(answerEvaluationService.evaluate(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new AnswerEvaluationV2Service.EvaluationOutcome(null, null, true, "trace"));
 
         AnswerSubmitRequest request = new AnswerSubmitRequest();
         ReflectionTestUtils.setField(request, "messageText", "인증 실패 시 사용자가 다시 시도할 수 있도록 안내했습니다.");

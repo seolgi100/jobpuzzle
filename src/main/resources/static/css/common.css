@@ -38,17 +38,6 @@ html {
 
 /*  03. 공통 등장 모션: data-reveal 요소에 is-visible 클래스가 추가되면 위로 나타남 */
 /* 페이지별 레이아웃과 분리해서 사용하는 공통 등장 모션 */
-.motion-reveal {
-    opacity: 0;
-    transform: translateY(18px);
-    transition: opacity 640ms cubic-bezier(.22, .61, .36, 1), transform 640ms cubic-bezier(.22, .61, .36, 1);
-    will-change: opacity, transform;
-}
-.motion-reveal.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
 
 /*  04. 공통 HTML 요소: 링크, 이미지, 버튼 글꼴 */
 a {
@@ -69,39 +58,6 @@ button {
 
 /*  05. 개발용 미리보기 상태 전환 바: 실제 제품 UI가 아니며 기본 hidden */
 /* 개발 미리보기에서만 사용하는 상태 전환 바 */
-.preview-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 9px 24px;
-    background: #EEF1F5;
-    border-bottom: 1px dashed var(--color-border);
-    font-size: 12px;
-    color: var(--color-text-faint);
-}
-.preview-bar__label {
-    font-weight: 600;
-    letter-spacing: 0.2px;
-}
-.preview-bar__btn {
-    padding: 6px 14px;
-    border-radius: 2px;
-    font-size: 12px;
-    font-weight: 500;
-    background: transparent;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.preview-bar__btn.is-active {
-    background: var(--color-primary);
-    color: #fff;
-    font-weight: 600;
-    border-color: var(--color-primary);
-}
 
 /*  06. 공통 버튼 변형: 기본, primary, ghost, large */
 /* 공통 버튼 */
@@ -128,11 +84,6 @@ button {
 .btn--ghost {
     background: transparent;
     color: var(--color-text);
-}
-.btn--lg {
-    font-size: 15.5px;
-    padding: 14px 30px;
-    border-radius: 2px;
 }
 
 /* =========================================================
@@ -211,9 +162,7 @@ button {
 }
 
 /* 어두운 헤더의 글자와 사용자 칩 */
-.site-header.header--dark .site-header__name,
-.site-header.header--dark .site-header__nav a,
-.site-header.header--dark .user-chip__name {
+.site-header.header--dark .site-header__nav a {
     color: #EDF2FA;
 }
 
@@ -239,9 +188,7 @@ button {
 }
 
 /* 밝은 헤더의 글자와 사용자 칩 */
-.site-header.header--light .site-header__name,
-.site-header.header--light .site-header__nav a,
-.site-header.header--light .user-chip__name {
+.site-header.header--light .site-header__nav a {
     color: #16263a;
 }
 
@@ -251,40 +198,6 @@ button {
     align-items: center;
     gap: 10px;
     text-decoration: none;
-}
-
-.site-header__logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 2px;
-    object-fit: contain;
-}
-
-.site-header__logo--dark {
-    display: none;
-}
-
-.site-header.header--dark .site-header__logo--light {
-    display: none;
-}
-
-.site-header.header--dark .site-header__logo--dark {
-    display: block;
-}
-
-.site-header.header--light .site-header__logo--light {
-    display: block;
-}
-
-.site-header.header--light .site-header__logo--dark {
-    display: none;
-}
-
-.site-header__name {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -.2px;
-    color: var(--color-text);
 }
 
 /* 중앙 내비게이션 */
@@ -326,28 +239,6 @@ button {
 }
 
 /* 페이지 최상단 스크롤 진행 바 */
-.site-scroll-progress {
-    position: fixed !important;
-    top: 0 !important;
-    right: 0 !important;
-    left: 0 !important;
-    z-index: 10000 !important;
-    height: 4px !important;
-    overflow: hidden;
-    pointer-events: none;
-    background: rgba(115, 158, 194, .18) !important;
-}
-
-.site-scroll-progress i {
-    display: block;
-    width: 100%;
-    height: 100%;
-    transform: scaleX(var(--page-scroll-progress, 0));
-    transform-origin: left center;
-    background: linear-gradient(90deg, #42d9d0, #4e92ff 52%, #9169ff);
-    box-shadow: 0 0 14px rgba(88, 142, 255, .48);
-    will-change: transform;
-}
 
 /* =========================================================
    08. 로그인 상태와 사용자 메뉴
@@ -386,12 +277,6 @@ button {
     justify-content: center;
     font-size: 11px;
     font-weight: 700;
-}
-.user-chip__name {
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--color-text);
-    white-space: nowrap;
 }
 /*  사용자 드롭다운 메뉴 및 일반/위험 항목 */
 .user-menu {
@@ -460,11 +345,6 @@ button {
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text-muted);
-}
-.site-footer__legal {
-    font-size: 12px;
-    color: var(--color-text-faint);
-    margin: 0;
 }
 
 /* =========================================================
@@ -611,11 +491,6 @@ button {
         padding: 0 18px;
     }
 
-    .site-header__logo {
-        width: 34px;
-        height: 34px;
-    }
-
     .jp-toast-region {
         top: 126px;
         right: auto;
@@ -626,12 +501,6 @@ button {
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
-    }
-
-    .motion-reveal {
-        opacity: 1;
-        transform: none;
-        transition: none;
     }
 
     .site-header[data-dynamic-header] {

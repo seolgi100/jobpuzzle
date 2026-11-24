@@ -10,7 +10,6 @@ import lombok.Builder; import lombok.Getter;
     private AnalysisStageStatus customizedAnalysisStatus;
     private String readinessStatus;
     private Boolean canGenerateQuestions;
-    private boolean questionSetAvailable;
     private String latestFailureStage;
     private String latestFailureType;
     private String errorCode;

@@ -101,56 +101,6 @@ class AnalysisResultQueryServiceTest {
         assertError(ErrorCode.JSON05_RESULT_INTEGRITY_CONFLICT);
     }
 
-    @Test
-    void rejectsV1QuestionSetOnAnAnalysisThatCannotGenerateQuestions() {
-        // v2 분석은 질문 세트가 없어도 되지만, 세트가 있는데 readiness가 질문 불가면 저장이 어긋난 것이다.
-        prerequisites(false);
-        when(sets.findBySnapshot_SnapshotIdAndInterviewMode(SNAPSHOT_ID, InterviewSessionMode.COMPANY_FIT))
-                .thenReturn(Optional.of(mock(QuestionSet.class)));
-
-        assertError(ErrorCode.JSON05_RESULT_INTEGRITY_CONFLICT);
-    }
-
-    @Test
-    void rejectsNonPassQuestionInACompletedQuestionSet() {
-        // 완료 question set에는 PASS 검수를 통과하지 못한 질문이 섞일 수 없다.
-        prerequisites(true);
-        QuestionSet questionSet = mock(QuestionSet.class);
-        when(questionSet.getQuestionSetId()).thenReturn(50L);
-        when(sets.findBySnapshot_SnapshotIdAndInterviewMode(SNAPSHOT_ID, InterviewSessionMode.COMPANY_FIT)).thenReturn(Optional.of(questionSet));
-        InterviewQuestion rejected = mock(InterviewQuestion.class);
-        when(rejected.getReviewStatus()).thenReturn(InterviewQuestionReviewStatus.REJECT);
-        when(questions.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(50L)).thenReturn(List.of(rejected));
-
-        assertError(ErrorCode.JSON05_RESULT_INTEGRITY_CONFLICT);
-    }
-
-    @Test
-    void marksAnalysisReadOnlyWhenItsQuestionSetAlreadyHasASession() {
-        prerequisites(true);
-        QuestionSet questionSet = mock(QuestionSet.class);
-        when(questionSet.getQuestionSetId()).thenReturn(50L);
-        when(sets.findBySnapshot_SnapshotIdAndInterviewMode(
-                SNAPSHOT_ID, InterviewSessionMode.COMPANY_FIT
-        )).thenReturn(Optional.of(questionSet));
-        InterviewQuestion question = mock(InterviewQuestion.class);
-        when(question.getReviewStatus()).thenReturn(InterviewQuestionReviewStatus.PASS);
-        when(question.getQuestionType()).thenReturn(InterviewQuestionType.EXPERIENCE);
-        when(questions.findByQuestionSet_QuestionSetIdOrderByDisplayOrderAsc(50L))
-                .thenReturn(List.of(question));
-        InterviewSession linkedSession = mock(InterviewSession.class);
-        when(linkedSession.getSessionId()).thenReturn(70L);
-        when(linkedSession.getStatus()).thenReturn(InterviewSessionStatus.IN_PROGRESS);
-        when(sessions.findFirstByQuestionSet_QuestionSetIdOrderByCreatedAtDesc(50L))
-                .thenReturn(Optional.of(linkedSession));
-
-        var result = service.getResult(USER_ID, CASE_ID);
-
-        assertThat(result.isInterviewStartAllowed()).isFalse();
-        assertThat(result.getLinkedSessionId()).isEqualTo(70L);
-        assertThat(result.getLinkedSessionStatus()).isEqualTo("IN_PROGRESS");
-    }
-
     private void prerequisites(boolean canGenerateQuestions) {
         // JSON-01·02·04·05 저장 결과를 갖춘 completed case의 최소 무결성 fixture를 만든다.
         completedCase();

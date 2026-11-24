@@ -171,10 +171,6 @@ public class UserService {
         }
     }
 
-    public void loginWithOAuth() {
-        // 카카오 로그인은 여기가 아니라 CustomOAuth2UserService에서 처리됨
-    }
-
     // 로그아웃 - 세션 무효화 + 시큐리티 컨텍스트 정리 + 자동로그인 쿠키/토큰 정리
     public void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

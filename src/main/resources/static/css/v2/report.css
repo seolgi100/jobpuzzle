@@ -16,7 +16,6 @@
 .r2 .interim { margin-bottom: 40px; padding: 18px 22px; background: var(--point-soft); font-size: 16px; }
 .r2 .interim b { font-weight: 600; }
 
-
 /* 1. 종합 */
 .r2 .overview { display: grid; grid-template-columns: auto 1fr; gap: 64px; align-items: end; }
 .r2 .total .label { font-size: 16px; font-weight: 500; color: var(--text-2); }

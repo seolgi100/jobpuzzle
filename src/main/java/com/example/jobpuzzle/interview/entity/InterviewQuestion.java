@@ -1,10 +1,7 @@
 package com.example.jobpuzzle.interview.entity;
 
-import com.example.jobpuzzle.ai.dto.CustomizedAnalysisGenerationResult;
-import com.example.jobpuzzle.ai.dto.SourceReference;
 import com.example.jobpuzzle.analysis.entity.AnalysisSourceReference;
 import com.example.jobpuzzle.analysis.entity.MatchAnalysisResult;
-import com.example.jobpuzzle.evaluation.entity.AnswerEvaluation;
 import com.example.jobpuzzle.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -63,10 +60,6 @@ public class InterviewQuestion extends BaseTimeEntity {
     @Column(name = "source_refs", nullable = false, columnDefinition = "json")
     private List<AnalysisSourceReference> sourceRefs;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "origin_evaluation_id")
-    private AnswerEvaluation originEvaluation;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "review_status", nullable = false, length = 20)
     private InterviewQuestionReviewStatus reviewStatus;
@@ -88,40 +81,12 @@ public class InterviewQuestion extends BaseTimeEntity {
                                        String questionText, String intent, List<String> competencyTags,
                                        String relatedRequirementId, int displayOrder) {
         InterviewQuestion question = create(questionSet, questionKey, questionType, questionText, intent,
-                List.of(), null, displayOrder);
+                List.of(), displayOrder);
         question.competencyTags = List.copyOf(competencyTags);
         question.relatedRequirementId = relatedRequirementId;
         return question;
     }
 
-    public static InterviewQuestion from(
-            QuestionSet questionSet,
-            MatchAnalysisResult relatedMatch,
-            CustomizedAnalysisGenerationResult.Question value,
-            int displayOrder
-    ) {
-        if (value.getReviewStatus() != InterviewQuestionReviewStatus.PASS) {
-            throw new IllegalArgumentException("Only PASS questions can be persisted in a QuestionSet.");
-        }
-        InterviewQuestion question = new InterviewQuestion();
-        question.questionSet = questionSet;
-        question.relatedMatch = relatedMatch;
-        question.questionKey = value.getQuestionId();
-        question.questionType = value.getQuestionType();
-        question.question = value.getQuestion();
-        question.intent = value.getIntent();
-        question.evaluationFocus = value.getEvaluationFocus() == null
-                ? List.of()
-                : List.copyOf(value.getEvaluationFocus());
-        question.relatedRequirementId = value.getRelatedRequirementId();
-        question.sourceRefs = sourceRefs(value.getSourceRefs());
-        question.reviewStatus = value.getReviewStatus();
-        question.reviewNote = value.getReviewNote();
-        question.displayOrder = displayOrder;
-        return question;
-    }
-
-    // 면접 기능 추가: BASIC·WEAKNESS_REVIEW 질문도 회사 맞춤 질문과 같은 원본 질문 모델로 저장한다.
     public static InterviewQuestion create(
             QuestionSet questionSet,
             String questionKey,
@@ -129,7 +94,6 @@ public class InterviewQuestion extends BaseTimeEntity {
             String questionText,
             String intent,
             List<InterviewQuestionEvaluationFocus> evaluationFocus,
-            AnswerEvaluation originEvaluation,
             int displayOrder
     ) {
         InterviewQuestion question = new InterviewQuestion();
@@ -140,13 +104,9 @@ public class InterviewQuestion extends BaseTimeEntity {
         question.intent = intent;
         question.evaluationFocus = evaluationFocus == null ? List.of() : List.copyOf(evaluationFocus);
         question.sourceRefs = List.of();
-        question.originEvaluation = originEvaluation;
         question.reviewStatus = InterviewQuestionReviewStatus.PASS;
         question.displayOrder = displayOrder;
         return question;
     }
 
-    private static List<AnalysisSourceReference> sourceRefs(List<SourceReference> values) {
-        return values == null ? List.of() : values.stream().map(AnalysisSourceReference::from).toList();
-    }
 }

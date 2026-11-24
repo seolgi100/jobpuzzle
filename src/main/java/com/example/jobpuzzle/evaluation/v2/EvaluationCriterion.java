@@ -99,9 +99,9 @@ public enum EvaluationCriterion {
         return score1;
     }
 
-    /** 공통 3개 + 모드별 3개 = 6개, 선언 순서대로. v1 모드는 평가 항목이 없다. */
+    /** 공통 3개 + 모드별 3개 = 6개, 선언 순서대로. */
     public static List<EvaluationCriterion> forMode(InterviewSessionMode mode) {
-        if (mode == null || !mode.isV2()) {
+        if (mode == null) {
             throw new IllegalArgumentException("v2 평가 항목이 없는 모드: " + mode);
         }
         return Arrays.stream(values()).filter(c -> c.mode == null || c.mode == mode).toList();

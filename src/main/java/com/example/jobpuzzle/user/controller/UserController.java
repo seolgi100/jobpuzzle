@@ -73,13 +73,6 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.checkIdDuplicate(loginId)));
     }
 
-    // 이메일 중복 확인
-    // GET /jobpuzzle/user/check-email?email=xxx -> true(중복) / false(사용 가능)
-    @GetMapping("/check-email")
-    public ResponseEntity<ApiResponse<Boolean>> checkEmailDuplicate(@RequestParam String email) {
-        return ResponseEntity.ok(ApiResponse.success(userService.checkEmailDuplicate(email)));
-    }
-
     // 아이디/비밀번호 로그인
     // POST /jobpuzzle/user/login { loginId, password, autoLogin }
     // 성공하면 세션에 로그인 상태가 저장되고, 이후 요청부터는 로그인된 상태로 인식됨

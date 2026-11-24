@@ -9,8 +9,6 @@ import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.guide.entity.GuideContextInputReferenceType;
 import com.example.jobpuzzle.guide.entity.GuideContextPurpose;
 import com.example.jobpuzzle.guide.repository.GuideContextResultRepository;
-import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
-import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
 import com.example.jobpuzzle.simulation.SimulationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,7 +26,6 @@ public class AnalysisStatusQueryService {
     private final CandidateMaterialAnalysisRepository candidates;
     private final GuideContextResultRepository guides;
     private final ReadinessResultRepository readiness;
-    private final QuestionSetRepository sets;
     private final AiCallLogRepository logs;
     private final SimulationService simulationService;
 
@@ -73,8 +70,6 @@ public class AnalysisStatusQueryService {
                 .customizedAnalysisStatus(stage(customizedLog))
                 .readinessStatus(readinessResult == null ? null : readinessResult.getStatus().name())
                 .canGenerateQuestions(readinessResult == null ? null : readinessResult.isCanGenerateQuestions())
-                .questionSetAvailable(sets.existsBySnapshot_SnapshotIdAndInterviewMode(
-                        snapshotId, InterviewSessionMode.COMPANY_FIT))
                 .latestFailureStage(failure == null ? null : failure.getExecutionStage().name())
                 .latestFailureType(failure == null ? null : failure.getErrorType().name())
                 // 내부 errorMessage는 API에 싣지 않는다.

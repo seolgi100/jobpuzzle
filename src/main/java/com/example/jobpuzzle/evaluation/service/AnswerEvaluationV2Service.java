@@ -64,7 +64,7 @@ public class AnswerEvaluationV2Service {
     private final AiGenerationProperties properties;
     private final ObjectMapper objectMapper;
 
-    public AnswerEvaluationService.EvaluationOutcome evaluate(InterviewMessage answerMessage) {
+    public EvaluationOutcome evaluate(InterviewMessage answerMessage) {
         InterviewSessionQuestion question = answerMessage.getSessionQuestion();
         InterviewSession session = question.getSession();
         InterviewSessionMode mode = session.getMode();
@@ -112,7 +112,7 @@ public class AnswerEvaluationV2Service {
             AiCallLogErrorType errorType = EvaluationFailureDiagnostics.errorType(last);
             callLog.fail(errorType, traceId + " | " + errorType + " | " + EvaluationFailureDiagnostics.failureDetail(last));
             log.error("ai_evaluation_v2_failed traceId={} answerMessageId={} mode={}", traceId, answerMessage.getMessageId(), mode, last);
-            return new AnswerEvaluationService.EvaluationOutcome(null, null, true, traceId);
+            return new EvaluationOutcome(null, null, true, traceId);
         }
 
         boolean evasive = Boolean.TRUE.equals(result.isEvasive());
@@ -137,7 +137,7 @@ public class AnswerEvaluationV2Service {
                 ? createFollowUp(evaluation, answerMessage, result.followUp(), details)
                 : null;
         callLog.succeed();
-        return new AnswerEvaluationService.EvaluationOutcome(evaluation, followUp, false, null);
+        return new EvaluationOutcome(evaluation, followUp, false, null);
     }
 
     private InterviewMessage createFollowUp(AnswerEvaluation evaluation, InterviewMessage answerMessage,
@@ -245,5 +245,14 @@ public class AnswerEvaluationV2Service {
         } catch (Exception exception) {
             throw new IllegalStateException("평가 입력을 JSON으로 만들 수 없습니다", exception);
         }
+    }
+
+    /** 답변 평가 결과. 평가 실패면 evaluation은 null이고 failureTraceId로 로그를 찾는다. */
+    public record EvaluationOutcome(
+            AnswerEvaluation evaluation,
+            InterviewMessage followUpMessage,
+            boolean evaluationFailed,
+            String failureTraceId
+    ) {
     }
 }

@@ -66,7 +66,7 @@ body, body.app {
 }
 ::selection { background: var(--point); color: #fff; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.num, .tabular { font-variant-numeric: tabular-nums lining-nums; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
 
 /* ── 페이지 머리말: 큰 명조 제목 → 설명 한 줄 → 먹색 1px 선으로 닫음. 영문 눈썹 문구는 쓰지 않음 */
 .dash-wrap { max-width: 1200px; padding: 56px 24px 120px; }
@@ -78,14 +78,11 @@ body, body.app {
 /* ── 종이(카드): 1px 선, 모서리 2px, 그림자 없음 */
 .dcard { border: 1px solid var(--line); border-radius: 2px; background: var(--paper); }
 .dcard__title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-.dcard__sub { font-size: 15px; color: var(--text-2); }
 
 /* ── 버튼: 모서리 2px. 주요 = 먹색(hover 델프트 블루), 보조 = 종이 + 회색 선 */
 .dbtn { border-radius: 2px; font-weight: 600; letter-spacing: -0.005em; transition: background-color .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease); }
 .dbtn--navy, .dbtn--sky { background: var(--ink); color: #fff; }
 .dbtn--navy:hover, .dbtn--sky:hover { background: var(--point); color: #fff; }
-.dbtn--white { background: var(--paper); color: var(--ink); }
-.dbtn--white:hover { background: var(--point-soft); }
 .dbtn--line { border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
 .dbtn--line:hover { border-color: var(--ink); background: var(--paper); }
 .dbtn--ghost { background: var(--paper); border: 1px solid var(--line); color: var(--ink); }
@@ -116,7 +113,7 @@ body, body.app {
 .mbadge--basic { background: #EEF1F5; color: var(--text-2); }
 .mbadge--custom { background: var(--ink); color: #fff; }
 .mbadge--persona { background: var(--point-soft); color: var(--point); }
-.mbadge--weak, .mbadge--tag { background: var(--paper); border: 1px solid var(--line); color: var(--caution); }
+.mbadge--tag { background: var(--paper); border: 1px solid var(--line); color: var(--caution); }
 
 /* ── 입력 */
 .input, select.input, textarea.input { border-radius: 2px; border-color: var(--line-strong); font-size: 16px; }
@@ -141,7 +138,6 @@ body, body.app {
 .jp-toast__title { color: var(--ink); }
 .jp-toast__message { color: var(--text-2); font-weight: 500; }
 .jp-toast__close { border-radius: 2px; color: var(--text-2); }
-
 
 /* ── 새 화면 공통 부품 (.r2 안에서만): 기준 design-test/app.css. 새 디자인으로 다시 만든 화면은 <main class="r2 page"> 아래에 쓴다 */
 .r2 {

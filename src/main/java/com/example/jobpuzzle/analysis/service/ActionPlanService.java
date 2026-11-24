@@ -32,19 +32,6 @@ public class ActionPlanService {
                 .toList();
     }
 
-    // 로그인 사용자의 마감일 지정 과제를 요청한 날짜 범위 안에서 조회한다.
-    public List<ActionPlanListResponse> getActionPlanCalendar(
-            Long userId, LocalDate from, LocalDate to
-    ) {
-        if (from == null || to == null || from.isAfter(to)) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
-        }
-        return actionPlanRepository.findOwnedCalendarActionPlans(userId, from, to)
-                .stream()
-                .map(ActionPlanListResponse::from)
-                .toList();
-    }
-
     // 소유권을 확인한 액션플랜의 마감일을 설정하거나 null로 제거한다.
     @Transactional
     public ActionPlanListResponse updateDeadline(Long userId, Long actionPlanId, LocalDate deadline) {

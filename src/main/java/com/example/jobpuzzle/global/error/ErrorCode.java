@@ -105,8 +105,6 @@ public enum ErrorCode {
     SESSION_CANNOT_BE_CANCELED(HttpStatus.CONFLICT, "INTERVIEW_007", "답변을 제출한 세션은 취소할 수 없습니다."),
     SESSION_CANNOT_BE_COMPLETED(HttpStatus.CONFLICT, "INTERVIEW_008", "완료 조건을 충족하지 못한 세션입니다."),
     ANSWER_ALREADY_CONFIRMED(HttpStatus.CONFLICT, "INTERVIEW_009", "이미 확정된 답변입니다."),
-    FOLLOW_UP_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "INTERVIEW_010", "추가 꼬리질문을 생성할 수 없습니다."),
-    WEAKNESS_NOT_AVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_011", "약점 보완에 사용할 미해결 약점이 없습니다."),
     ANSWER_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "INTERVIEW_012", "답변 기준 메시지를 찾을 수 없습니다."),
     ANSWER_SUBMISSION_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "INTERVIEW_013", "이 질문의 답변 제출 기회를 모두 사용했습니다."),
     MATERIAL_INTERVIEW_UNAVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_014", "이 분석 결과로는 자료 기반 면접을 만들 수 없습니다. 자료를 보완한 뒤 다시 분석해 주세요."),
@@ -116,10 +114,6 @@ public enum ErrorCode {
     ROUND_ALREADY_EXISTS(HttpStatus.CONFLICT, "INTERVIEW_018", "이 면접은 이미 다음 회차가 있습니다. 가장 최근 회차에서 다시 진행해 주십시오."),
 
     // interview / report
-    INTERVIEW_SESSION_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "REPORT_002", "완료되지 않은 세션은 최종 리포트를 생성할 수 없습니다."),
-    FINAL_REPORT_NOT_GENERATABLE(HttpStatus.BAD_REQUEST, "REPORT_003", "평가에 성공한 답변이 없어 최종 리포트를 생성할 수 없습니다."),
-    FINAL_REPORT_GENERATION_IN_PROGRESS(HttpStatus.CONFLICT, "REPORT_004", "최종 리포트를 생성하는 중입니다. 잠시 후 다시 시도해주세요."),
-    FINAL_REPORT_GENERATION_FAILED(HttpStatus.BAD_GATEWAY, "REPORT_005", "최종 리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
     // competency tag / personality question
     COMPETENCY_TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETENCY_001", "역량 태그를 찾을 수 없습니다."),

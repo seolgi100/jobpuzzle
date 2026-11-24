@@ -7,9 +7,7 @@
   var U = window.JPUI, route = window.JobPuzzleRoutes.path, esc = U.esc;
   // 화면 등급: 판단 보류(INSUFFICIENT)는 근거 부족과 같은 칸에 넣는다
   var LV = { HIGH: ['충족', 'high'], MEDIUM: ['일부 충족', 'medium'], LOW: ['낮은 연결', 'low'], NONE: ['근거 부족', 'none'], INSUFFICIENT: ['판단 보류', 'none'] };
-  var TYPE = { EXPERIENCE: '경험', SKILL: '기술', PROBLEM_SOLVING: '문제 해결', COMPANY_FIT: '직무 적합', GENERAL: '일반' };
   var SRC = { RESUME: '이력서', COVER_LETTER: '자기소개서', PORTFOLIO: '포트폴리오', EXPERIENCE_NOTE: '경험 정리', JOB_POSTING: '채용공고', COMPANY_INFO: '회사정보' };
-  var QUESTION_PREVIEW = 6;
   var filter = 'ALL', data = null;
 
   function lv(m) { return LV[m.matchLevel] || LV.NONE; }
@@ -24,13 +22,11 @@
 
   function renderReqs() {
     var matches = data.result.requirementMatches || [];
-    var qs = data.questions;
     document.querySelector('[data-reqs]').innerHTML = matches.filter(function (m) {
       var k = lv(m)[1];
       return filter === 'ALL' || (filter === 'high' && k === 'high') || (filter === 'part' && (k === 'medium' || k === 'low')) || (filter === 'none' && k === 'none');
     }).map(function (m) {
       var must = m.requirementType === 'REQUIRED';
-      var related = qs.map(function (q, i) { return q.relatedRequirementId === m.requirementId ? (i + 1) + '번' : null; }).filter(Boolean);
       var refs = (m.candidateSourceRefs || []).map(function (r) { return (SRC[r.documentType] || '지원 자료') + (r.pageNumber ? ' ' + r.pageNumber + '쪽' : ''); })
         .filter(function (v, i, all) { return all.indexOf(v) === i; });
       return '<details class="req"><summary><span class="req__kind' + (must ? ' req__kind--must' : '') + '">' + (must ? '필수' : '우대') + '</span>' +
@@ -38,7 +34,7 @@
         (m.candidateEvidence ? '<div class="ev"><small>확인된 근거</small>' + esc(m.candidateEvidence) + '</div>' : '') +
         (m.missingPoint ? '<div class="ev ev--miss"><small>부족한 근거</small>' + esc(m.missingPoint) + '</div>' : '') +
         (m.reason ? '<div class="ev ev--wide"><small>판단 이유</small>' + esc(m.reason) + '</div>' : '') +
-        '<div class="ev ev--wide"><small>사용된 자료' + (related.length ? ' · 관련 질문 ' + related.join(', ') : '') + '</small><div class="ev__src">' +
+        '<div class="ev ev--wide"><small>사용된 자료</small><div class="ev__src">' +
         (refs.length ? refs.map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') : '<span>연결된 자료 없음</span>') + '</div></div>' +
         '</div></details>';
     }).join('') || '<p class="rs-sub">해당하는 요구사항이 없습니다.</p>';
@@ -46,8 +42,7 @@
 
   function render(result, analysisCase, plans) {
     var matches = result.requirementMatches || [];
-    var questions = (result.questionSet && result.questionSet.questions || []).slice().sort(function (a, b) { return (a.displayOrder || 0) - (b.displayOrder || 0); });
-    data = { result: result, questions: questions };
+    data = { result: result };
     var counts = { high: 0, medium: 0, low: 0, none: 0 };
     matches.forEach(function (m) { counts[lv(m)[1]]++; });
     var linked = matches.filter(function (m) { return connected(m.matchLevel); }).length;
@@ -57,19 +52,9 @@
     var career = { NEW: '신입', EXPERIENCED: '경력', ANY: '경력 무관' }[analysisCase && analysisCase.careerLevel] || '';
     var sources = analysisCase && analysisCase.sources || [];
 
-    // 면접 연결: 시작 가능 / 이미 연결된 면접(완료·진행 중) / 둘 다 아님
-    // v2 분석은 질문 세트 없이 끝나고, 면접 모드(기초 지식·자료 기반)를 골라 그때 질문을 만든다.
-    var v2 = !result.questionSet || result.questionSet.questionSetId == null;
-    var canStart = v2 || (questions.length > 0 && result.interviewStartAllowed === true);
-    var sid = v2 ? null : result.linkedSessionId, completed = result.linkedSessionStatus === 'COMPLETED';
-    var cta = canStart ? ['이 분석으로 면접 보기', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))]
-      : sid ? (completed ? ['완료한 면접 결과 보기', route('/interview-results?sessionId=' + encodeURIComponent(sid))]
-        : ['진행 중인 면접으로 돌아가기', route('/interview?resumeSessionId=' + encodeURIComponent(sid))])
-        : ['면접 준비로 이동', route('/interview')];
-    var ctaSub = canStart ? (v2 ? '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있습니다.'
-        : '부족한 근거를 중심으로 만든 질문으로 바로 면접을 볼 수 있습니다.')
-      : sid ? (completed ? '이 분석으로 본 면접 결과를 다시 확인할 수 있습니다.' : '이 분석으로 진행 중인 면접이 있습니다.')
-        : '자료를 보완한 뒤 새 분석을 진행해 보십시오.';
+    // 면접 모드(기초 지식·자료 기반)를 고를 때 질문을 만든다.
+    var cta = ['이 분석으로 면접 보기', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))];
+    var ctaSub = '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있습니다.';
 
     var limits = result.readiness && result.readiness.limitations || [];
     root.innerHTML =
@@ -87,8 +72,6 @@
       '<div class="ar-kind"><div>필수 요구사항<b>' + req.length + '개 중 ' + req.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div>' +
       '<div>우대 요구사항<b>' + pref.length + '개 중 ' + pref.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div></div></section>' +
       '<section class="dcard ar-next"><h2 class="rs-h">분석을 연습으로 이어 갑니다</h2><p class="rs-sub" style="margin-bottom:0">' + ctaSub + '</p>' +
-      // v2 분석은 질문을 만들지 않는다(면접을 고를 때 만든다). v1 기록만 질문 수·목록을 보여 준다.
-      (v2 ? '' : '<div class="ar-next__row"><span>예상 면접 질문</span><b>' + questions.length + '개</b></div>') +
       '<div class="ar-next__row"><span>보완 과제</span><b>' + plans.length + '개</b></div>' +
       '<a href="' + cta[1] + '" class="dbtn dbtn--navy" style="margin-top:16px">' + cta[0] + '</a></section></div>' +
       '<section class="ar-sec" aria-labelledby="req-title"><div class="ar-sec__head"><div><h2 id="req-title">요구사항 연결 분석<small>' + matches.length + '개</small></h2>' +
@@ -96,14 +79,7 @@
       '<div class="chips" role="group" aria-label="연결 정도">' + [['ALL', '전체'], ['high', '충족'], ['part', '일부 충족'], ['none', '근거 부족']].map(function (c) {
         return '<button type="button" class="chip" data-lv="' + c[0] + '" aria-pressed="' + (filter === c[0]) + '">' + c[1] + '</button>';
       }).join('') + '</div></div><div data-reqs></div></section>' +
-      '<div class="' + (v2 ? 'ar-sec' : 'dcols ar-sec') + '" style="align-items:start">' + (v2 ? '' :
-      '<section class="dcard" aria-labelledby="q-title"><h2 class="rs-h" id="q-title">예상 면접 질문</h2>' +
-      '<p class="rs-sub">분석 근거를 바탕으로 실제 면접에서 나올 가능성이 높은 질문입니다.</p>' +
-      (questions.length ? questions.slice(0, QUESTION_PREVIEW).map(function (q, i) {
-        return '<div class="aq"><span class="aq__n">' + (i + 1) + '</span><div><span class="mbadge mbadge--basic">' + (TYPE[q.questionType] || '일반') + '</span>' +
-          '<p class="aq__q">' + esc(q.question) + '</p>' + (q.intent ? '<p class="aq__why"><b>확인하는 것</b> · ' + esc(q.intent) + '</p>' : '') + '</div></div>';
-      }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접에서 차례로 나옵니다.</p>' : '')
-        : '<p class="rs-sub">만들어진 질문이 없습니다.</p>') + '</section>') +
+      '<div class="ar-sec" style="align-items:start">' +
       '<section class="dcard" aria-labelledby="p-title"><h2 class="rs-h" id="p-title">보완 과제</h2><p class="rs-sub">마감일과 완료는 액션플랜에서 관리합니다.</p>' +
       (plans.length ? plans.map(function (p) {
         var done = p.status === 'DONE';

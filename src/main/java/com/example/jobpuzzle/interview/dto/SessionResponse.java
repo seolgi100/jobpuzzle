@@ -26,7 +26,6 @@ public class SessionResponse {
     private boolean reviewReady;
     private Long guideId;
     private String guideVersion;
-    private String targetWeaknessTag;
     private LocalDateTime createdAt;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
@@ -73,7 +72,6 @@ public class SessionResponse {
                 .reviewReady(false)
                 .guideId(session.getGuideDocument() == null ? null : session.getGuideDocument().getGuideId())
                 .guideVersion(session.getGuideVersion())
-                .targetWeaknessTag(session.getTargetWeaknessTag())
                 .createdAt(session.getCreatedAt())
                 .startedAt(session.getStartedAt())
                 .completedAt(session.getCompletedAt())

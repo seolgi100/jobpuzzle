@@ -3,12 +3,10 @@ package com.example.jobpuzzle.analysis.controller;
 import com.example.jobpuzzle.analysis.dto.AnalysisResultResponse;
 import com.example.jobpuzzle.analysis.dto.AnalysisCaseResponse;
 import com.example.jobpuzzle.analysis.dto.AnalysisStatusResponse;
-import com.example.jobpuzzle.analysis.dto.CompanyFitQuestionSetResponse;
 import com.example.jobpuzzle.analysis.service.AnalysisCaseService;
 import com.example.jobpuzzle.analysis.service.AnalysisResultQueryService;
 import com.example.jobpuzzle.analysis.service.AnalysisService;
 import com.example.jobpuzzle.analysis.service.AnalysisStatusQueryService;
-import com.example.jobpuzzle.analysis.service.CompanyFitQuestionSetQueryService;
 import com.example.jobpuzzle.global.common.ApiResponse;
 import com.example.jobpuzzle.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ public class AnalysisController {
     private final AnalysisCaseService analysisCaseService;
     private final AnalysisResultQueryService queryService;
     private final AnalysisStatusQueryService statusQueryService;
-    private final CompanyFitQuestionSetQueryService questionSetQueryService;
 
     @PostMapping("/cases/{analysisCaseId}/run")
     public ResponseEntity<ApiResponse<AnalysisCaseResponse>> run(@PathVariable Long analysisCaseId, @AuthenticationPrincipal(expression = "user") User user) {
@@ -42,8 +39,4 @@ public class AnalysisController {
         return ResponseEntity.ok(ApiResponse.success(statusQueryService.getStatus(user.getUserId(), analysisCaseId)));
     }
 
-    @GetMapping("/cases/{analysisCaseId}/question-set")
-    public ResponseEntity<ApiResponse<CompanyFitQuestionSetResponse>> questionSet(@PathVariable Long analysisCaseId, @AuthenticationPrincipal(expression = "user") User user) {
-        return ResponseEntity.ok(ApiResponse.success(questionSetQueryService.getCompanyFitQuestionSet(user.getUserId(), analysisCaseId)));
-    }
 }

@@ -1,11 +1,9 @@
 package com.example.jobpuzzle.user.dto;
 
-import com.example.jobpuzzle.jobcategory.entity.JobCategory;
 import com.example.jobpuzzle.user.entity.User;
 import com.example.jobpuzzle.user.entity.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 // 내 정보 조회 응답 (/jobpuzzle/user/me)
 @Getter

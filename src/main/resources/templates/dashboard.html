@@ -51,7 +51,7 @@
     <!-- 요약 -->
     <dl class="tally" aria-label="요약">
       <div><dt>진행 중인 면접</dt><dd class="num"><span data-stat="active">0</span><small>건</small></dd></div>
-      <div><dt>해결하지 않은 약점</dt><dd class="num"><span data-stat="open">0</span><small>건</small></dd></div>
+      <div><dt>완료한 면접</dt><dd class="num"><span data-stat="done">0</span><small>건</small></dd></div>
       <div data-late><dt>마감 지난 과제</dt><dd class="num"><span data-stat="overdue">0</span><small>건</small></dd></div>
       <div><dt>마감일 없는 과제</dt><dd class="num"><span data-stat="nodue">0</span><small>건</small></dd></div>
     </dl>
@@ -59,7 +59,6 @@
     <!-- 탭 -->
     <div class="tabs" role="tablist" aria-label="준비 기록">
       <button role="tab" id="tab-sessions" aria-controls="p-sessions" aria-selected="true" data-tab="sessions">면접 세션<small class="num" data-count="sessions"></small></button>
-      <button role="tab" id="tab-weakness" aria-controls="p-weakness" aria-selected="false" tabindex="-1" data-tab="weakness">약점 태그<small class="num" data-count="weakness"></small></button>
       <button role="tab" id="tab-tasks" aria-controls="p-tasks" aria-selected="false" tabindex="-1" data-tab="tasks">과제<small class="num" data-count="tasks"></small></button>
     </div>
 
@@ -71,17 +70,6 @@
       <div class="group">
         <div class="group-head"><h2 class="h3">완료된 면접</h2><a class="link" href="/jobpuzzle/reports" th:href="@{/reports}">리포트 전체 보기<svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
         <ul class="rows sessions" data-list="done"></ul>
-      </div>
-    </section>
-
-    <section class="panel" id="p-weakness" role="tabpanel" aria-labelledby="tab-weakness" hidden>
-      <div class="group">
-        <div class="group-head"><h2 class="h3">해결하지 않은 약점</h2><p>항목별 점수와 최종 점수가 모두 70점을 넘어야 해결로 처리됩니다.</p></div>
-        <ul class="rows weak" data-list="open"></ul>
-      </div>
-      <div class="group">
-        <div class="group-head"><h2 class="h3">해결된 약점</h2><p>같은 약점이 다시 나오면 해결하지 않은 약점으로 돌아갑니다.</p></div>
-        <ul class="rows weak" data-list="solved"></ul>
       </div>
     </section>
 

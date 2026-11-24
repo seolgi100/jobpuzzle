@@ -31,13 +31,6 @@ public interface InterviewSessionQuestionRepository
             Collection<InterviewSessionQuestionStatus> statuses
     );
 
-    Optional<InterviewSessionQuestion>
-    findFirstBySession_User_UserIdAndStatusAndQuestion_OriginEvaluation_EvaluationIdOrderBySessionQuestionIdDesc(
-            Long userId,
-            InterviewSessionQuestionStatus status,
-            Long originEvaluationId
-    );
-
     // 세션에 선택된 전체 질문 개수
     long countBySession_SessionId(
             Long sessionId

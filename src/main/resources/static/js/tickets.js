@@ -4,9 +4,7 @@
 
   var USAGE_LABEL = {
     ANALYSIS: '공고·지원자 분석', KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
-    SESSION_RETRY: '면접 다시 진행', QUESTION_REGENERATE: '질문 다시 생성',
-    // v1 기록
-    BASIC: '기본 면접', WEAKNESS_REVIEW: '약점 보완 면접', COMPANY_FIT: '공고 맞춤 분석'
+    SESSION_RETRY: '면접 다시 진행', QUESTION_REGENERATE: '질문 다시 생성'
   };
   var TYPE_LABEL = { CHARGE: '충전', USE: '사용', REFUND: '환불' };
 
