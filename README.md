@@ -114,7 +114,7 @@ com.example.jobpuzzle
 ├─ jobcategory    직무 카테고리
 ├─ jobposting     채용 공고 등록·저장
 ├─ simulation     시연용 시뮬레이션 계정 (저장된 결과 재생)
-├─ ticket         면접 이용권·토스페이먼츠 결제 *(개인 개선)*
+├─ ticket         면접 이용권·토스페이먼츠 결제
 └─ user           회원가입·로그인·소셜 로그인·설정
 ```
 
