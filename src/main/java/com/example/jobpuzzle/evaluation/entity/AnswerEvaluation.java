@@ -85,6 +85,51 @@ public class AnswerEvaluation extends BaseTimeEntity {
     @JoinColumn(name = "ai_call_log_id", nullable = false)
     private AiCallLog aiCallLog;
 
+    // 평가 명세 v2 (7장): 2 = v2 평가, null = v1 평가. 기존 데이터를 지울 때 이 값으로 구분한다.
+    @Column(name = "evaluation_version")
+    private Integer evaluationVersion;
+
+    // v2: 무응답·회피 답변 (전 항목 1점)
+    @Column(name = "evasive")
+    private Boolean evasive;
+
+    // v2: 추천 답변 방향
+    @Lob
+    @Column(name = "recommended_answer", columnDefinition = "TEXT")
+    private String recommendedAnswer;
+
+    // v2 다회차: improved(이전 회차보다 나아진 점), toImprove(더 개선하면 좋을 점). 첫 회차는 null
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "comparison", columnDefinition = "json")
+    private Map<String, String> comparison;
+
+    /**
+     * v2 평가 저장. score는 답변 점수(6개 항목 평균)를 100점으로 환산한 값, evaluationDetail은 항목 code → (1~5점, 근거).
+     * 잘한 점은 summary, 보완할 점은 improvementDirection 첫 칸에 둔다 (v1 칸을 같은 뜻으로 재사용).
+     * passThreshold 70은 꼬리질문 기준(3.5점)을 100점으로 나타낸 값.
+     */
+    public static AnswerEvaluation createV2(
+            InterviewMessage answerMessage,
+            InterviewSessionQuestion sessionQuestion,
+            InterviewSessionMode mode,
+            int score,
+            Map<String, DimensionEvaluation> evaluationDetail,
+            boolean evasive,
+            String strengths,
+            String improvements,
+            String recommendedAnswer,
+            Map<String, String> comparison,
+            AiCallLog aiCallLog
+    ) {
+        AnswerEvaluation evaluation = create(answerMessage, sessionQuestion, mode, score, 70, null, evaluationDetail,
+                null, null, List.of(), Map.of(), strengths, List.of(improvements), aiCallLog);
+        evaluation.evaluationVersion = 2;
+        evaluation.evasive = evasive;
+        evaluation.recommendedAnswer = recommendedAnswer;
+        evaluation.comparison = comparison;
+        return evaluation;
+    }
+
     public static AnswerEvaluation create(
             InterviewMessage answerMessage,
             InterviewSessionQuestion sessionQuestion,

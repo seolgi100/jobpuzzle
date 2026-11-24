@@ -38,15 +38,10 @@ public interface AiClient {
         return generateCustomizedAnalysisV13(renderedPrompt, outputSchema);
     }
 
-    // interview 추가: JSON-11 기본 질문 생성 Provider 계약
-    String generateBasicQuestions(String renderedPrompt);
-
-    // interview 추가: JSON-09 약점 보완 질문 생성 Provider 계약
-    String generateWeaknessQuestions(String renderedPrompt);
+    // 평가 명세 v2: JSON-12 기초 지식·자료 기반 질문 생성
+    String generateQuestionsV2(String renderedPrompt);
 
     String evaluateAnswer(String renderedPrompt);
-
-    String evaluateWeaknessAnswer(String renderedPrompt);
 
     QuestionGenerationResult generateQuestions(String prompt);
 

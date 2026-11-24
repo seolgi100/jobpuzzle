@@ -135,6 +135,9 @@ public class PreparedQuestionSetResponse {
             case BASIC -> "기본 질문";
             case COMPANY_FIT -> "회사 맞춤";
             case WEAKNESS_REVIEW -> "약점 보완";
+            case KNOWLEDGE -> "기초 지식";
+            case MATERIAL -> "자료 기반";
+            case PERSONALITY -> "인성";
         };
     }
 

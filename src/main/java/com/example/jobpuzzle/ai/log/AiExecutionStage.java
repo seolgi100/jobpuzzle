@@ -6,6 +6,9 @@ public enum AiExecutionStage {
     CANDIDATE_MATERIAL_ANALYSIS,
     CUSTOMIZED_SYNTHESIS,
     BASIC_QUESTION_GENERATION,
+    // 평가 명세 v2: 기초 지식·자료 기반 면접 질문 생성 (JSON-12)
+    QUESTION_GENERATION,
+    // v1 약점 보완 (기존 AI 호출 기록 조회용으로만 남김)
     WEAKNESS_QUESTION_GENERATION,
     ANSWER_EVALUATION,
     WEAKNESS_REEVALUATION,

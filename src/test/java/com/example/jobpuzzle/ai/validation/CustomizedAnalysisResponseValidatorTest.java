@@ -172,7 +172,8 @@ class CustomizedAnalysisResponseValidatorTest {
     }
 
     @Test
-    void preservesAnalysisAndDisablesQuestionSetWhenProviderOmitsQuestions() {
+    // v2: JSON-05는 질문을 만들지 않는다. 질문이 없어도 자료 기반 면접 가능 여부는 그대로 남는다.
+    void keepsInterviewAvailabilityWhenAnalysisHasNoQuestions() {
         CustomizedAnalysisGenerationResult result = CustomizedAnalysisGenerationResult.builder()
                 .readiness(CustomizedAnalysisGenerationResult.Readiness.builder()
                         .status(ReadinessResultStatus.SUFFICIENT)
@@ -189,9 +190,8 @@ class CustomizedAnalysisResponseValidatorTest {
                 new CustomizedAnalysisValidationContext(
                         posting(), candidate(), guide(GuideMatchType.EXACT), evidence()), result);
 
-        assertThat(normalized.getReadiness().isCanGenerateQuestions()).isFalse();
-        assertThat(normalized.getReadiness().getLimitations())
-                .contains("질문 생성 결과에서 사용할 수 있는 근거 기반 질문을 확인하지 못했습니다.");
+        assertThat(normalized.getReadiness().isCanGenerateQuestions()).isTrue();
+        assertThat(normalized.getReadiness().getLimitations()).isEmpty();
         assertThat(normalized.getQuestions()).isEmpty();
     }
 

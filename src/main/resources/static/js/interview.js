@@ -21,8 +21,6 @@
 
   var state = {
     step: 'mode', mode: null,
-    selectedWeaknessTag: null,
-    weaknessTags: [],
 
     // 자료 선택 단계
     docsLoaded: false,
@@ -60,8 +58,7 @@
     } else if (home) {
       home.hide();
     }
-    if (state.step === 'weaknessPick') root.innerHTML = renderWeaknessPick();
-    else if (state.step === 'materialSelect') root.innerHTML = renderMaterialSelect();
+    if (state.step === 'materialSelect') root.innerHTML = renderMaterialSelect();
     bindStepEvents();
   }
 
@@ -70,97 +67,10 @@
     render();
   }
 
-  function openWeakness() {
-    DF.api('/interview-weakness-tags/details').then(function (tags) {
-      state.weaknessTags = tags || [];
-      state.selectedWeaknessTag = null;
-      state.step = 'weaknessPick';
-      render();
-      window.scrollTo(0, 0);
-    }).catch(function (e) { notify('error', e.message); });
-  }
-
   function openCustom() {
     state.mode = 'custom';
     enterMaterialSelect();
     window.scrollTo(0, 0);
-  }
-
-  // ---- step: weakness pick ----
-  function renderWeaknessPick() {
-    function historyDate(value) {
-      if (!value) return '';
-      var date = new Date(value);
-      return String(date.getMonth() + 1).padStart(2, '0') + '.' + String(date.getDate()).padStart(2, '0');
-    }
-    function diagnosticChips(values) {
-      if (!values || !values.length) return '';
-      return '<p class="wk-diag"><span>세부 진단</span>' + values.map(function (value) {
-        return '<i>' + esc(value) + '</i>';
-      }).join('') + '</p>';
-    }
-    function historyLink(sessionId, label) {
-      if (!sessionId) return '';
-      return '<a class="fl-link" href="' + window.JobPuzzleRoutes.path('/interview-results?sessionId=' +
-        encodeURIComponent(sessionId)) + '">' + esc(label || '결과 보기') + '</a>';
-    }
-    function summary(date, mode, score, stateClass, stateText) {
-      return '<div class="wk-sum"><b>' + esc(date) + '</b><span>' + esc(mode) + '</span>' +
-        (score == null ? '' : '<strong>' + esc(score) + '점</strong>') +
-        '<em class="wk-state ' + stateClass + '">' + stateText + '</em></div>';
-    }
-    function renderOccurrence(occurrence) {
-      var mode = { BASIC: '기본 면접', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완' }[occurrence.mode] || occurrence.mode || '';
-      var resolved = occurrence.status === 'RESOLVED';
-      var attempts = (occurrence.attempts || []).map(function (attempt) {
-        var ok = attempt.status === 'RESOLVED';
-        return '<div class="wk-att">' + summary(historyDate(attempt.occurredAt), '약점 보완', attempt.score,
-          ok ? 'is-ok' : 'is-open', ok ? '해결' : '미해결') +
-          diagnosticChips(attempt.diagnostics) +
-          historyLink(attempt.sessionId, attempt.resultLabel || '약점 보완 리포트 보기') + '</div>';
-      }).join('');
-      return '<article class="wk-occ">' + summary(historyDate(occurrence.occurredAt), mode, occurrence.score,
-        resolved ? 'is-ok' : 'is-open', resolved ? '해결' : (occurrence.attempts || []).length ? '보완 중' : '보완 전') +
-        diagnosticChips(occurrence.diagnostics) +
-        historyLink(occurrence.sessionId, occurrence.resultLabel || '맞춤 면접 리포트 보기') + attempts + '</article>';
-    }
-
-    var rows = state.weaknessTags.map(function (item) {
-      var tag = typeof item === 'string' ? item : item.tag;
-      var displayName = typeof item === 'string' ? item : item.displayName;
-      var description = typeof item === 'string'
-        ? '이전 평가에서 확인된 관점을 집중해서 보완해요.'
-        : item.description;
-      var occurrences = typeof item === 'string' ? [] : (item.recentOccurrences || []);
-      var count = item.unresolvedCount || item.occurrenceCount || occurrences.length || 1;
-      var expanded = state.selectedWeaknessTag === tag;
-      var id = 'wk-' + String(tag).replace(/[^a-zA-Z0-9_-]/g, '');
-      var open = occurrences.filter(function (o) { return o.status !== 'RESOLVED'; });
-      var done = occurrences.filter(function (o) { return o.status === 'RESOLVED'; });
-      var body = '';
-      if (expanded) {
-        body = '<div class="wk-body" id="' + id + '">' +
-          (occurrences.length
-            ? (open.length ? '<section class="wk-group"><h3>보완이 필요한 면접 <b>' + open.length + '</b></h3>' + open.map(renderOccurrence).join('') + '</section>' : '') +
-              (done.length ? '<section class="wk-group"><h3>최근 해결한 기록 <b>' + done.length + '</b></h3>' + done.map(renderOccurrence).join('') + '</section>' : '')
-            : '<p class="wk-empty">아직 보완 기록이 없어요.</p>') +
-          '<div class="wk-actions"><button type="button" class="fl-btn fl-btn--navy" data-generate-weakness="' + esc(tag) + '">' +
-          '이 약점으로 질문 만들기</button></div></div>';
-      }
-      return '<li class="wk' + (expanded ? ' is-open' : '') + '">' +
-        '<button type="button" class="wk-toggle" aria-expanded="' + expanded + '" aria-controls="' + id + '" data-weak-tag="' + esc(tag) + '">' +
-        '<span class="wk-name">#' + esc(displayName) + '</span>' +
-        '<span class="wk-desc">' + esc(description) + '</span>' +
-        '<span class="wk-count">보완 필요 ' + esc(count) + '건</span></button>' + body + '</li>';
-    }).join('');
-
-    return '<section class="fl-panel" aria-labelledby="fl-title">' +
-      backBtn('backToMode', '면접 준비로 돌아가기') +
-      '<h1 class="fl-title" id="fl-title">보완할 약점을 골라주세요</h1>' +
-      '<p class="fl-sub">약점을 누르면 보완 기록을 볼 수 있어요. 질문은 기록 아래 버튼으로 만들어요.</p>' +
-      (rows ? '<ul class="wk-list">' + rows + '</ul>'
-        : '<p class="wk-empty">보완할 약점이 아직 없어요. 면접을 한 번 마치면 답변에서 찾은 약점이 여기에 생겨요.</p>') +
-      '</section>';
   }
 
   function backBtn(action, label) {
@@ -263,8 +173,8 @@
   function ticketLineHtml() {
     var t = state.tickets;
     if (!t) return '';
-    var short = t.balance < t.costs.companyFit;
-    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.companyFit + '장</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
+    var short = t.balance < t.costs.analysis;
+    return '<p class="ms-ticket">맞춤 분석에 티켓 <b>' + t.costs.analysis + '장</b>이 들어요 · 지금 <b>' + t.balance + '장</b>' +
       (short ? ' · 모자라요. <a class="fl-link" href="' + window.JobPuzzleRoutes.path('/tickets') + '">충전하기</a>' : '') + '</p>';
   }
 
@@ -402,7 +312,7 @@
     if (!box || !action) return;
     DF.api('/tickets/me').then(function (tickets) {
       if (!document.getElementById('material-review-ticket')) return;
-      var cost = tickets.costs.companyFit;
+      var cost = tickets.costs.analysis;
       var short = cost - tickets.balance;
       box.innerHTML = '<p class="tk-title">' + (short > 0 ? '티켓이 ' + short + '장 부족해요' : '분석에 티켓 ' + cost + '장을 사용해요') + '</p>' +
         (short > 0 ? '' : '<p class="tk-what">분석이 실패하면 티켓은 돌려드려요.</p>') +
@@ -572,30 +482,6 @@
   // ---- step: connection result (더미 - JSON-01/02/05 연동 전까지 유지) ----
   // ---- events ----
   function bindStepEvents() {
-    document.querySelectorAll('[data-weak-tag]').forEach(function (el) {
-      el.addEventListener('click', function () {
-        var tag = el.dataset.weakTag;
-        state.selectedWeaknessTag = state.selectedWeaknessTag === tag ? null : tag;
-        render();
-        var again = document.querySelector('[data-weak-tag="' + (window.CSS && CSS.escape ? CSS.escape(tag) : tag) + '"]');
-        if (again) again.focus();
-      });
-    });
-
-    document.querySelectorAll('[data-generate-weakness]').forEach(function (button) {
-      button.addEventListener('click', function (event) {
-        event.stopPropagation();
-        state.selectedWeaknessTag = button.dataset.generateWeakness;
-        var tag = state.selectedWeaknessTag;
-        window.TicketConfirm.open({
-          usage: 'WEAKNESS_REVIEW',
-          what: '고른 약점을 집중해서 확인하는 질문을 만들어요.',
-          confirmLabel: '질문 만들기',
-          onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startWeakness(tag); }
-        });
-      });
-    });
-
     bindAction('backToMode', function () { state.step = 'mode'; render(); });
     bindAction('historyBack', function () { window.history.back(); });
     bindAction('retryMaterials', reloadMaterials);
@@ -655,5 +541,5 @@
     if (params.get('analysisCaseId') || params.get('resumeSessionId')) return;
     render();
   });
-  window.InterviewPage = { showModes: showModeStep, openWeakness: openWeakness, openCustom: openCustom };
+  window.InterviewPage = { showModes: showModeStep, openCustom: openCustom };
 })();

@@ -26,6 +26,7 @@ public interface ActionPlanRepository extends JpaRepository<ActionPlan, Long> {
             join fetch snapshot.jobCategory jobCategory
             join fetch actionPlan.matchAnalysisResult matchResult
             where snapshot.user.userId = :userId
+              and analysisCase.hiddenAt is null
               and (:status is null or actionPlan.status = :status)
               and (:analysisCaseId is null or analysisCase.analysisCaseId = :analysisCaseId)
             order by actionPlan.actionPlanId desc
@@ -45,6 +46,7 @@ public interface ActionPlanRepository extends JpaRepository<ActionPlan, Long> {
             join fetch snapshot.jobCategory jobCategory
             join fetch actionPlan.matchAnalysisResult matchResult
             where snapshot.user.userId = :userId
+              and analysisCase.hiddenAt is null
               and actionPlan.deadline between :from and :to
             order by actionPlan.deadline asc, actionPlan.actionPlanId asc
             """)

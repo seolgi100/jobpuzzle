@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>역량·인성 질문 관리 — JobPuzzle 관리자</title>
+<link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
+<link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
+<link rel="stylesheet" href="/css/app-theme.css" th:href="@{/css/app-theme.css}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="/css/ds/header.css" th:href="@{/css/ds/header.css}">
+<link rel="stylesheet" href="/css/ds/theme-bridge.css" th:href="@{/css/ds/theme-bridge.css}">
+<link rel="stylesheet" href="/css/admin.css" th:href="@{/css/admin.css}">
+</head>
+<body class="jp-app-theme jp-admin-page">
+
+<div th:replace="~{fragments/header :: appHeader('admin')}"></div>
+
+<div class="app-shell">
+  <div class="app-container">
+
+    <h1 class="page-title">역량·인성 질문 관리</h1>
+    <p class="page-subtitle">직무별 역량 태그와 인성 면접 질문을 관리합니다. 직무는 경력 구분 없이 대분류·중분류 기준입니다.</p>
+
+    <div class="tabbar" style="margin-bottom:20px; flex-wrap:wrap;">
+      <a class="tabbar__btn" href="/jobpuzzle/admin/users" th:href="@{/admin/users}">회원 관리</a>
+      <a class="tabbar__btn" href="/jobpuzzle/admin/job-categories" th:href="@{/admin/job-categories}">직무 분류 관리</a>
+      <a class="tabbar__btn" href="/jobpuzzle/admin/guide-usage" th:href="@{/admin/guide-usage}">가이드 사용 이력</a>
+      <a class="tabbar__btn" href="/jobpuzzle/admin/ai-logs" th:href="@{/admin/ai-logs}">AI 오류 로그</a>
+      <a class="tabbar__btn" href="/jobpuzzle/admin/guides" th:href="@{/admin/guides}">가이드 관리</a>
+      <a class="tabbar__btn is-active" href="/jobpuzzle/admin/competency" th:href="@{/admin/competency}">역량·인성 질문</a>
+    </div>
+
+    <div style="max-width:420px; margin-bottom:20px;">
+      <label class="field-label" for="cp-job">직무</label>
+      <select class="select-input" id="cp-job" style="width:100%; box-sizing:border-box;"></select>
+    </div>
+
+    <p class="field-label--section">공통 역량 <span style="font-weight:400;">(모든 직무 공통, 수정 불가)</span></p>
+    <div class="chip-row" id="cp-common" style="margin-bottom:28px;"></div>
+
+    <!-- 직무별 역량 태그 -->
+    <div class="flex-row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <p class="field-label--section" style="margin:0;">직무별 역량 태그</p>
+      <button class="btn btn--primary" id="cp-tag-add">태그 추가</button>
+    </div>
+
+    <div class="card card--pad-lg" id="cp-tag-form" style="margin-bottom:12px;" hidden>
+      <p class="field-label--section" id="cp-tag-form-title">태그 추가</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr 2fr auto; gap:8px; align-items:end;">
+        <div>
+          <label class="field-label" for="cp-tag-code">코드</label>
+          <input class="text-input" id="cp-tag-code" placeholder="SYSTEM_DESIGN" style="width:100%; box-sizing:border-box;">
+        </div>
+        <div>
+          <label class="field-label" for="cp-tag-name">이름</label>
+          <input class="text-input" id="cp-tag-name" placeholder="구조화·설계" style="width:100%; box-sizing:border-box;">
+        </div>
+        <div>
+          <label class="field-label" for="cp-tag-desc">설명</label>
+          <input class="text-input" id="cp-tag-desc" placeholder="이 역량이 무엇인지 한 문장" style="width:100%; box-sizing:border-box;">
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn--primary" id="cp-tag-save">저장</button>
+          <button class="btn btn--ghost" id="cp-tag-cancel">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:32px;">
+      <div class="table-head" style="grid-template-columns:1fr 0.8fr 2.4fr 0.9fr;">
+        <span>코드</span><span>이름</span><span>설명</span><span>관리</span>
+      </div>
+      <div id="cp-tag-rows"></div>
+    </div>
+
+    <!-- 인성 질문 -->
+    <div class="flex-row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <p class="field-label--section" style="margin:0;">인성 질문 <span id="cp-question-count" style="font-weight:400;"></span></p>
+      <button class="btn btn--primary" id="cp-question-add">질문 추가</button>
+    </div>
+
+    <div class="card card--pad-lg" id="cp-question-form" style="margin-bottom:12px;" hidden>
+      <p class="field-label--section" id="cp-question-form-title">질문 추가</p>
+      <label class="field-label" for="cp-question-text">질문</label>
+      <textarea class="textarea-input" id="cp-question-text" rows="2" style="width:100%; box-sizing:border-box; margin-bottom:10px;"></textarea>
+      <label class="field-label" for="cp-question-intent">출제 의도</label>
+      <input class="text-input" id="cp-question-intent" style="width:100%; box-sizing:border-box; margin-bottom:10px;">
+      <p class="field-label">역량 태그 (1~2개)</p>
+      <div class="chip-row" id="cp-question-tags" style="margin-bottom:10px;"></div>
+      <div style="display:flex; gap:8px; align-items:end;">
+        <div>
+          <label class="field-label" for="cp-question-career">경력수준</label>
+          <select class="select-input" id="cp-question-career">
+            <option value="ANY">무관</option>
+            <option value="NEW">신입</option>
+            <option value="EXPERIENCED">경력</option>
+          </select>
+        </div>
+        <button class="btn btn--primary" id="cp-question-save">저장</button>
+        <button class="btn btn--ghost" id="cp-question-cancel">취소</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head" style="grid-template-columns:2.6fr 1.2fr 0.6fr 0.9fr;">
+        <span>질문 · 출제 의도</span><span>역량 태그</span><span>경력</span><span>관리</span>
+      </div>
+      <div id="cp-question-rows"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
+<script src="/js/common.js" th:src="@{/js/common.js}"></script>
+<script src="/js/header.js" th:src="@{/js/header.js}"></script>
+<script src="/js/admin-competency.js" th:src="@{/js/admin-competency.js}"></script>
+
+</body>
+</html>

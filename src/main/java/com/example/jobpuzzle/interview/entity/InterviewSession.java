@@ -119,6 +119,31 @@ public class InterviewSession extends BaseTimeEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // 평가 명세 v2 다회차: 이 회차를 만든 바로 앞 회차. 첫 회차는 null
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "previous_session_id")
+    private InterviewSession previousSession;
+
+    // 회차 번호. 예전 행은 null이라 getRoundNumber()로 읽는다
+    @Column(name = "round_no")
+    private Integer round;
+
+    public int getRoundNumber() {
+        return round == null ? 1 : round;
+    }
+
+    /**
+     * 끝난 면접의 다음 회차. 같은 분석 결과를 그대로 쓰고, 질문은 이전 회차와 같은 묶음(다시 진행)이거나
+     * 새로 만든 묶음(질문 다시 생성)이다.
+     */
+    public static InterviewSession nextRound(InterviewSession previous, QuestionSet questionSet) {
+        InterviewSession session = create(questionSet, previous.jobPostingAnalysis, previous.candidateAnalysis);
+        session.snapshot = previous.snapshot;
+        session.previousSession = previous;
+        session.round = previous.getRoundNumber() + 1;
+        return session;
+    }
+
     /**
      * BASIC·WEAKNESS_REVIEW와 기존 호출부에서 사용하는 생성 메서드.
      * COMPANY_FIT 분석 Entity 연결은 전체 충돌 해결 후 서비스에서 추가한다.
@@ -163,6 +188,7 @@ public class InterviewSession extends BaseTimeEntity {
 
         session.status = InterviewSessionStatus.CREATED;
         session.lastActivityAt = LocalDateTime.now();
+        session.round = 1;
 
         return session;
     }

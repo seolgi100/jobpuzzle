@@ -7,6 +7,7 @@ import com.example.jobpuzzle.analysis.dto.AnalysisCaseSourceAddRequest;
 import com.example.jobpuzzle.analysis.dto.AnalysisCaseSourceResponse;
 import com.example.jobpuzzle.analysis.dto.AnalysisInputSnapshotResponse;
 import com.example.jobpuzzle.analysis.service.AnalysisCaseService;
+import com.example.jobpuzzle.simulation.SimulationService;
 import com.example.jobpuzzle.analysis.rag.service.AnalysisVectorIndexService;
 import com.example.jobpuzzle.global.common.ApiResponse;
 import com.example.jobpuzzle.user.entity.User;
@@ -29,6 +30,7 @@ public class AnalysisCaseController {
 
     private final AnalysisCaseService analysisCaseService;
     private final AnalysisVectorIndexService vectorIndexService;
+    private final SimulationService simulationService;
 
     // 면접 준비 화면의 공고별 묶음용 전체 목록 (DRAFT 제외)
     @GetMapping("/analysis-cases")
@@ -131,8 +133,19 @@ public class AnalysisCaseController {
 
     @PostMapping("/analysis-cases/{analysisCaseId}/index")
     public ResponseEntity<ApiResponse<Void>> index(@PathVariable Long analysisCaseId, @AuthenticationPrincipal(expression = "user") User user) {
-        vectorIndexService.index(user.getUserId(), analysisCaseId);
+        // 시뮬레이션 계정이 저장된 결과를 다시 쓸 때는 색인(외부 embedding 호출)도 필요 없다
+        if (simulationService.reusableCase(user.getUserId(), analysisCaseId).isEmpty()) {
+            vectorIndexService.index(user.getUserId(), analysisCaseId);
+        }
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 분석 삭제 (시뮬레이션 계정만): 목록에서만 숨기고 결과는 DB에 남긴다
+    // DELETE /jobpuzzle/analysis-cases/{analysisCaseId}
+    @DeleteMapping("/analysis-cases/{analysisCaseId}")
+    public ResponseEntity<Void> hideCase(@PathVariable Long analysisCaseId, @AuthenticationPrincipal(expression = "user") User user) {
+        simulationService.hide(user.getUserId(), analysisCaseId);
+        return ResponseEntity.noContent().build();
     }
 
     // 확정된 분석 입력 스냅샷 읽기 전용 조회

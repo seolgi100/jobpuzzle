@@ -10,7 +10,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-final class EvaluationFailureDiagnostics {
+// v2 질문 생성(QuestionGenerationV2Service)도 같은 실패 기록 형식을 쓴다.
+public final class EvaluationFailureDiagnostics {
 
     private static final int MAX_FAILURE_DETAIL_LENGTH = 900;
     private static final int MAX_RESPONSE_PREVIEW_LENGTH = 500;
@@ -26,7 +27,7 @@ final class EvaluationFailureDiagnostics {
                 .toUpperCase(Locale.ROOT);
     }
 
-    static String rootCauseSummary(Throwable failure) {
+    public static String rootCauseSummary(Throwable failure) {
         Throwable root = failure;
         while (root.getCause() != null && root.getCause() != root) {
             root = root.getCause();
@@ -39,7 +40,7 @@ final class EvaluationFailureDiagnostics {
         return root.getClass().getSimpleName() + ": " + message;
     }
 
-    static String failureDetail(Throwable failure) {
+    public static String failureDetail(Throwable failure) {
         List<String> causes = new ArrayList<>();
         Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         Throwable current = failure;
@@ -58,7 +59,7 @@ final class EvaluationFailureDiagnostics {
         return limit(singleLine(rawResponse), MAX_RESPONSE_PREVIEW_LENGTH);
     }
 
-    static AiCallLogErrorType errorType(Throwable failure) {
+    public static AiCallLogErrorType errorType(Throwable failure) {
         Throwable current = failure;
         while (current != null) {
             if (current instanceof AiProcessingException processing) {

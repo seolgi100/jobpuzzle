@@ -44,14 +44,8 @@ public class CustomizedAnalysisResponseValidator {
     private void normalizeQuestionAvailability(
             CustomizedAnalysisGenerationResult.Readiness readiness,
             List<CustomizedAnalysisGenerationResult.Question> questions) {
-        if (questions != null && !questions.isEmpty()) return;
-        if (!readiness.isCanGenerateQuestions()) return;
-        readiness.setCanGenerateQuestions(false);
-        List<String> limitations = readiness.getLimitations() == null
-                ? new ArrayList<>() : new ArrayList<>(readiness.getLimitations());
-        String limitation = "질문 생성 결과에서 사용할 수 있는 근거 기반 질문을 확인하지 못했습니다.";
-        if (!limitations.contains(limitation)) limitations.add(limitation);
-        readiness.setLimitations(List.copyOf(limitations));
+        // v2: JSON-05는 질문을 만들지 않는다. 질문이 없어도 canGenerateQuestions(자료 기반 면접 가능 여부)는 그대로 둔다.
+        if (questions == null || questions.isEmpty()) return;
     }
 
     // JSON-01의 REQUIRED/PREFERRED 요구사항이 JSON-05에 정확히 한 번씩 대응되는지 확인한다.
@@ -197,7 +191,8 @@ public class CustomizedAnalysisResponseValidator {
             if (!questions.isEmpty()) fail("questions must be empty when generation is disabled");
             return;
         }
-        if (questions.isEmpty() || questions.size() > 10) fail("questions must contain 1 to 10 PASS items");
+        if (questions.isEmpty()) return; // v2 분석 결과는 질문이 없다
+        if (questions.size() > 10) fail("questions must contain 1 to 10 PASS items");
         Set<String> ids = new HashSet<>();
         List<SourceReference> allRefs = new ArrayList<>();
         inputs.values().forEach(value -> allRefs.addAll(value.sourceRefs()));

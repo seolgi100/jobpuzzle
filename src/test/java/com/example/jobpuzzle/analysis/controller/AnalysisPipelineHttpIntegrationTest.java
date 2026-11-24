@@ -26,6 +26,7 @@ import com.example.jobpuzzle.guide.repository.JobGuideDocumentRepository;
 import com.example.jobpuzzle.jobcategory.entity.JobCategory;
 import com.example.jobpuzzle.jobcategory.entity.JobCategoryCareerLevel;
 import com.example.jobpuzzle.jobcategory.repository.JobCategoryRepository;
+import com.example.jobpuzzle.ticket.service.TicketService;
 import com.example.jobpuzzle.user.entity.User;
 import com.example.jobpuzzle.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,7 @@ class AnalysisPipelineHttpIntegrationTest {
     @Autowired private PromptTemplateRepository promptTemplateRepository;
     @Autowired private JobGuideDocumentRepository guideDocumentRepository;
     @Autowired private JobGuideChunkRepository guideChunkRepository;
+    @Autowired private TicketService ticketService;
 
     @Test
     void runsThePipelineAndExposesCompletedStatusAndResultOverHttp() throws Exception {
@@ -101,26 +103,25 @@ class AnalysisPipelineHttpIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.analysisCaseStatus").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.questionSetAvailable").value(true));
+                .andExpect(jsonPath("$.data.canGenerateQuestions").value(true))
+                // v2: 분석은 질문 세트를 만들지 않는다. 자료 기반 질문은 면접 생성 때 만든다.
+                .andExpect(jsonPath("$.data.questionSetAvailable").value(false));
 
         mockMvc.perform(get("/analysis/cases/{caseId}/result", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.questionSet.questions").isNotEmpty());
+                .andExpect(jsonPath("$.data.readiness.canGenerateQuestions").value(true))
+                .andExpect(jsonPath("$.data.questionSet.questions").isEmpty());
 
-        // 세션 모듈은 Repository가 아닌 이 handoff API만으로 PASS 질문 세트를 받아야 한다.
         mockMvc.perform(get("/analysis/cases/{caseId}/question-set", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.mode").value("COMPANY_FIT"))
                 .andExpect(jsonPath("$.data.canGenerateQuestions").value(true))
-                .andExpect(jsonPath("$.data.questionSetId").isNumber())
-                .andExpect(jsonPath("$.data.questions").isNotEmpty())
-                .andExpect(jsonPath("$.data.questions[0].questionId").isNumber())
-                .andExpect(jsonPath("$.data.questions[0].displayOrder").value(0));
+                .andExpect(jsonPath("$.data.questionSetId").doesNotExist())
+                .andExpect(jsonPath("$.data.questions").isEmpty());
     }
 
     @Test
@@ -151,13 +152,14 @@ class AnalysisPipelineHttpIntegrationTest {
         JobCategory category = jobCategoryRepository.save(JobCategory.builder()
                 .mainCategory("HTTP").subCategory("BACKEND-" + suffix).careerLevel(JobCategoryCareerLevel.NEW).build());
         User user = userRepository.save(User.createLocalUser("http-" + suffix, "encoded", suffix + "@example.test", "HTTP", category));
+        ticketService.charge(user.getUserId(), 10, "test-" + suffix);
         AnalysisCase analysisCase = analysisCaseRepository.save(AnalysisCase.builder().user(user).jobCategory(category).build());
         saveSource(user, analysisCase, UserDocumentType.JOB_POSTING, "Java와 Spring Boot 기반 백엔드 개발자를 찾습니다.");
         saveSource(user, analysisCase, UserDocumentType.RESUME, "Java와 Spring Boot로 REST API를 구현한 백엔드 개발 경험이 있습니다.");
         if (withGuide) saveActiveCategoryGuide(user, category, suffix);
-        savePrompt("PT-JOB-" + suffix, "JSON-01", "prompts/json-01-v1.3.txt");
-        savePrompt("PT-CAND-" + suffix, "JSON-02", "prompts/json-02-v1.6.txt");
-        savePrompt("PT-SYN-" + suffix, "JSON-05", "prompts/json-05-v1.10.txt");
+        savePrompt("PT-JOB-" + suffix, "JSON-01", "prompts/json-01-v1.3.txt", "v1.0");
+        savePrompt("PT-CAND-" + suffix, "JSON-02", "prompts/json-02-v1.6.txt", "v1.0");
+        savePrompt("PT-SYN-" + suffix, "JSON-05", "prompts/json-05-v1.10.txt", "v1.10");
         return new Fixture(user, analysisCase);
     }
 
@@ -183,10 +185,10 @@ class AnalysisPipelineHttpIntegrationTest {
                 .content("Java와 Spring Boot 경험의 구체적 근거를 평가한다.").contentSummary("백엔드 평가 기준").build());
     }
 
-    private void savePrompt(String code, String targetJson, String resourcePath) throws IOException {
+    private void savePrompt(String code, String targetJson, String resourcePath, String version) throws IOException {
         String template = new ClassPathResource(resourcePath).getContentAsString(StandardCharsets.UTF_8);
         promptTemplateRepository.saveAndFlush(PromptTemplate.builder().promptCode(code).name(targetJson + " HTTP test")
-                .version("v1.0").targetJson(targetJson).templateText(template).forbiddenRules("JSON 이외의 응답 금지").isActive(true).build());
+                .version(version).targetJson(targetJson).templateText(template).forbiddenRules("JSON 이외의 응답 금지").isActive(true).build());
     }
 
     private RequestPostProcessor authenticated(User user) {

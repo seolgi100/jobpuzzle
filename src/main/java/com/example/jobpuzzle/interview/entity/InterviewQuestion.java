@@ -78,6 +78,22 @@ public class InterviewQuestion extends BaseTimeEntity {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
+    // 평가 명세 4-2: 질문이 확인하는 역량 태그 코드 1~2개. v1 질문은 null
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "competency_tags", columnDefinition = "json")
+    private List<String> competencyTags;
+
+    /** 평가 명세 v2 질문 (기초 지식·자료 기반·인성). 태그 검증은 만드는 쪽에서 끝낸 뒤 넘긴다. */
+    public static InterviewQuestion v2(QuestionSet questionSet, String questionKey, InterviewQuestionType questionType,
+                                       String questionText, String intent, List<String> competencyTags,
+                                       String relatedRequirementId, int displayOrder) {
+        InterviewQuestion question = create(questionSet, questionKey, questionType, questionText, intent,
+                List.of(), null, displayOrder);
+        question.competencyTags = List.copyOf(competencyTags);
+        question.relatedRequirementId = relatedRequirementId;
+        return question;
+    }
+
     public static InterviewQuestion from(
             QuestionSet questionSet,
             MatchAnalysisResult relatedMatch,

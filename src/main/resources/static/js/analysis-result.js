@@ -58,13 +58,16 @@
     var sources = analysisCase && analysisCase.sources || [];
 
     // 면접 연결: 시작 가능 / 이미 연결된 면접(완료·진행 중) / 둘 다 아님
-    var canStart = questions.length > 0 && result.interviewStartAllowed === true;
-    var sid = result.linkedSessionId, completed = result.linkedSessionStatus === 'COMPLETED';
-    var cta = canStart ? ['맞춤 면접 시작', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))]
+    // v2 분석은 질문 세트 없이 끝나고, 면접 모드(기초 지식·자료 기반)를 골라 그때 질문을 만든다.
+    var v2 = !result.questionSet || result.questionSet.questionSetId == null;
+    var canStart = v2 || (questions.length > 0 && result.interviewStartAllowed === true);
+    var sid = v2 ? null : result.linkedSessionId, completed = result.linkedSessionStatus === 'COMPLETED';
+    var cta = canStart ? ['이 분석으로 면접 보기', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))]
       : sid ? (completed ? ['완료한 면접 결과 보기', route('/interview-results?sessionId=' + encodeURIComponent(sid))]
         : ['진행 중인 면접으로 돌아가기', route('/interview?resumeSessionId=' + encodeURIComponent(sid))])
         : ['면접 준비로 이동', route('/interview')];
-    var ctaSub = canStart ? '부족한 근거를 중심으로 만든 질문으로 바로 면접을 볼 수 있어요.'
+    var ctaSub = canStart ? (v2 ? '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있어요.'
+        : '부족한 근거를 중심으로 만든 질문으로 바로 면접을 볼 수 있어요.')
       : sid ? (completed ? '이 분석으로 본 면접 결과를 다시 확인할 수 있어요.' : '이 분석으로 진행 중인 면접이 있어요.')
         : '자료를 보완한 뒤 새 분석을 진행해 보세요.';
 
@@ -84,7 +87,8 @@
       '<div class="ar-kind"><div>필수 요구사항<b>' + req.length + '개 중 ' + req.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div>' +
       '<div>우대 요구사항<b>' + pref.length + '개 중 ' + pref.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div></div></section>' +
       '<section class="dcard ar-next"><h2 class="rs-h">분석을 연습으로 이어가요</h2><p class="rs-sub" style="margin-bottom:0">' + ctaSub + '</p>' +
-      '<div class="ar-next__row"><span>예상 면접 질문</span><b>' + questions.length + '개</b></div>' +
+      // v2 분석은 질문을 만들지 않는다(면접을 고를 때 만든다). v1 기록만 질문 수·목록을 보여 준다.
+      (v2 ? '' : '<div class="ar-next__row"><span>예상 면접 질문</span><b>' + questions.length + '개</b></div>') +
       '<div class="ar-next__row"><span>보완 과제</span><b>' + plans.length + '개</b></div>' +
       '<a href="' + cta[1] + '" class="dbtn dbtn--white" style="margin-top:16px">' + cta[0] + '</a></section></div>' +
       '<section class="ar-sec" aria-labelledby="req-title"><div class="ar-sec__head"><div><h2 id="req-title">요구사항 연결 분석<small>' + matches.length + '개</small></h2>' +
@@ -92,13 +96,14 @@
       '<div class="chips" role="group" aria-label="연결 정도">' + [['ALL', '전체'], ['high', '충족'], ['part', '일부 충족'], ['none', '근거 부족']].map(function (c) {
         return '<button type="button" class="chip" data-lv="' + c[0] + '" aria-pressed="' + (filter === c[0]) + '">' + c[1] + '</button>';
       }).join('') + '</div></div><div data-reqs></div></section>' +
-      '<div class="dcols ar-sec" style="align-items:start"><section class="dcard" aria-labelledby="q-title"><h2 class="rs-h" id="q-title">예상 면접 질문</h2>' +
+      '<div class="' + (v2 ? 'ar-sec' : 'dcols ar-sec') + '" style="align-items:start">' + (v2 ? '' :
+      '<section class="dcard" aria-labelledby="q-title"><h2 class="rs-h" id="q-title">예상 면접 질문</h2>' +
       '<p class="rs-sub">분석 근거를 바탕으로 실제 면접에서 나올 가능성이 높은 질문이에요.</p>' +
       (questions.length ? questions.slice(0, QUESTION_PREVIEW).map(function (q, i) {
         return '<div class="aq"><span class="aq__n">' + (i + 1) + '</span><div><span class="mbadge mbadge--basic">' + (TYPE[q.questionType] || '일반') + '</span>' +
           '<p class="aq__q">' + esc(q.question) + '</p>' + (q.intent ? '<p class="aq__why"><b>확인하는 것</b> · ' + esc(q.intent) + '</p>' : '') + '</div></div>';
       }).join('') + (questions.length > QUESTION_PREVIEW ? '<p class="rs-sub" style="margin:8px 0 0">외 ' + (questions.length - QUESTION_PREVIEW) + '개 · 전체 질문은 면접에서 차례로 나와요.</p>' : '')
-        : '<p class="rs-sub">만들어진 질문이 없어요.</p>') + '</section>' +
+        : '<p class="rs-sub">만들어진 질문이 없어요.</p>') + '</section>') +
       '<section class="dcard" aria-labelledby="p-title"><h2 class="rs-h" id="p-title">보완 과제</h2><p class="rs-sub">마감일과 완료는 액션플랜에서 관리해요.</p>' +
       (plans.length ? plans.map(function (p) {
         var done = p.status === 'DONE';

@@ -1,5 +1,6 @@
 package com.example.jobpuzzle.evaluation.service;
 
+import com.example.jobpuzzle.evaluation.dto.SessionReportV2Response;
 import com.example.jobpuzzle.evaluation.dto.SessionScoreSummary;
 import com.example.jobpuzzle.evaluation.entity.AnswerEvaluation;
 import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
@@ -29,11 +30,15 @@ public class SessionScoreAggregationService {
     private final InterviewSessionQuestionRepository sessionQuestionRepository;
     private final AnswerEvaluationRepository answerEvaluationRepository;
     private final InterviewMessageRepository interviewMessageRepository;
+    private final SessionReportV2Service sessionReportV2Service;
 
     public SessionScoreSummary aggregate(Long userId, Long sessionId) {
         InterviewSession session = interviewSessionRepository
                 .findBySessionIdAndUser_UserIdAndDeletedAtIsNull(sessionId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_SESSION_NOT_FOUND));
+        if (session.getMode().isV2()) {
+            return v2Summary(session);
+        }
         List<InterviewSessionQuestion> questions =
                 sessionQuestionRepository.findBySession_SessionIdOrderByDisplayOrderAsc(sessionId);
 
@@ -84,6 +89,35 @@ public class SessionScoreAggregationService {
                 .skippedQuestionCount(skipped)
                 .completionRate(total == 0 ? 0 : (int) Math.round(submitted * 100.0 / total))
                 .questionScores(questionScores)
+                .build();
+    }
+
+    // v2 평가는 항목 점수가 1~5점이라 v1 평균으로는 100점이 나오지 않는다. 보고서와 같은 계산(ScoreCalculator)을 쓴다.
+    private SessionScoreSummary v2Summary(InterviewSession session) {
+        SessionReportV2Response report = sessionReportV2Service.build(session);
+        Map<String, Integer> categoryScores = new LinkedHashMap<>();
+        report.criteria().stream().filter(c -> c.score() != null).forEach(c -> categoryScores.put(c.code(), c.score()));
+        return SessionScoreSummary.builder()
+                .sessionId(session.getSessionId())
+                .mode(session.getMode())
+                .overallScore(report.totalScore())
+                .categoryScores(categoryScores)
+                .totalQuestionCount(report.tally().total())
+                .submittedQuestionCount(report.tally().answered())
+                .evaluatedQuestionCount(report.tally().evaluated())
+                .evaluationFailedQuestionCount((int) report.questions().stream()
+                        .filter(q -> "FAILED".equals(q.status())).count())
+                .skippedQuestionCount(report.tally().skipped())
+                .completionRate(report.tally().completionRate())
+                .questionScores(report.questions().stream().filter(q -> q.score() != null)
+                        .map(q -> SessionScoreSummary.QuestionScore.builder()
+                                .sessionQuestionId(q.sessionQuestionId())
+                                .dimensionScores(Map.of())
+                                .dimensionEvaluationCounts(Map.of())
+                                .finalScore(q.score())
+                                .weaknessTags(List.of())
+                                .build())
+                        .toList())
                 .build();
     }
 

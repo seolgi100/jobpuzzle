@@ -18,9 +18,9 @@ import java.util.List;
 @Getter
 @Entity
 @NoArgsConstructor
-@Table(name = "question_set", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_question_set_snapshot_mode", columnNames = {"snapshot_id", "mode"})
-})
+// v2는 같은 분석 결과로 같은 모드 면접을 여러 번 만들 수 있어 (snapshot_id, mode) 유일 조건을 뺐다.
+// 기존 DB는 db/manual/interview/evaluation-v2-question-set.sql로 맞춘다.
+@Table(name = "question_set")
 public class QuestionSet extends BaseTimeEntity {
 
     @Id
@@ -74,8 +74,9 @@ public class QuestionSet extends BaseTimeEntity {
     @Column(name = "status", nullable = false, length = 20)
     private QuestionSetStatus status;
 
+    // 인성 면접은 AI를 부르지 않아 null
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ai_call_log_id", nullable = false)
+    @JoinColumn(name = "ai_call_log_id")
     private AiCallLog aiCallLog;
 
     public static QuestionSet companyFit(AnalysisInputSnapshot snapshot, GuideContextResult guideContextResult,
@@ -121,6 +122,19 @@ public class QuestionSet extends BaseTimeEntity {
         questionSet.basisEvaluationIds = basisEvaluationIds == null ? List.of() : List.copyOf(basisEvaluationIds);
         questionSet.status = QuestionSetStatus.ACTIVE;
         questionSet.aiCallLog = aiCallLog;
+        return questionSet;
+    }
+
+    /**
+     * 평가 명세 v2 질문 묶음. 기초 지식·자료 기반은 사용자가 고른 분석 결과(snapshot)와 AI 호출 기록을,
+     * 인성은 둘 다 없이 회원 직무만 가진다.
+     */
+    public static QuestionSet v2(User user, InterviewSessionMode mode, JobCategory jobCategory,
+                                 AnalysisInputSnapshot snapshot, AiCallLog aiCallLog) {
+        QuestionSet questionSet = create(user, mode, jobCategory, jobCategory.getCareerLevel(), null,
+                aiCallLog == null ? QuestionSetGenerationSource.ADMIN_POOL : QuestionSetGenerationSource.AI,
+                aiCallLog == null ? null : aiCallLog.getPromptVersion(), null, null, List.of(), aiCallLog);
+        questionSet.snapshot = snapshot;
         return questionSet;
     }
 

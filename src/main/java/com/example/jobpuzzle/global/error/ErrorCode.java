@@ -109,12 +109,25 @@ public enum ErrorCode {
     WEAKNESS_NOT_AVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_011", "약점 보완에 사용할 미해결 약점이 없습니다."),
     ANSWER_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "INTERVIEW_012", "답변 기준 메시지를 찾을 수 없습니다."),
     ANSWER_SUBMISSION_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "INTERVIEW_013", "이 질문의 답변 제출 기회를 모두 사용했습니다."),
+    MATERIAL_INTERVIEW_UNAVAILABLE(HttpStatus.CONFLICT, "INTERVIEW_014", "이 분석 결과로는 자료 기반 면접을 만들 수 없습니다. 자료를 보완한 뒤 다시 분석해 주세요."),
+    PERSONALITY_JOB_REQUIRED(HttpStatus.CONFLICT, "INTERVIEW_015", "인성 면접은 회원 정보에서 직무를 먼저 설정해야 합니다."),
+    PERSONALITY_QUESTION_EMPTY(HttpStatus.CONFLICT, "INTERVIEW_016", "이 직무에 등록된 인성 질문이 없습니다."),
+    ROUND_NOT_ALLOWED(HttpStatus.CONFLICT, "INTERVIEW_017", "끝난 면접만 다시 진행할 수 있습니다."),
+    ROUND_ALREADY_EXISTS(HttpStatus.CONFLICT, "INTERVIEW_018", "이 면접은 이미 다음 회차가 있습니다. 가장 최근 회차에서 다시 진행해 주십시오."),
 
     // interview / report
     INTERVIEW_SESSION_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "REPORT_002", "완료되지 않은 세션은 최종 리포트를 생성할 수 없습니다."),
     FINAL_REPORT_NOT_GENERATABLE(HttpStatus.BAD_REQUEST, "REPORT_003", "평가에 성공한 답변이 없어 최종 리포트를 생성할 수 없습니다."),
     FINAL_REPORT_GENERATION_IN_PROGRESS(HttpStatus.CONFLICT, "REPORT_004", "최종 리포트를 생성하는 중입니다. 잠시 후 다시 시도해주세요."),
     FINAL_REPORT_GENERATION_FAILED(HttpStatus.BAD_GATEWAY, "REPORT_005", "최종 리포트 생성에 실패했습니다. 잠시 후 다시 시도해주세요."),
+
+    // competency tag / personality question
+    COMPETENCY_TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETENCY_001", "역량 태그를 찾을 수 없습니다."),
+    COMPETENCY_TAG_DUPLICATE(HttpStatus.CONFLICT, "COMPETENCY_002", "이 직무에 이미 같은 코드의 역량 태그가 있습니다."),
+    COMPETENCY_TAG_IN_USE(HttpStatus.CONFLICT, "COMPETENCY_003", "인성 질문에서 사용 중인 역량 태그는 삭제하거나 코드를 바꿀 수 없습니다."),
+    COMPETENCY_TAG_INVALID(HttpStatus.BAD_REQUEST, "COMPETENCY_004", "공통 역량이나 이 직무의 역량 태그만 1~2개 선택할 수 있습니다."),
+    COMPETENCY_JOB_NOT_FOUND(HttpStatus.BAD_REQUEST, "COMPETENCY_005", "등록되지 않은 대분류·중분류입니다."),
+    PERSONALITY_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETENCY_006", "인성 질문을 찾을 수 없습니다."),
 
     // ticket / payment
     TICKET_INSUFFICIENT(HttpStatus.PAYMENT_REQUIRED, "TICKET_001", "티켓이 부족합니다. 상단 메뉴의 티켓 충전에서 충전해 주세요."),

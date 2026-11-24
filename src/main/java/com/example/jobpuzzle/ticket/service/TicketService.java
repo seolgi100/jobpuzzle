@@ -42,8 +42,14 @@ public class TicketService {
     public int cost(TicketUsage usage) {
         return switch (usage) {
             case BASIC -> properties.getBasicCost();
-            case WEAKNESS_REVIEW -> properties.getWeaknessCost();
+            case WEAKNESS_REVIEW -> throw new IllegalArgumentException("약점 보완은 v2에서 없어졌습니다");
             case COMPANY_FIT -> properties.getCompanyFitCost();
+            case ANALYSIS -> properties.getAnalysisCost();
+            case KNOWLEDGE -> properties.getKnowledgeCost();
+            case MATERIAL -> properties.getMaterialCost();
+            case PERSONALITY -> properties.getPersonalityCost();
+            case SESSION_RETRY -> properties.getSessionRetryCost();
+            case QUESTION_REGENERATE -> properties.getQuestionRegenerateCost();
         };
     }
 
@@ -71,17 +77,12 @@ public class TicketService {
     public Long use(Long userId, TicketUsage usage, int cost) {
         return newTransaction.execute(status -> {
             TicketWallet wallet = lockWallet(userId);
-            boolean free = usage == TicketUsage.BASIC && !wallet.isFreeBasicUsed();
-            if (free) {
-                wallet.useFreeBasic();
-            } else {
-                if (wallet.getBalance() < cost) {
-                    throw insufficient(cost, wallet.getBalance());
-                }
-                wallet.subtract(cost);
+            if (wallet.getBalance() < cost) {
+                throw insufficient(cost, wallet.getBalance());
             }
-            return transactionRepository.save(TicketTransaction.use(
-                    userId, usage, free ? 0 : cost, wallet.getBalance(), free)).getTicketTransactionId();
+            wallet.subtract(cost);
+            return transactionRepository.save(TicketTransaction.use(userId, usage, cost, wallet.getBalance()))
+                    .getTicketTransactionId();
         });
     }
 
@@ -94,11 +95,7 @@ public class TicketService {
                 return;
             }
             TicketWallet wallet = lockWallet(used.getUserId());
-            if (used.isFreeUse()) {
-                wallet.restoreFreeBasic();
-            } else {
-                wallet.add(-used.getAmount());
-            }
+            wallet.add(-used.getAmount());
             transactionRepository.save(TicketTransaction.refund(used, wallet.getBalance()));
         });
     }

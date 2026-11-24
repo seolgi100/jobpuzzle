@@ -537,7 +537,8 @@ class CustomizedSynthesisStageExecutorTest {
     }
 
     @Test
-    void questionGenerationReadyResultWithoutQuestionSetIsRejected() {
+    void v2ResultWithoutQuestionSetIsTreatedAsCompleted() {
+        // v2: 분석은 질문 세트를 만들지 않으므로 canGenerateQuestions=true여도 세트가 없는 것이 정상이다.
         AiCallLog successLog = customizedSucceededLog(72L);
         ReadinessResult readiness = mock(ReadinessResult.class);
         when(readiness.getAiCallLog()).thenReturn(successLog);
@@ -547,7 +548,9 @@ class CustomizedSynthesisStageExecutorTest {
         when(matchRepository.findBySnapshot_SnapshotIdOrderByMatchIdAsc(SNAPSHOT_ID)).thenReturn(List.of());
         when(questionSetRepository.findBySnapshot_SnapshotIdAndInterviewMode(anyLong(), any())).thenReturn(Optional.empty());
 
-        assertIntegrityConflict();
+        executor.execute(SNAPSHOT_ID);
+
+        verify(aiClientService, never()).generateCustomizedAnalysis(any(GenerationClientSelection.class), anyString());
     }
 
     @Test
@@ -559,7 +562,8 @@ class CustomizedSynthesisStageExecutorTest {
         when(readinessRepository.existsBySnapshot_SnapshotId(SNAPSHOT_ID)).thenReturn(true);
         when(readinessRepository.findBySnapshot_SnapshotId(SNAPSHOT_ID)).thenReturn(Optional.of(readiness));
         when(matchRepository.findBySnapshot_SnapshotIdOrderByMatchIdAsc(SNAPSHOT_ID)).thenReturn(List.of());
-        when(questionSetRepository.existsBySnapshot_SnapshotIdAndInterviewMode(anyLong(), any())).thenReturn(true);
+        when(questionSetRepository.findBySnapshot_SnapshotIdAndInterviewMode(anyLong(), any()))
+                .thenReturn(Optional.of(mock(com.example.jobpuzzle.interview.entity.QuestionSet.class)));
 
         assertIntegrityConflict();
     }

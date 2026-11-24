@@ -24,14 +24,11 @@ public class AnalysisCaseResponse {
     // 면접 준비 화면의 공고별 묶음 기준: 이 분석에 고른 채용공고 자료
     private final Long postingDocumentId;
     private final String postingName;
-    // 목록 조회에서만 채움: 아직 면접에 쓰지 않은 맞춤 질문 세트가 있는지
-    private final Boolean questionSetAvailable;
 
     private AnalysisCaseResponse(
             Long analysisCaseId, Long jobCategoryId, String mainCategory, String subCategory,
             JobCategoryCareerLevel careerLevel, AnalysisCaseStatus status,
-            List<AnalysisCaseSourceResponse> sources, LocalDateTime createdAt,
-            Boolean questionSetAvailable
+            List<AnalysisCaseSourceResponse> sources, LocalDateTime createdAt
     ) {
         this.analysisCaseId = analysisCaseId;
         this.jobCategoryId = jobCategoryId;
@@ -47,16 +44,9 @@ public class AnalysisCaseResponse {
                 .orElse(null);
         this.postingDocumentId = posting == null ? null : posting.getDocumentId();
         this.postingName = posting == null ? null : posting.getDisplayName();
-        this.questionSetAvailable = questionSetAvailable;
     }
 
     public static AnalysisCaseResponse of(AnalysisCase analysisCase, List<AnalysisCaseSource> sources) {
-        return of(analysisCase, sources, null);
-    }
-
-    public static AnalysisCaseResponse of(
-            AnalysisCase analysisCase, List<AnalysisCaseSource> sources, Boolean questionSetAvailable
-    ) {
         var jobCategory = analysisCase.getJobCategory();
         return new AnalysisCaseResponse(
                 analysisCase.getAnalysisCaseId(),
@@ -66,8 +56,7 @@ public class AnalysisCaseResponse {
                 jobCategory.getCareerLevel(),
                 analysisCase.getStatus(),
                 sources.stream().map(AnalysisCaseSourceResponse::from).toList(),
-                analysisCase.getCreatedAt(),
-                questionSetAvailable
+                analysisCase.getCreatedAt()
         );
     }
 }

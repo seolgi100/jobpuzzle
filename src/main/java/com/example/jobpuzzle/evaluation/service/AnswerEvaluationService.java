@@ -3,7 +3,6 @@ package com.example.jobpuzzle.evaluation.service;
 import com.example.jobpuzzle.ai.log.*;
 import com.example.jobpuzzle.ai.dto.AnswerEvaluationResult;
 import com.example.jobpuzzle.ai.dto.AnswerDisposition;
-import com.example.jobpuzzle.ai.dto.WeaknessAnswerEvaluationResult;
 import com.example.jobpuzzle.ai.service.AiClientService;
 import com.example.jobpuzzle.ai.service.GenerationClientSelection;
 import com.example.jobpuzzle.ai.prompt.PromptTemplate;
@@ -13,7 +12,6 @@ import com.example.jobpuzzle.ai.validation.AiProcessingException;
 import com.example.jobpuzzle.evaluation.entity.*;
 import com.example.jobpuzzle.evaluation.repository.AnswerEvaluationRepository;
 import com.example.jobpuzzle.evaluation.repository.WeaknessTagLogRepository;
-import com.example.jobpuzzle.evaluation.repository.WeaknessRemediationAttemptRepository;
 import com.example.jobpuzzle.evaluation.repository.WeaknessTagStatusRepository;
 import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
@@ -44,7 +42,6 @@ public class AnswerEvaluationService {
     private final InterviewMessageRepository interviewMessageRepository;
     private final FollowUpQuestionRepository followUpQuestionRepository;
     private final WeaknessTagLogRepository weaknessTagLogRepository;
-    private final WeaknessRemediationAttemptRepository weaknessRemediationAttemptRepository;
     private final WeaknessTagStatusRepository weaknessTagStatusRepository;
     private final WeaknessTagNormalizer weaknessTagNormalizer;
     private final PromptTemplateRepository promptTemplateRepository;
@@ -52,20 +49,27 @@ public class AnswerEvaluationService {
     private final AiClientService aiClientService;
     private final ObjectMapper objectMapper;
     private final AiResponseProcessor aiResponseProcessor;
+    private final AnswerEvaluationV2Service answerEvaluationV2Service;
 
     public EvaluationOutcome evaluateAnswer(InterviewMessage answerMessage) {
         InterviewSessionQuestion sessionQuestion = answerMessage.getSessionQuestion();
         InterviewSession session = sessionQuestion.getSession();
         InterviewSessionMode mode = session.getMode();
+        if (mode.isV2()) {
+            return answerEvaluationV2Service.evaluate(answerMessage);
+        }
 
-        String targetJson = mode == InterviewSessionMode.WEAKNESS_REVIEW ? "JSON-10" : "JSON-06";
+        if (mode == InterviewSessionMode.WEAKNESS_REVIEW) {
+            // 약점 보완은 v2에서 없어졌다. 진행 중이던 예전 세션의 답변은 평가 실패로 남겨 점수에서 뺀다.
+            log.warn("weakness_review_evaluation_unsupported answerMessageId={}", answerMessage.getMessageId());
+            return new EvaluationOutcome(null, null, true, EvaluationFailureDiagnostics.newTraceId());
+        }
+        String targetJson = "JSON-06";
         PromptTemplate template = promptTemplateRepository
                 .findFirstByTargetJsonAndIsActiveTrueOrderByPromptTemplateIdDesc(targetJson)
                 .orElseThrow(() -> new CustomException(ErrorCode.AI_PROMPT_TEMPLATE_NOT_FOUND));
 
-        AiExecutionStage stage = mode == InterviewSessionMode.WEAKNESS_REVIEW
-                ? AiExecutionStage.WEAKNESS_REEVALUATION
-                : AiExecutionStage.ANSWER_EVALUATION;
+        AiExecutionStage stage = AiExecutionStage.ANSWER_EVALUATION;
         GenerationClientSelection selection = aiClientService.resolve(stage);
         AiCallLog callLog = AiCallLog.pending(
                 selection.provider(),
@@ -157,7 +161,7 @@ public class AnswerEvaluationService {
                 mode,
                 payload.score(),
                 payload.passThreshold(),
-                mode == InterviewSessionMode.WEAKNESS_REVIEW ? null : "답변 기준 충족도",
+                "답변 기준 충족도",
                 payload.details(),
                 session.getTargetWeaknessTag(),
                 session.getTargetDimension(),
@@ -168,7 +172,6 @@ public class AnswerEvaluationService {
                 callLog
         );
         answerEvaluationRepository.save(evaluation);
-        registerWeaknessRemediationAttempt(evaluation);
         registerWeaknessTags(evaluation);
 
         InterviewMessage followUpMessage = createFollowUpIfNeeded(
@@ -313,54 +316,6 @@ public class AnswerEvaluationService {
         }
     }
 
-    private void registerWeaknessRemediationAttempt(AnswerEvaluation evaluation) {
-        if (evaluation.getEvaluationMode() != InterviewSessionMode.WEAKNESS_REVIEW
-                || weaknessRemediationAttemptRepository
-                .existsByEvaluation_EvaluationId(evaluation.getEvaluationId())) {
-            return;
-        }
-        InterviewQuestion sourceQuestion = evaluation.getSessionQuestion().getQuestion();
-        if (sourceQuestion == null || sourceQuestion.getOriginEvaluation() == null) {
-            log.warn(
-                    "weakness_remediation_origin_missing evaluationId={} sessionQuestionId={}",
-                    evaluation.getEvaluationId(),
-                    evaluation.getSessionQuestion().getSessionQuestionId()
-            );
-            return;
-        }
-        String targetTag = evaluation.getTargetWeaknessTag();
-        WeaknessTagLog origin = weaknessRemediationAttemptRepository
-                .findByOriginTagLog_User_UserIdOrderByAttemptIdDesc(
-                        evaluation.getSessionQuestion().getSession().getUser().getUserId())
-                .stream()
-                .filter(attempt -> attempt.getEvaluation().getEvaluationId()
-                        .equals(sourceQuestion.getOriginEvaluation().getEvaluationId()))
-                .map(WeaknessRemediationAttempt::getOriginTagLog)
-                .findFirst()
-                .orElseGet(() -> weaknessTagLogRepository
-                .findByUser_UserIdOrderByTagLogIdDesc(
-                        evaluation.getSessionQuestion().getSession().getUser().getUserId())
-                .stream()
-                .filter(logEntry -> logEntry.getEvaluation() != null
-                        && logEntry.getEvaluation().getEvaluationId()
-                        .equals(sourceQuestion.getOriginEvaluation().getEvaluationId()))
-                .filter(logEntry -> weaknessTagNormalizer.sameDimension(logEntry.getTag(), targetTag))
-                .findFirst()
-                .orElse(null));
-        if (origin == null) {
-            log.warn(
-                    "weakness_remediation_tag_log_missing evaluationId={} originEvaluationId={} targetTag={}",
-                    evaluation.getEvaluationId(),
-                    sourceQuestion.getOriginEvaluation().getEvaluationId(),
-                    targetTag
-            );
-            return;
-        }
-        weaknessRemediationAttemptRepository.save(
-                WeaknessRemediationAttempt.create(origin, evaluation)
-        );
-    }
-
     private EvaluationPayload mockPayload(
             InterviewMessage answer,
             InterviewSessionQuestion question,
@@ -390,20 +345,7 @@ public class AnswerEvaluationService {
         if (mode == InterviewSessionMode.COMPANY_FIT) {
             return weaknessTags(question);
         }
-        if (mode != InterviewSessionMode.WEAKNESS_REVIEW) {
-            return List.of();
-        }
-        return switch (question.getSession().getTargetDimension()) {
-            case "intentMatch" -> List.of("질문 의도 파악 부족");
-            case "specificity" -> List.of("구체성 부족");
-            case "ownRole" -> List.of("역할 설명 부족");
-            case "problemSolving" -> List.of("문제 해결 과정 부족");
-            case "resultExpression" -> List.of("성과 근거 부족");
-            case "requirementConnection" -> List.of("요구사항 연결 부족");
-            case "guideAlignment" -> List.of("직무 기준 연결 부족");
-            case "deliveryClarity" -> List.of("답변 구조 부족");
-            default -> List.of("보완 근거 부족");
-        };
+        return List.of();
     }
 
     private Map<String, List<String>> mockWeaknessDiagnostics(
@@ -413,10 +355,6 @@ public class AnswerEvaluationService {
     ) {
         if (score >= PASS_THRESHOLD || mode == InterviewSessionMode.BASIC) {
             return Map.of();
-        }
-        if (mode == InterviewSessionMode.WEAKNESS_REVIEW) {
-            return Map.of(question.getSession().getTargetDimension(),
-                    mockWeaknessTags(question, mode, score));
         }
         return question.getEvaluationFocusSnapshot().stream()
                 .collect(java.util.stream.Collectors.toUnmodifiableMap(
@@ -444,31 +382,6 @@ public class AnswerEvaluationService {
         input.put("targetDimension", question.getSession().getTargetDimension());
         try {
             String prompt = template.getTemplateText() + "\n\n[INPUT]\n" + objectMapper.writeValueAsString(input);
-            if (mode == InterviewSessionMode.WEAKNESS_REVIEW) {
-                String rawResponse = aiClientService.evaluateWeaknessAnswer(selection, prompt);
-                WeaknessAnswerEvaluationResult value;
-                try {
-                    value = aiResponseProcessor.parseWeaknessAnswerEvaluation(rawResponse);
-                } catch (RuntimeException exception) {
-                    throw responseProcessingFailure(rawResponse, exception);
-                }
-                validateWeaknessResult(value, question, input.get("currentFollowUpDepth"));
-                Map<String, AnswerEvaluation.DimensionEvaluation> details = Map.of(
-                        value.getTargetDimension(),
-                        new AnswerEvaluation.DimensionEvaluation(value.getScore(), value.getComment())
-                );
-                return new EvaluationPayload(
-                    averageScore(details), PASS_THRESHOLD, details,
-                    normalizeWeaknessTags(value.getWeaknessTags()),
-                    weaknessDiagnostics(value.getTargetDimension(), value.getWeaknessTags(), value.getScore()),
-                    value.getComment(), List.of(),
-                    value.getFollowUp() == null ? null : value.getFollowUp().getQuestion(),
-                    value.getFollowUp() == null ? null : value.getFollowUp().getType(),
-                    value.getFollowUp() == null ? null : value.getFollowUp().getReason(),
-                    value.getScore() < 10 ? AnswerDisposition.RETRY_ANSWER
-                            : value.getScore() < PASS_THRESHOLD ? AnswerDisposition.FOLLOW_UP : AnswerDisposition.EVALUATE
-                );
-            }
             String rawResponse = aiClientService.evaluateAnswer(selection, prompt);
             AnswerEvaluationResult value;
             try {
@@ -577,29 +490,6 @@ public class AnswerEvaluationService {
         validateWeaknessDiagnostics(value.getWeaknessDiagnostics(), details, mode);
     }
 
-    private void validateWeaknessResult(
-            WeaknessAnswerEvaluationResult value,
-            InterviewSessionQuestion question,
-            Object expectedDepth
-    ) {
-        if (value == null
-                || !java.util.Objects.equals(
-                        value.getTargetWeaknessTag(),
-                        question.getSession().getTargetWeaknessTag())
-                || !java.util.Objects.equals(
-                        value.getTargetDimension(),
-                        question.getSession().getTargetDimension())
-                || value.getCurrentFollowUpDepth() != ((Number) expectedDepth).intValue()
-                || value.getPassThreshold() != PASS_THRESHOLD
-                || value.getScore() < 0
-                || value.getScore() > 100
-                || value.isPassed() != (value.getScore() >= PASS_THRESHOLD)) {
-            throw responseValidationFailure(
-                    "JSON-10 response does not match the evaluation contract"
-            );
-        }
-    }
-
     private void validateScores(
             Map<String, AnswerEvaluation.DimensionEvaluation> details
     ) {
@@ -649,13 +539,6 @@ public class AnswerEvaluationService {
             int score
     ) {
         Map<String, AnswerEvaluation.DimensionEvaluation> details = new LinkedHashMap<>();
-        if (mode == InterviewSessionMode.WEAKNESS_REVIEW) {
-            details.put(
-                    question.getSession().getTargetDimension(),
-                    new AnswerEvaluation.DimensionEvaluation(score, "선택 약점 관점 재평가")
-            );
-            return details;
-        }
         // 질문 생성 시 확정한 evaluationFocus만 평가한다. 질문이 요구하지 않은 관점을
         // 낮은 점수로 만드는 대신 집계 대상 자체에서 제외한다.
         for (InterviewQuestionEvaluationFocus focus : question.getEvaluationFocusSnapshot()) {
@@ -691,17 +574,6 @@ public class AnswerEvaluationService {
                 .distinct()
                 .limit(3)
                 .toList();
-    }
-
-    private Map<String, List<String>> weaknessDiagnostics(
-            String dimension,
-            List<String> diagnostics,
-            int score
-    ) {
-        List<String> normalized = normalizeWeaknessTags(diagnostics);
-        return score < PASS_THRESHOLD && !normalized.isEmpty()
-                ? Map.of(dimension, normalized)
-                : Map.of();
     }
 
     private Map<String, List<String>> normalizeWeaknessDiagnostics(

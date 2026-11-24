@@ -107,7 +107,8 @@ public class CompanyFitQuestionSetQueryService {
             QuestionSet questionSet
     ) {
         boolean questionSetExists = questionSet != null;
-        if (readiness.isCanGenerateQuestions() != questionSetExists) {
+        // v2 분석은 질문 세트가 없다. v1 질문 세트가 있을 때만 분석 결과와 맞는지 본다.
+        if (questionSetExists && !readiness.isCanGenerateQuestions()) {
             throw integrityConflict();
         }
         if (questionSetExists
@@ -125,7 +126,7 @@ public class CompanyFitQuestionSetQueryService {
             QuestionSet questionSet,
             List<InterviewQuestion> questions
     ) {
-        if (readiness.isCanGenerateQuestions()
+        if (questionSet != null
                 && (questions.isEmpty() || questions.size() > 10)) {
             throw integrityConflict();
         }

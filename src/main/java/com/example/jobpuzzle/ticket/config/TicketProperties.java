@@ -15,8 +15,14 @@ import java.util.List;
 public class TicketProperties {
 
     private int basicCost = 1;
-    private int weaknessCost = 1;
     private int companyFitCost = 3;
+    // v2: 분석, 면접 모드 3종, 종료된 면접 다시 진행(질문 유지·평가만 다시), 질문 다시 생성
+    private int analysisCost = 1;
+    private int knowledgeCost = 1;
+    private int materialCost = 3;
+    private int personalityCost = 1;
+    private int sessionRetryCost = 1;
+    private int questionRegenerateCost = 2;
     private List<Product> products = new ArrayList<>();
     private Toss toss = new Toss();
 

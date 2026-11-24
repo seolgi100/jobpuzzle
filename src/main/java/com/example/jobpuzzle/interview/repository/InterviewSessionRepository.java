@@ -18,6 +18,9 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
     );
     boolean existsByQuestionSet_QuestionSetId(Long questionSetId);
 
+    // 다회차: 이 면접을 앞 회차로 둔 다음 회차가 있는지 (취소된 다음 회차는 없는 것으로 본다)
+    boolean existsByPreviousSession_SessionIdAndStatusNot(Long previousSessionId, InterviewSessionStatus status);
+
     Optional<InterviewSession> findFirstByQuestionSet_QuestionSetIdOrderByCreatedAtDesc(
             Long questionSetId
     );

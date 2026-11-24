@@ -132,6 +132,7 @@ body.app ::selection { background: var(--iv-accent); color: var(--iv-text); }
 .ih-rec { margin: 4px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--iv-line); }
 .ih-rec[hidden] { display: none; }
 .ih-rec li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 16px; min-height: 52px; border-bottom: 1px solid var(--iv-line); font-size: 14px; }
+.ih-rec li:has([data-hide-case]) { grid-template-columns: minmax(0, 1fr) auto auto auto auto; }   /* 시뮬레이션 계정의 삭제 버튼 칸 */
 .ih-rec__what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .ih-rec__state, .ih-rec__when { font-size: 14px; color: var(--iv-text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ih-rec--open { border-top: 0; }
@@ -200,7 +201,7 @@ body.ih-modal-open { overflow: hidden; }
   .ih-quick__row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
   .ih-quick__row .ih-fare { grid-column: 1; grid-row: 2; }
   .ih-quick__row .ih-btn { grid-column: 2; grid-row: 1 / span 2; }
-  .ih-rec li { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 8px 0; }
+  .ih-rec li, .ih-rec li:has([data-hide-case]) { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 8px 0; }
   .ih-rec__when { grid-column: 1; }
   .tk-foot { flex-direction: column-reverse; }
   .tk-foot .ih-btn { width: 100%; }

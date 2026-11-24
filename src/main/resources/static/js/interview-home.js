@@ -48,10 +48,13 @@
     return value ? new Date(value).getTime() : 0;
   }
 
+  var MODE_LABEL = {
+    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
+    BASIC: '기본 질문', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완'
+  };
+
   function modeLabel(mode) {
-    if (mode === 'BASIC') return '기본 질문';
-    if (mode === 'COMPANY_FIT') return '맞춤 면접';
-    return '약점 보완';
+    return MODE_LABEL[mode] || '면접';
   }
 
   // ───────────────── 데이터 묶기 ─────────────────
@@ -82,8 +85,8 @@
   function describePosting(g) {
     var cases = g.cases.slice().sort(function (a, b) { return time(b.createdAt) - time(a.createdAt); });
     var latest = cases[0];
+    // v2: 분석 결과 하나로 기초 지식·자료 기반 면접을 몇 번이든 만들 수 있다
     var completedCase = cases.filter(function (c) { return c.status === 'COMPLETED'; })[0];
-    var readyCase = cases.filter(function (c) { return c.status === 'COMPLETED' && c.questionSetAvailable; })[0];
     var running = latest.status === 'ANALYZING' || latest.status === 'INPUT_CONFIRMED';
     var failed = latest.status === 'FAILED';
     var sessions = g.sessions.slice().sort(function (a, b) {
@@ -96,7 +99,7 @@
     // 조각 상태: done | next | wait | running | failed
     var steps = [
       completedCase ? 'done' : running ? 'running' : failed ? 'failed' : 'next',
-      sessions.length || (completedCase && !completedCase.questionSetAvailable) ? 'done' : readyCase ? 'next' : 'wait',
+      sessions.length ? 'done' : completedCase ? 'next' : 'wait',
       // 진행 중인 면접이 있으면 지금 회차 기준으로 보여준다(이전 회차 완료는 기록에 남는다)
       active ? 'next' : done || review ? 'done' : 'wait',
       active ? 'wait' : review ? 'next' : done ? 'done' : 'wait'
@@ -109,12 +112,10 @@
       action = { label: '중간 결과 확인', href: '/interview-results?sessionId=' + review.sessionId };
     } else if (running) {
       action = { label: '분석 상태 확인', href: '/analysis/' + latest.analysisCaseId };
-    } else if (readyCase) {
-      action = { label: '면접 시작', href: '/interview?analysisCaseId=' + readyCase.analysisCaseId };
-    } else if (failed && !completedCase) {
+    } else if (completedCase) {
+      action = { label: done ? '다른 면접 보기' : '면접 고르기', href: '/interview?analysisCaseId=' + completedCase.analysisCaseId };
+    } else if (failed) {
       action = { label: '멈춘 분석 확인', href: '/analysis/' + latest.analysisCaseId };
-    } else if (done) {
-      action = { label: '리포트 보기', href: '/interview-results?sessionId=' + done.sessionId };
     } else {
       action = { label: '분석 결과 보기', href: '/analysis-results/' + (completedCase || latest).analysisCaseId };
     }
@@ -124,7 +125,6 @@
     else if (review) status = '결과 확인 전';
     else if (running) status = '분석 중';
     else if (failed && !completedCase) status = '분석 멈춤';
-    else if (readyCase) status = '질문 준비됨';
     else if (done) status = '면접 완료';
     else status = '분석 완료';
 
@@ -190,7 +190,10 @@
         at: time(c.createdAt),
         html: '<li><span class="ih-rec__what">맞춤 분석</span><span class="ih-rec__state">' + label + '</span>' +
           '<span class="ih-rec__when">' + esc(day(c.createdAt)) + '</span>' +
-          '<a class="ih-link" href="' + R.path(href) + '">' + (c.status === 'COMPLETED' ? '분석 결과' : '상태 확인') + '</a></li>'
+          '<a class="ih-link" href="' + R.path(href) + '">' + (c.status === 'COMPLETED' ? '분석 결과' : '상태 확인') + '</a>' +
+          // 시뮬레이션 계정만: 화면에서만 지우고 결과는 남긴다 (같은 자료로 다시 분석하면 다시 나옴)
+          (data.user && data.user.simulation && c.status !== 'ANALYZING'
+            ? '<button type="button" class="ih-link" data-hide-case="' + c.analysisCaseId + '">삭제</button>' : '') + '</li>'
       });
     });
     rows.sort(function (a, b) { return b.at - a.at; });
@@ -207,8 +210,7 @@
   }
 
   function postingRow(p) {
-    var menu = recordsToggle(p.key, '기록 보기', 'ih-menu__item') +
-      (p.practiced && data.weakness.length ? '<button type="button" class="ih-menu__item" data-open-weakness>약점 연습</button>' : '');
+    var menu = recordsToggle(p.key, '기록 보기', 'ih-menu__item');
     return '<li class="ih-row' + (p.busy ? ' is-busy' : '') + '">' +
       '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(p.title) + '</h3>' +
       (p.meta ? '<p class="ih-row__meta">' + esc(p.meta) + '</p>' : '') + '</div>' +
@@ -248,8 +250,8 @@
   }
 
   // ───────────────── 시작하기: 공고 맞춤 + 빠른 연습 둘 ─────────────────
-  function fare(n, free) {
-    return '<span class="ih-fare">' + (free ? '첫 1회 무료' : '티켓 <b>' + esc(n) + '</b>장') + '</span>';
+  function fare(n) {
+    return '<span class="ih-fare">티켓 <b>' + esc(n) + '</b>장</span>';
   }
 
   function quickRow(opts) {
@@ -264,32 +266,24 @@
     var category = (data.categories || []).filter(function (c) {
       return String(c.jobCategoryId) === String(user.defaultJobCategoryId);
     })[0];
-    var tags = data.weakness || [];
     var fit = '<section class="ih-fit ih-box" aria-labelledby="ih-fit-title">' +
       '<h2 class="ih-fit__title" id="ih-fit-title">공고 맞춤 면접</h2>' +
       '<p class="ih-fit__desc">채용공고와 내 자료를 맞춰, 그 공고에서 나올 질문으로 연습해요.</p>' +
       '<div class="ih-fit__board">' + stepsHtml(['idle', 'idle', 'idle', 'idle'], true) +
       '<ol class="ih-fit__steps">' + STEPS.map(function (name) { return '<li>' + name + '</li>'; }).join('') + '</ol></div>' +
-      '<div class="ih-fit__foot">' + (t ? fare(t.costs.companyFit) : '') +
+      '<div class="ih-fit__foot">' + (t ? fare(t.costs.analysis) : '') +
       '<button type="button" class="ih-btn ih-btn--ink ih-btn--lg" data-new-posting>공고 고르기</button></div></section>';
-    var basic = quickRow({
-      title: '기본 질문',
+    var personality = quickRow({
+      title: '인성 면접',
       note: category ? [category.subCategory, CAREER[category.careerLevel]].filter(Boolean).join(' · ') : '희망 직무를 먼저 정해 주세요',
       disabled: !category,
-      fare: t ? fare(t.costs.basic, t.freeBasicAvailable) : '',
+      fare: t ? fare(t.costs.personality) : '',
       button: category
-        ? '<button type="button" class="ih-btn ih-btn--line" data-start-basic>시작</button>'
+        ? '<button type="button" class="ih-btn ih-btn--line" data-start-personality>시작</button>'
         : '<a class="ih-btn ih-btn--line" href="' + R.path('/settings') + '">직무 정하기</a>'
     });
-    var weak = quickRow({
-      title: '약점 보완',
-      note: tags.length ? '보완할 약점 ' + tags.length + '개' : '면접을 한 번 마치면 열려요',
-      disabled: !tags.length,
-      fare: t ? fare(t.costs.weakness) : '',
-      button: '<button type="button" class="ih-btn ih-btn--line" data-open-weakness' + (tags.length ? '' : ' disabled') + '>고르기</button>'
-    });
     return '<div class="ih-start">' + fit +
-      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + basic + weak + '</ul></div></div>';
+      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">공고 없이 연습</h2><ul>' + personality + '</ul></div></div>';
   }
 
   // ───────────────── 진행 중 / 전체 기록 ─────────────────
@@ -307,9 +301,7 @@
 
   function preparedRow(set) {
     return '<li class="ih-row">' +
-      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(set.mode === 'WEAKNESS_REVIEW'
-        ? '약점 보완 · #' + (set.targetWeaknessDisplayName || set.targetWeaknessTag || '')
-        : '기본 질문') + '</h3>' +
+      '<div class="ih-row__main"><h3 class="ih-row__title">' + esc(modeLabel(set.mode)) + '</h3>' +
       '<p class="ih-row__meta">' + esc(day(set.createdAt)) + ' 만듦 · 질문 ' + esc(set.questionCount) + '개</p></div>' +
       '<div class="ih-row__state"><span class="ih-row__status">시작 전</span></div>' +
       '<div class="ih-row__act"><button type="button" class="ih-btn ih-btn--line" data-open-set="' + esc(set.questionSetId) + '">면접 시작</button><span class="ih-menu-gap"></span></div></li>';
@@ -405,8 +397,6 @@
     if (!home) return Promise.resolve();
     renderLoading();
     var optional = function (p, fallback) { return p.catch(function () { return fallback; }); };
-    // 약점 상세는 점수 집계 때문에 느려서(수 초) 화면을 먼저 그리고 도착하면 채운다.
-    var weakness = optional(api('/interview-weakness-tags/details'), []);
     return Promise.all([
       api('/analysis-cases'),
       api('/interview-sessions/active-list'),
@@ -425,7 +415,6 @@
         cases: r[0] || [],
         sessions: sessions,
         prepared: r[4] || [],
-        weakness: [],
         tickets: r[5],
         user: r[6],
         categories: r[7] || []
@@ -434,11 +423,6 @@
       data.looseSessions = sessions.filter(function (s) { return !s.analysisCaseId; });
       render();
       loadScores();
-      weakness.then(function (tags) {
-        if (!tags || !tags.length) return;
-        data.weakness = tags;
-        render();
-      });
     }).catch(function (error) {
       renderError(error.message);
     });
@@ -476,16 +460,27 @@
         render();
       } else if (t.hasAttribute('data-retry')) {
         load();
+      } else if (t.hasAttribute('data-hide-case')) {
+        var caseId = t.getAttribute('data-hide-case');
+        Dialog.confirm({
+          title: '이 분석을 삭제하시겠습니까?',
+          body: '목록에서만 지웁니다. 같은 공고와 자료로 다시 분석하면 이 결과가 다시 나옵니다.',
+          confirmLabel: '삭제',
+          onConfirm: function () {
+            fetch(R.path('/analysis-cases/' + caseId), { method: 'DELETE', credentials: 'same-origin' })
+              .then(function (response) { if (!response.ok) throw new Error(); })
+              .then(load)
+              .catch(function () { renderError('분석을 삭제하지 못했습니다. 잠시 후 다시 시도해 주십시오.'); });
+          }
+        });
       } else if (t.hasAttribute('data-new-posting')) {
         if (window.InterviewPage) window.InterviewPage.openCustom();
-      } else if (t.hasAttribute('data-open-weakness')) {
-        if (window.InterviewPage) window.InterviewPage.openWeakness();
-      } else if (t.hasAttribute('data-start-basic')) {
+      } else if (t.hasAttribute('data-start-personality')) {
         TicketConfirm.open({
-          usage: 'BASIC',
-          what: '희망 직무의 공통 질문을 만들고 바로 면접을 시작해요. 원치 않는 질문은 면접 중에 건너뛸 수 있어요.',
-          confirmLabel: '질문 만들기',
-          onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startBasic(); }
+          usage: 'PERSONALITY',
+          what: '희망 직무의 인성 질문 중에서 골라 바로 면접을 시작해요. 원치 않는 질문은 면접 중에 건너뛸 수 있어요.',
+          confirmLabel: '질문 받기',
+          onConfirm: function () { if (window.InterviewLive) window.InterviewLive.startPersonality(); }
         });
       } else if (t.hasAttribute('data-open-set')) {
         if (window.InterviewLive) window.InterviewLive.openQuestionSet(t.getAttribute('data-open-set'));
@@ -573,33 +568,29 @@
 
   // ───────────────── 티켓 사용 확인 창 ─────────────────
   var TicketConfirm = (function () {
+    var COST_KEY = { ANALYSIS: 'analysis', KNOWLEDGE: 'knowledge', MATERIAL: 'material', PERSONALITY: 'personality' };
+
     function costFor(usage, tickets, explicit) {
       if (typeof explicit === 'number') return explicit;
-      if (usage === 'BASIC') return tickets.costs.basic;
-      if (usage === 'WEAKNESS_REVIEW') return tickets.costs.weakness;
-      return tickets.costs.companyFit;
+      return tickets.costs[COST_KEY[usage]];
     }
 
     function body(opts, tickets) {
       var cost = costFor(opts.usage, tickets, opts.cost);
       // shortage: 서버가 잔액 부족(402)을 돌려준 경우. 화면 잔액과 어긋나도 부족 상태로 보여준다.
-      var free = !opts.shortage && opts.usage === 'BASIC' && tickets.freeBasicAvailable;
       var short = opts.shortage ? Math.max(cost - tickets.balance, 1) : cost - tickets.balance;
-      var title = free ? '첫 기본 면접은 무료예요'
-        : opts.shortage ? '티켓이 부족해요'
+      var title = opts.shortage ? '티켓이 부족해요'
         : short > 0 ? '티켓이 ' + short + '장 부족해요'
           : '티켓 ' + cost + '장을 사용해요';
       var lines = '<p class="tk-what">' + esc(opts.what) + '</p>';
-      if (!free) {
-        lines += '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
-          '<div><dt>' + (short > 0 ? '필요' : '사용 후') + '</dt><dd>' +
-          (short > 0 ? cost + '장' : (tickets.balance - cost) + '장') + '</dd></div></dl>';
-      }
+      lines += '<dl class="tk-balance"><div><dt>지금</dt><dd>' + tickets.balance + '장</dd></div>' +
+        '<div><dt>' + (short > 0 ? '필요' : '사용 후') + '</dt><dd>' +
+        (short > 0 ? cost + '장' : (tickets.balance - cost) + '장') + '</dd></div></dl>';
       if (opts.note && short <= 0) lines += '<p class="tk-note">' + esc(opts.note) + '</p>';
-      var primary = short > 0 && !free
+      var primary = short > 0
         ? '<a class="ih-btn ih-btn--ink" href="' + R.path('/tickets') + '">티켓 충전하러 가기</a>'
         : '<button type="button" class="ih-btn ih-btn--ink" data-tk-confirm>' +
-          esc(free ? opts.confirmLabel || '시작하기' : cost + '장 쓰고 ' + (opts.confirmLabel || '시작하기')) + '</button>';
+          esc(cost + '장 쓰고 ' + (opts.confirmLabel || '시작하기')) + '</button>';
       return '<h2 class="tk-title" id="tk-title">' + esc(title) + '</h2>' + lines +
         '<div class="tk-foot"><button type="button" class="ih-btn ih-btn--ghost" data-tk-cancel>취소</button>' + primary + '</div>';
     }

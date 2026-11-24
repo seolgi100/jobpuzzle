@@ -21,7 +21,7 @@ public class AiClientService {
     private final AiClient anthropicClient;
     private final AiGenerationProperties properties;
 
-    // app.ai.generation.default-provider: mock 또는 anthropic. 코드 수정 없이 설정만으로 전환
+    // app.ai.generation.mode: stub 또는 live. 코드 수정 없이 설정만으로 전환
     public AiClientService(
             @Qualifier("mockAiClient") AiClient mockAiClient,
             @Qualifier("anthropicClient") AiClient anthropicClient,
@@ -123,25 +123,14 @@ public class AiClientService {
                 anthropic.getModel(), anthropic.getMaxOutputTokens().forStage(stage));
     }
 
-    // interview 추가: 호출자는 Mock/Anthropic 구현을 알지 않고 동일한 JSON 계약만 사용한다.
-    public String generateBasicQuestions(String renderedPrompt) {
-        GenerationClientSelection selection = resolve(AiExecutionStage.BASIC_QUESTION_GENERATION);
-        return selection.client().generateBasicQuestions(renderedPrompt);
-    }
-
-    public String generateWeaknessQuestions(String renderedPrompt) {
-        GenerationClientSelection selection = resolve(AiExecutionStage.WEAKNESS_QUESTION_GENERATION);
-        return selection.client().generateWeaknessQuestions(renderedPrompt);
+    public String generateQuestionsV2(GenerationClientSelection selection, String renderedPrompt) {
+        requireStage(selection, AiExecutionStage.QUESTION_GENERATION);
+        return selection.client().generateQuestionsV2(renderedPrompt);
     }
 
     public String evaluateAnswer(GenerationClientSelection selection, String renderedPrompt) {
         requireStage(selection, AiExecutionStage.ANSWER_EVALUATION);
         return selection.client().evaluateAnswer(renderedPrompt);
-    }
-
-    public String evaluateWeaknessAnswer(GenerationClientSelection selection, String renderedPrompt) {
-        requireStage(selection, AiExecutionStage.WEAKNESS_REEVALUATION);
-        return selection.client().evaluateWeaknessAnswer(renderedPrompt);
     }
 
     private void requireStage(GenerationClientSelection selection, AiExecutionStage expected) {

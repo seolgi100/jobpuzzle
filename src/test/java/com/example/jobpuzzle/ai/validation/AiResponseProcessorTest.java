@@ -266,51 +266,6 @@ class AiResponseProcessorTest {
                 .isEqualTo("약점과 보완 노력을 구체적으로 설명해 주세요.");
     }
 
-    @Test
-    void normalizesCommonJson10FollowUpShapeMistakes() {
-        String response = """
-                {
-                  "targetWeaknessTag":"기술 역량 보완",
-                  "targetDimension":"guideAlignment",
-                  "currentFollowUpDepth":0,
-                  "score":45,
-                  "passThreshold":70,
-                  "comment":"실제 적용 경험을 더 설명해야 합니다.",
-                  "passed":false,
-                  "followUp":["Spring Boot를 실제 프로젝트에 적용한 사례를 설명해 주세요."]
-                }
-                """;
-
-        var result = processor.parseWeaknessAnswerEvaluation(response);
-
-        assertThat(result.getFollowUp().getDepth()).isEqualTo(1);
-        assertThat(result.getFollowUp().getQuestion())
-                .isEqualTo("Spring Boot를 실제 프로젝트에 적용한 사례를 설명해 주세요.");
-        assertThat(result.getFollowUp().getType())
-                .isEqualTo(com.example.jobpuzzle.interview.entity.FollowUpQuestionType.IMPROVEMENT_PLAN);
-    }
-
-    @Test
-    void keepsWeaknessReviewDiagnosticKeywords() {
-        String response = """
-                {
-                  "targetWeaknessTag":"본인 역할 설명 부족",
-                  "targetDimension":"ownRole",
-                  "currentFollowUpDepth":1,
-                  "score":58,
-                  "passThreshold":70,
-                  "comment":"본인이 주도한 역할과 판단 근거가 부족합니다.",
-                  "weaknessTags":["역할 설명 부족", "주도성 부족"],
-                  "passed":false,
-                  "followUp":null
-                }
-                """;
-
-        var result = processor.parseWeaknessAnswerEvaluation(response);
-
-        assertThat(result.getWeaknessTags()).containsExactly("역할 설명 부족", "주도성 부족");
-    }
-
     private void assertFailure(org.assertj.core.api.ThrowableAssert.ThrowingCallable callable, AiCallLogErrorType expected) {
         assertThatThrownBy(callable).isInstanceOf(AiProcessingException.class)
                 .extracting(error -> ((AiProcessingException) error).getErrorType()).isEqualTo(expected);

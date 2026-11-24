@@ -85,9 +85,6 @@
     var todos = [], a = data.active[0];
     if (a) todos.push({ icon: 'play', title: '진행 중인 면접 마무리하기', desc: U.mode(a.mode)[0] + ' · 질문 ' + (a.questionCount || 0) + '개 중 ' + (a.completedQuestionCount || 0) + '개 답변 완료',
       cta: '<a href="' + route('/interview?resumeSessionId=' + a.sessionId) + '" class="dbtn dbtn--sky">이어서 진행하기</a>' });
-    if (data.open.length) todos.push({ icon: 'tag', title: '약점 태그 해결하기',
-      desc: data.open.slice(0, 2).map(function (t) { return '#' + (t.displayName || U.weakLabel(t.tag)); }).join(' · ') + ' 연습이 필요해요',
-      cta: '<a href="' + route('/interview?mode=weakness') + '" class="dbtn dbtn--line">약점 보완 연습하기</a>' });
     var left = data.plans.filter(pending).length;
     if (left) todos.push({ icon: 'list', title: '미완료 과제 처리하기', desc: left + '건의 과제가 남아있어요',
       cta: '<button type="button" class="dbtn dbtn--line" data-goto="tasks">과제 목록 보기</button>' });

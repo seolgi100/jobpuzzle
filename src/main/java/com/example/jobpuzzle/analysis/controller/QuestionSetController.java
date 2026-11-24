@@ -1,8 +1,9 @@
 package com.example.jobpuzzle.analysis.controller;
 
-import com.example.jobpuzzle.analysis.dto.BasicQuestionRequest;
+import com.example.jobpuzzle.analysis.dto.AnalysisQuestionRequest;
+import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
+import com.example.jobpuzzle.interview.service.QuestionGenerationV2Service;
 import com.example.jobpuzzle.analysis.dto.QuestionSetResponse;
-import com.example.jobpuzzle.analysis.dto.WeaknessQuestionRequest;
 import com.example.jobpuzzle.analysis.dto.PreparedQuestionSetResponse;
 import com.example.jobpuzzle.analysis.service.QuestionGenerationService;
 import com.example.jobpuzzle.global.common.ApiResponse;
@@ -25,30 +26,38 @@ import java.util.List;
 public class QuestionSetController {
 
     private final QuestionGenerationService questionGenerationService;
+    private final QuestionGenerationV2Service questionGenerationV2Service;
     private final TicketService ticketService;
 
-    @PostMapping("/basic")
-    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateBasic(
+    // 평가 명세 v2 1장: 기초 지식·자료 기반·인성 면접 질문 생성. AI가 최종 실패하면 spend가 티켓을 돌려준다.
+    @PostMapping("/knowledge")
+    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateKnowledge(
             @AuthenticationPrincipal(expression = "user") User user,
-            @Valid @RequestBody BasicQuestionRequest request
+            @Valid @RequestBody AnalysisQuestionRequest request
     ) {
-        // 첫 기본 면접은 무료, 이후 티켓 차감. 질문 생성에 실패하면 돌려준다.
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
-                ticketService.spend(user.getUserId(), TicketUsage.BASIC, ticketService.cost(TicketUsage.BASIC),
-                        () -> questionGenerationService.generateBasicQuestionSet(user.getUserId(), request))
-        ));
+        return created(ticketService.spend(user.getUserId(), TicketUsage.KNOWLEDGE, ticketService.cost(TicketUsage.KNOWLEDGE),
+                () -> questionGenerationV2Service.generate(user.getUserId(), InterviewSessionMode.KNOWLEDGE, request.analysisCaseId())));
     }
 
-    @PostMapping("/weakness")
-    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateWeakness(
+    @PostMapping("/material")
+    public ResponseEntity<ApiResponse<QuestionSetResponse>> generateMaterial(
             @AuthenticationPrincipal(expression = "user") User user,
-            @Valid @RequestBody WeaknessQuestionRequest request
+            @Valid @RequestBody AnalysisQuestionRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
-                ticketService.spend(user.getUserId(), TicketUsage.WEAKNESS_REVIEW,
-                        ticketService.cost(TicketUsage.WEAKNESS_REVIEW),
-                        () -> questionGenerationService.generateWeaknessQuestionSet(user.getUserId(), request))
-        ));
+        return created(ticketService.spend(user.getUserId(), TicketUsage.MATERIAL, ticketService.cost(TicketUsage.MATERIAL),
+                () -> questionGenerationV2Service.generate(user.getUserId(), InterviewSessionMode.MATERIAL, request.analysisCaseId())));
+    }
+
+    @PostMapping("/personality")
+    public ResponseEntity<ApiResponse<QuestionSetResponse>> generatePersonality(
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        return created(ticketService.spend(user.getUserId(), TicketUsage.PERSONALITY, ticketService.cost(TicketUsage.PERSONALITY),
+                () -> questionGenerationV2Service.generatePersonality(user.getUserId())));
+    }
+
+    private static ResponseEntity<ApiResponse<QuestionSetResponse>> created(QuestionSetResponse response) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @GetMapping("/{questionSetId}")

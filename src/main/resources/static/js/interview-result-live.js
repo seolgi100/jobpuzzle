@@ -153,8 +153,7 @@
         }).join('') + '</div>' : '') +
         (learn.length ? '<h2 class="rs-h" style="margin-top:' + (docKeys.length ? 22 : 0) + 'px">학습 방향</h2><ul class="learn" style="margin-top:8px">' + learn.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
         '</section>' : '') +
-      '<div class="rs-foot">' + (r.analysisCaseId ? '<a href="' + route('/analysis-results/' + encodeURIComponent(r.analysisCaseId)) + '" class="dbtn dbtn--line" style="height:40px">공고 요구사항 연결 분석 결과 보기</a>' : '') +
-      '<a href="' + route('/interview?mode=weakness') + '" class="dbtn dbtn--navy">약점 보완 연습하기</a></div>';
+      '<div class="rs-foot">' + (r.analysisCaseId ? '<a href="' + route('/analysis-results/' + encodeURIComponent(r.analysisCaseId)) + '" class="dbtn dbtn--line" style="height:40px">공고 요구사항 연결 분석 결과 보기</a>' : '') + '</div>';
     var panel = document.getElementById('p-final');
     panel.setAttribute('aria-busy', 'false');
     panel.innerHTML = html;
@@ -202,6 +201,9 @@
         : '<span class="rs-sub" style="align-self:center">점수가 나온 질문이 1개 이상 있어야 리포트를 확정할 수 있어요.</span>') + '</div>';
   }
 
+  // v2 면접(기초 지식·자료 기반·인성)은 새 보고서 화면에서 본다. 이 화면은 v1 기록용
+  var V2_MODES = ['KNOWLEDGE', 'MATERIAL', 'PERSONALITY'];
+
   function openRemaining() {
     var m = document.getElementById('remaining');
     document.getElementById('remaining-list').innerHTML = s.remaining.map(function (q, i) {
@@ -248,6 +250,16 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     if (!sessionId) { window.location.replace(route('/reports')); return; }
+    get('/interview-sessions/' + sessionId).then(function (info) {
+      if (V2_MODES.indexOf(info.mode) >= 0) {
+        window.location.replace(route('/interview-report?sessionId=' + encodeURIComponent(sessionId)));
+        return;
+      }
+      loadV1();
+    }).catch(function (err) { document.getElementById('result-meta').textContent = err.message; });
+  });
+
+  function loadV1() {
     Promise.all([
       get('/interview-sessions/' + sessionId), get('/interview-sessions/' + sessionId + '/score'),
       get('/interview-sessions/' + sessionId + '/questions'), get('/interview-sessions/' + sessionId + '/questions/remaining')
@@ -277,5 +289,5 @@
           notify('error', err.message);
         });
     }).catch(function (err) { document.getElementById('result-meta').textContent = err.message; });
-  });
+  }
 })();

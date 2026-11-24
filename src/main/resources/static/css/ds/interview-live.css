@@ -8,6 +8,11 @@
 }
 .lv :focus-visible { outline: 2px solid var(--iv-text); outline-offset: 2px; }
 
+/* 분석 결과로 볼 면접 고르기 (면접 준비 홈의 줄 모양을 그대로 씀) */
+.lv-choose { max-width: 860px; margin: 0 auto; display: grid; gap: 12px; justify-items: start; }
+.lv-choose .ih-box { width: 100%; }
+.lv-choose .lv-back { text-decoration: none; }
+
 /* 위: 나가기 · 모드 */
 .lv-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .lv-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--iv-text-2); cursor: pointer; }

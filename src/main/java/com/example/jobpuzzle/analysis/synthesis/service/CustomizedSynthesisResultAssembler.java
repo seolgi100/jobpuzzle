@@ -189,7 +189,8 @@ public class CustomizedSynthesisResultAssembler {
             Map<String, CustomizedSynthesisEvidenceCatalog.EvidenceItem> evidence,
             Map<String, CustomizedAnalysisGenerationResult.RequirementMatch> matches) {
         List<CustomizedSynthesisProviderResult.Question> source = generated == null ? List.of() : generated;
-        if (!readiness.isCanGenerateQuestions()) {
+        // v2에서 JSON-05는 질문을 만들지 않는다. 이때 canGenerateQuestions는 "자료 기반 면접을 만들 수 있는 분석"이라는 뜻으로 유지한다.
+        if (!readiness.isCanGenerateQuestions() || source.isEmpty()) {
             return List.of();
         }
         List<CustomizedAnalysisGenerationResult.Question> values = new ArrayList<>();

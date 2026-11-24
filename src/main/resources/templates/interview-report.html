@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>면접 결과 — JobPuzzle</title>
+<th:block th:replace="~{fragments/head :: dsCss}"></th:block>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/v2/report.css" th:href="@{/css/v2/report.css}">
+</head>
+<body class="app r2-body">
+
+<!-- 공용 도형: 퍼즐 조각(메인과 같은 윤곽)·화살표 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="pc" viewBox="34 6 160 160">
+      <path d="M46,40 H82 C86,40 88,37 86,33 C82,26 84,12 100,12 C116,12 118,26 114,33 C112,37 114,40 118,40 H154 Q160,40 160,46 V82 C160,86 163,88 167,86 C174,82 188,84 188,100 C188,116 174,118 167,114 C163,112 160,114 160,118 V154 Q160,160 154,160 H118 C114,160 112,157 114,153 C118,146 116,132 100,132 C84,132 82,146 86,153 C88,157 86,160 82,160 H46 Q40,160 40,154 V118 C40,114 43,112 47,114 C54,118 68,116 68,100 C68,84 54,82 47,86 C43,88 40,86 40,82 V46 Q40,40 46,40 Z"/>
+    </symbol>
+    <symbol id="arrow" viewBox="0 0 16 16"><path d="M2 8h11.5M9 3.5 13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="arrow-left" viewBox="0 0 16 16"><path d="M14 8H2.5M7 3.5 2.5 8 7 12.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="chev" viewBox="0 0 14 14"><path d="M2.5 5 7 9.5 11.5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  </defs>
+</svg>
+
+<div th:replace="~{fragments/header :: appHeader('reports')}"></div>
+
+<main class="r2 page" id="report" aria-busy="true">
+  <div class="wrap">
+    <a class="crumb" href="/jobpuzzle/reports" th:href="@{/reports}"><svg aria-hidden="true"><use href="#arrow-left"/></svg>면접 리포트</a>
+    <div class="head">
+      <div>
+        <h1 class="title" id="r2-title">면접 결과</h1>
+        <p class="meta" id="r2-meta">결과를 불러오고 있습니다.</p>
+      </div>
+    </div>
+    <div id="r2-body"></div>
+  </div>
+</main>
+
+<!-- 확인 창: 브라우저 confirm 대신 -->
+<dialog class="r2 r2-dialog" id="r2-confirm" aria-labelledby="r2-confirm-title">
+  <form method="dialog">
+    <h2 class="h3" id="r2-confirm-title"></h2>
+    <p class="r2-dialog__text" id="r2-confirm-text"></p>
+    <div class="r2-dialog__foot">
+      <button class="btn btn-ghost" value="cancel">취소</button>
+      <button class="btn btn-primary" value="ok" id="r2-confirm-ok">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+
+<script src="/js/routes.js" th:src="@{/js/routes.js}"></script>
+<script src="/js/common.js" th:src="@{/js/common.js}"></script>
+<script src="/js/header.js" th:src="@{/js/header.js}"></script>
+<script src="/js/ds-ui.js" th:src="@{/js/ds-ui.js}"></script>
+<script src="/js/interview-report.js" th:src="@{/js/interview-report.js}"></script>
+</body>
+</html>

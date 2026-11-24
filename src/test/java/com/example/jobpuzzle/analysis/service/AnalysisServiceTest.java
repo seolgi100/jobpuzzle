@@ -73,6 +73,9 @@ class AnalysisServiceTest {
     @Mock
     private com.example.jobpuzzle.ticket.service.TicketService ticketService;
 
+    @Mock
+    private com.example.jobpuzzle.simulation.SimulationService simulationService;
+
     @InjectMocks
     private AnalysisService analysisService;
 

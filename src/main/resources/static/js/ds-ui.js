@@ -3,6 +3,12 @@
   'use strict';
 
   var DIM_LABELS = {
+    // 평가 명세 v2 2장 항목 (점수 집계 categoryScores의 키)
+    INTENT_UNDERSTANDING: '질문 의도 이해', LOGICAL_STRUCTURE: '논리적 구성', CLARITY: '표현 명확성',
+    CONCEPT_ACCURACY: '개념 정확성', PRINCIPLE_UNDERSTANDING: '원리 이해', PRACTICAL_APPLICATION: '실무 연결',
+    EXPERIENCE_SPECIFICITY: '경험 구체성', OUTCOME: '성과 및 결과', JOB_POSTING_ALIGNMENT: '공고 요구사항 연결',
+    ROLE_FIT: '직무·조직 적합성', AUTHENTICITY: '진정성과 일관성', SELF_AWARENESS: '자기 인식',
+    // v1 관점
     intentMatch: '질문 의도 이해',
     specificity: '경험 구체성',
     ownRole: '본인 역할',
@@ -14,9 +20,13 @@
   };
   // 면접 모드 → [이름, 배지 클래스, 필터 키]
   var MODES = {
-    COMPANY_FIT: ['맞춤 면접', 'mbadge--custom', 'custom'],
-    BASIC: ['기본 질문', 'mbadge--basic', 'basic'],
-    WEAKNESS_REVIEW: ['약점 보완', 'mbadge--weak', 'weak']
+    KNOWLEDGE: ['기초 지식', 'mbadge--basic', 'knowledge'],
+    MATERIAL: ['자료 기반', 'mbadge--custom', 'material'],
+    PERSONALITY: ['인성', 'mbadge--persona', 'personality'],
+    // v1 기록 표시용. 평가 기준이 달라 필터에서는 "이전 면접" 하나로 묶는다.
+    COMPANY_FIT: ['맞춤 면접', 'mbadge--custom', 'v1'],
+    BASIC: ['기본 질문', 'mbadge--basic', 'v1'],
+    WEAKNESS_REVIEW: ['약점 보완', 'mbadge--weak', 'v1']
   };
 
   function esc(value) {

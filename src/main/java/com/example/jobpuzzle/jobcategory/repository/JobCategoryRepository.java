@@ -14,6 +14,8 @@ public interface JobCategoryRepository extends JpaRepository<JobCategory, Long> 
             JobCategoryCareerLevel careerLevel
     );
 
+    boolean existsByMainCategoryAndSubCategory(String mainCategory, String subCategory);
+
     // 관리자 수정 시 자기 자신은 중복으로 치지 않고 확인
     boolean existsByMainCategoryAndSubCategoryAndCareerLevelAndJobCategoryIdNot(
             String mainCategory,

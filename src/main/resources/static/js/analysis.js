@@ -14,7 +14,7 @@
         ['jobPostingAnalysisStatus', '채용공고 분석', '필수·우대 요구사항을 뽑아요'],
         ['candidateMaterialAnalysisStatus', '지원자 자료 분석', '이력서·자기소개서에서 근거가 될 경험을 찾아요'],
         ['guideContextStatus', '직무 가이드 적용', '희망 직무에서 중요하게 보는 기준을 더해요'],
-        ['customizedAnalysisStatus', '맞춤 결과 생성', '요구사항별 연결 결과와 예상 질문을 만들어요']
+        ['customizedAnalysisStatus', '맞춤 결과 생성', '요구사항별 연결 결과와 보완 과제를 정리해요']
     ];
     var errorText = {
         ANALYSIS_002: '분석 작업을 찾을 수 없거나 접근 권한이 없어요.',
@@ -137,9 +137,10 @@
         document.getElementById('analysis-sources').innerHTML = rows.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
     }
 
-    function schedulePoll() {
+    // 시뮬레이션 계정이 저장된 결과를 기다리는 동안(status.simulated)은 1초마다 조회해 단계가 차례로 넘어가게 한다
+    function schedulePoll(delay) {
         clearTimeout(state.pollTimer);
-        if (!state.disposed) state.pollTimer = setTimeout(loadStatus, 3500);
+        if (!state.disposed) state.pollTimer = setTimeout(loadStatus, delay || (state.simulated ? 1000 : 3500));
     }
 
     function canRetryAutomatically(status) {
@@ -157,6 +158,7 @@
     }
 
     function handleStatus(status) {
+        state.simulated = !!status.simulated;
         if (status.analysisCaseStatus === 'COMPLETED') {
             clearTimeout(state.pollTimer); clearTimeout(state.retryTimer);
             window.location.replace(route('/analysis-results/' + encodeURIComponent(caseId)));
@@ -196,8 +198,15 @@
         var ensureIndexed = reuseExistingIndex ? Promise.resolve()
             : api(route('/analysis-cases/' + caseId + '/index'), { method: 'POST' });
         ensureIndexed
-            .then(function () { var run = analysisApi('/run', { method: 'POST' }); schedulePoll(); return run; })
-            .then(function () { state.running = false; loadStatus(); })
+            .then(function () { var run = analysisApi('/run', { method: 'POST' }); schedulePoll(1000); return run; })
+            .then(function (result) {
+                // 시뮬레이션 계정은 같은 입력으로 끝난 분석을 다시 보여 주므로 그 결과로 바로 간다
+                if (result && String(result.analysisCaseId) !== String(caseId)) {
+                    window.location.replace(route('/analysis-results/' + result.analysisCaseId));
+                    return;
+                }
+                state.running = false; loadStatus();
+            })
             .catch(function (error) {
                 state.running = false;
                 clearTimeout(state.pollTimer);

@@ -1,0 +1,229 @@
+{
+  "jobs": [
+    {
+      "mainCategory": "IT·개발",
+      "subCategory": "백엔드 개발",
+      "competencyTags": [
+        {"code": "SYSTEM_DESIGN", "name": "구조화·설계", "description": "기능을 역할별로 나누고 변경과 확장에 견디는 구조로 설계하는 역량입니다."},
+        {"code": "AI_UTILIZATION", "name": "AI 활용", "description": "AI 도구를 업무에 활용하되 결과물을 스스로 검증하고 책임지는 역량입니다."},
+        {"code": "RELIABILITY_MINDSET", "name": "안정성 의식", "description": "장애, 예외 상황, 데이터 정합성까지 고려해 서비스가 안정적으로 동작하도록 챙기는 태도입니다."},
+        {"code": "TECH_JUDGMENT", "name": "기술 선택 판단", "description": "유행보다 상황과 목적에 맞춰 기술 도입 여부를 판단하는 역량입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "당장 동작하는 코드와 오래 유지보수하기 좋은 코드 사이에서 고민했던 경험이 있다면, 어떤 기준으로 결정했는지 말씀해 주세요.", "intent": "단기 결과와 장기 구조 사이에서 균형 있게 판단하는 기준을 확인합니다.", "competencyTags": ["SYSTEM_DESIGN", "REASONING"], "careerLevel": "ANY"},
+        {"question": "직접 만든 기능에서 예상하지 못한 오류가 발생했을 때 가장 먼저 무엇을 했는지 말씀해 주세요.", "intent": "문제 상황에서 원인을 차분하게 좁혀 가는 태도를 확인합니다.", "competencyTags": ["RELIABILITY_MINDSET", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "AI 도구가 제안한 코드를 그대로 쓰지 않고 직접 검증했던 경험을 말씀해 주세요.", "intent": "AI 결과물을 비판적으로 검토하고 책임지는 태도를 확인합니다.", "competencyTags": ["AI_UTILIZATION", "REASONING"], "careerLevel": "ANY"},
+        {"question": "새로운 기술이 화제가 될 때 그 기술을 도입할지 판단하는 본인만의 기준은 무엇입니까?", "intent": "유행에 휩쓸리지 않고 목적에 맞게 기술을 선택하는 관점을 확인합니다.", "competencyTags": ["TECH_JUDGMENT"], "careerLevel": "ANY"},
+        {"question": "기획자나 프론트엔드 개발자의 요청이 서버 구조상 무리가 있다고 느꼈을 때 어떻게 대응했는지 말씀해 주세요.", "intent": "요구의 본질을 파악하고 다른 직군과 대안을 조율하는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "아무도 확인하지 않을 것 같은 예외 상황까지 처리하느라 시간을 더 들였던 경험을 말씀해 주세요.", "intent": "보이지 않는 부분의 안정성까지 책임지려는 태도를 확인합니다.", "competencyTags": ["RELIABILITY_MINDSET"], "careerLevel": "ANY"},
+        {"question": "다른 사람이 작성한 코드를 이어받아 작업할 때 가장 먼저 하는 일은 무엇입니까?", "intent": "기존 구조를 이해하고 적응하는 방식을 확인합니다.", "competencyTags": ["SYSTEM_DESIGN", "LEARNING_ADAPTABILITY"], "careerLevel": "ANY"},
+        {"question": "혼자 해결하기 어려운 문제를 만났을 때 도움을 요청하기 전까지 스스로 어디까지 시도하는지 말씀해 주세요.", "intent": "자기 주도적 문제 해결과 적절한 도움 요청 사이의 균형을 확인합니다.", "competencyTags": ["PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "개발 공부를 하며 오래 막혔던 문제를 끝까지 해결해 낸 경험을 말씀해 주세요.", "intent": "어려움 앞에서의 끈기와 학습 방식을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY", "PROBLEM_SOLVING"], "careerLevel": "NEW"},
+        {"question": "운영 중인 서비스에서 장애를 겪은 뒤 재발을 막기 위해 팀에 제안하거나 바꾼 것을 말씀해 주세요.", "intent": "장애를 개인 수습에 그치지 않고 팀 차원의 개선으로 연결하는지 확인합니다.", "competencyTags": ["RELIABILITY_MINDSET", "COLLABORATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "기술적인 내용을 개발자가 아닌 사람에게 설명해야 했던 경험을 말씀해 주세요.", "intent": "전문 지식을 상대의 눈높이에 맞춰 전달하는 역량을 확인합니다.", "competencyTags": ["COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "AI 도구를 쓰기보다 직접 해결하는 편이 낫다고 판단했던 상황을 말씀해 주세요.", "intent": "AI 활용의 한계를 인식하고 상황에 맞게 판단하는지 확인합니다.", "competencyTags": ["AI_UTILIZATION", "REASONING"], "careerLevel": "ANY"},
+        {"question": "익숙한 기술과 상황에 더 맞는 낯선 기술 중 하나를 골라야 한다면 무엇을 기준으로 선택하시겠습니까?", "intent": "익숙함보다 목적과 상황을 우선해 기술을 선택하는지 확인합니다.", "competencyTags": ["TECH_JUDGMENT", "LEARNING_ADAPTABILITY"], "careerLevel": "ANY"},
+        {"question": "요구사항이 명확하지 않은 상태에서 개발을 시작해야 한다면 가장 먼저 무엇을 하시겠습니까?", "intent": "불명확한 요구를 구체화하는 방식을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "작업 내용을 문서로 남기는 일에 대해 어떻게 생각하는지 말씀해 주세요.", "intent": "다른 사람이 이해하고 이어받을 수 있도록 작업을 정리하는 태도를 확인합니다.", "competencyTags": ["COMMUNICATION", "SYSTEM_DESIGN"], "careerLevel": "ANY"},
+        {"question": "동료의 코드에서 문제를 발견했을 때 그 사실을 어떻게 전달하시겠습니까?", "intent": "관계를 해치지 않으면서 문제를 명확히 공유하는 방식을 확인합니다.", "competencyTags": ["COMMUNICATION", "COLLABORATION"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 맡을 기능의 범위를 팀원과 어떻게 정했는지 말씀해 주세요.", "intent": "작업 범위를 합의하고 역할을 나누는 협업 방식을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "COLLABORATION"], "careerLevel": "NEW"},
+        {"question": "첫 직장에서 개발자로서 가장 먼저 익히고 싶은 일하는 방식은 무엇입니까?", "intent": "실무 환경에 적응하려는 태도와 성장 방향을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "팀에 새로운 기술이나 도구를 도입하자고 제안했던 경험을 말씀해 주세요.", "intent": "기술 도입의 필요성을 판단하고 팀을 설득하는 과정을 확인합니다.", "competencyTags": ["TECH_JUDGMENT", "COMMUNICATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "후배 개발자의 코드를 리뷰할 때 가장 중요하게 다루는 것은 무엇입니까?", "intent": "동료의 성장을 돕는 관점과 코드 품질에 대한 기준을 확인합니다.", "competencyTags": ["COLLABORATION", "SYSTEM_DESIGN"], "careerLevel": "EXPERIENCED"}
+      ]
+    },
+    {
+      "mainCategory": "IT·개발",
+      "subCategory": "프론트엔드 개발",
+      "competencyTags": [
+        {"code": "SYSTEM_DESIGN", "name": "구조화·설계", "description": "기능을 역할별로 나누고 변경과 확장에 견디는 구조로 설계하는 역량입니다."},
+        {"code": "AI_UTILIZATION", "name": "AI 활용", "description": "AI 도구를 업무에 활용하되 결과물을 스스로 검증하고 책임지는 역량입니다."},
+        {"code": "USER_EXPERIENCE_FOCUS", "name": "사용자 경험", "description": "구현하는 화면을 실제 사용자가 어떻게 느끼고 쓰게 될지 고려하는 감각입니다."},
+        {"code": "DETAIL_ORIENTATION", "name": "디테일 완성도", "description": "작은 화면 요소와 다양한 사용 환경까지 확인해 결과물의 완성도를 높이는 태도입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "디자인 시안대로 구현했는데 실제로 써 보니 불편했던 경험이 있다면, 그때 어떻게 했는지 말씀해 주세요.", "intent": "시안을 그대로 옮기는 데 그치지 않고 사용 경험을 고민하는지 확인합니다.", "competencyTags": ["USER_EXPERIENCE_FOCUS", "COLLABORATION"], "careerLevel": "ANY"},
+        {"question": "화면 하나를 만들 때 어디까지 확인해야 완성이라고 판단하는지 말씀해 주세요.", "intent": "본인이 생각하는 완성도의 기준을 확인합니다.", "competencyTags": ["DETAIL_ORIENTATION"], "careerLevel": "ANY"},
+        {"question": "비슷한 화면이 반복될 때 재사용할 수 있도록 구조를 나눠 본 경험을 말씀해 주세요.", "intent": "반복을 줄이고 유지보수를 고려하는 구조적 사고를 확인합니다.", "competencyTags": ["SYSTEM_DESIGN"], "careerLevel": "ANY"},
+        {"question": "사용자가 작동 방식을 오해할 수 있겠다고 느껴 기획자나 디자이너에게 먼저 의견을 낸 경험을 말씀해 주세요.", "intent": "사용자 관점에서 문제를 발견하고 능동적으로 공유하는지 확인합니다.", "competencyTags": ["USER_EXPERIENCE_FOCUS", "COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "AI 도구로 만든 화면 코드를 그대로 쓰지 않고 직접 고친 경험을 말씀해 주세요.", "intent": "AI 결과물을 검토하고 품질을 책임지는 태도를 확인합니다.", "competencyTags": ["AI_UTILIZATION", "DETAIL_ORIENTATION"], "careerLevel": "ANY"},
+        {"question": "일정이 촉박할 때 화면 완성도와 마감 기한 중 무엇을 우선하는지 말씀해 주세요.", "intent": "품질과 일정 사이에서 우선순위를 판단하는 기준을 확인합니다.", "competencyTags": ["DETAIL_ORIENTATION", "REASONING"], "careerLevel": "ANY"},
+        {"question": "빠르게 바뀌는 프론트엔드 기술을 따라가기 위해 꾸준히 하고 있는 것은 무엇입니까?", "intent": "변화가 빠른 분야에서 지속적으로 학습하는 습관을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "ANY"},
+        {"question": "서버 개발자와 주고받는 데이터 형식을 두고 의견이 맞지 않았던 경험을 말씀해 주세요.", "intent": "다른 직군과 이견을 조율해 합의에 이르는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "자주 쓰는 서비스 중 화면을 직접 개선해 보고 싶었던 곳이 있다면 말씀해 주세요.", "intent": "평소 사용자 관점에서 화면을 관찰하는 습관이 있는지 확인합니다.", "competencyTags": ["USER_EXPERIENCE_FOCUS"], "careerLevel": "ANY"},
+        {"question": "여러 사람이 함께 쓰는 공통 컴포넌트를 바꿔야 했을 때 다른 팀원에게 미칠 영향을 어떻게 관리했는지 말씀해 주세요.", "intent": "공유 자원을 변경할 때 구조적 영향과 협업을 함께 고려하는지 확인합니다.", "competencyTags": ["SYSTEM_DESIGN", "COLLABORATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "원인을 찾기 어려웠던 화면 오류를 해결한 경험을 말씀해 주세요.", "intent": "막막한 문제를 단계적으로 좁혀 해결하는 방식을 확인합니다.", "competencyTags": ["PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "AI 도구를 활용해 반복 작업을 줄였던 경험을 말씀해 주세요.", "intent": "AI를 효율적으로 업무에 접목하는 역량을 확인합니다.", "competencyTags": ["AI_UTILIZATION"], "careerLevel": "ANY"},
+        {"question": "기획 문서에 없는 화면 상태를 발견했다면 어떻게 하시겠습니까?", "intent": "누락된 요구를 발견하고 능동적으로 확인하는 태도를 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "사용자마다 서비스를 쓰는 환경이 다르다는 점을 의식하게 된 계기를 말씀해 주세요.", "intent": "다양한 사용 환경을 고려하는 관점이 어떻게 형성되었는지 확인합니다.", "competencyTags": ["USER_EXPERIENCE_FOCUS", "LEARNING_ADAPTABILITY"], "careerLevel": "ANY"},
+        {"question": "같은 화면을 구현하는 여러 방법 중 하나를 고를 때 무엇을 기준으로 판단합니까?", "intent": "구현 방식을 선택하는 논리적 기준을 확인합니다.", "competencyTags": ["REASONING", "SYSTEM_DESIGN"], "careerLevel": "ANY"},
+        {"question": "작은 수정이라고 생각했던 작업이 예상보다 커졌던 경험을 말씀해 주세요.", "intent": "예상치 못한 상황에서 범위를 다시 판단하고 대응하는 방식을 확인합니다.", "competencyTags": ["PROBLEM_SOLVING", "REASONING"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 디자이너 없이 화면 구성을 직접 결정해야 했던 경험을 말씀해 주세요.", "intent": "사용자 관점에서 스스로 화면을 판단하는 역량을 확인합니다.", "competencyTags": ["USER_EXPERIENCE_FOCUS", "PROBLEM_SOLVING"], "careerLevel": "NEW"},
+        {"question": "프론트엔드를 공부하며 처음 접한 개념을 스스로 익혔던 방식을 말씀해 주세요.", "intent": "자기 주도적으로 학습하는 방식을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "출시 직전에 화면 품질 문제를 발견했을 때 출시 여부를 어떻게 판단했는지 말씀해 주세요.", "intent": "품질과 일정 사이에서 책임 있게 결정하는 실무 판단력을 확인합니다.", "competencyTags": ["DETAIL_ORIENTATION", "REASONING"], "careerLevel": "EXPERIENCED"},
+        {"question": "팀의 화면 개발 방식이 비효율적이라고 느껴 개선을 이끈 경험을 말씀해 주세요.", "intent": "팀 차원의 구조적 문제를 발견하고 개선을 주도하는지 확인합니다.", "competencyTags": ["SYSTEM_DESIGN", "PROBLEM_SOLVING"], "careerLevel": "EXPERIENCED"}
+      ]
+    },
+    {
+      "mainCategory": "IT·개발",
+      "subCategory": "데이터 분석",
+      "competencyTags": [
+        {"code": "DATA_INTERPRETATION", "name": "데이터 해석력", "description": "숫자 뒤에 숨은 의미와 한계를 읽어 내 올바른 결론을 이끄는 역량입니다."},
+        {"code": "HYPOTHESIS_VALIDATION", "name": "가설 검증", "description": "가설을 세우고 데이터로 검증하며 예상과 다른 결과도 객관적으로 받아들이는 역량입니다."},
+        {"code": "BUSINESS_INSIGHT", "name": "인사이트 도출", "description": "분석 결과를 실제 의사결정에 쓸 수 있는 시사점으로 연결하는 역량입니다."},
+        {"code": "DATA_INTEGRITY", "name": "데이터 정확성", "description": "데이터의 품질과 분석의 객관성을 끝까지 지키려는 태도입니다."},
+        {"code": "AI_UTILIZATION", "name": "AI 활용", "description": "AI 도구를 업무에 활용하되 결과물을 스스로 검증하고 책임지는 역량입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "분석 결과가 처음 예상과 정반대로 나왔을 때 어떻게 대응했는지 말씀해 주세요.", "intent": "예상과 다른 결과를 객관적으로 받아들이고 검증하는 태도를 확인합니다.", "competencyTags": ["HYPOTHESIS_VALIDATION"], "careerLevel": "ANY"},
+        {"question": "숫자에 익숙하지 않은 사람에게 분석 결과를 설명해야 했던 경험을 말씀해 주세요.", "intent": "분석 결과를 상대가 이해할 수 있는 시사점으로 전달하는 방식을 확인합니다.", "competencyTags": ["COMMUNICATION", "BUSINESS_INSIGHT"], "careerLevel": "ANY"},
+        {"question": "데이터를 다루다가 값이 이상하다고 느껴 분석을 멈추고 확인했던 경험을 말씀해 주세요.", "intent": "데이터 품질 문제를 그냥 넘기지 않는 태도를 확인합니다.", "competencyTags": ["DATA_INTEGRITY"], "careerLevel": "ANY"},
+        {"question": "그럴듯해 보이는 결과를 의심해 본 적이 있다면, 무엇 때문에 의심했는지 말씀해 주세요.", "intent": "상관관계와 인과관계 등 결과의 한계를 비판적으로 바라보는지 확인합니다.", "competencyTags": ["DATA_INTERPRETATION", "REASONING"], "careerLevel": "ANY"},
+        {"question": "요청받은 분석이 실제로 해결하려는 문제와 맞지 않는다고 느꼈던 경험을 말씀해 주세요.", "intent": "요청의 배경에 있는 진짜 문제를 파악하려는 태도를 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "BUSINESS_INSIGHT"], "careerLevel": "ANY"},
+        {"question": "분석 결과를 특정 방향으로 해석해 달라는 요청을 받는다면 어떻게 하시겠습니까?", "intent": "압력 속에서도 분석의 객관성을 지키는 가치관을 확인합니다.", "competencyTags": ["DATA_INTEGRITY"], "careerLevel": "ANY"},
+        {"question": "AI 도구가 분석하거나 요약한 결과를 그대로 믿지 않고 직접 확인했던 경험을 말씀해 주세요.", "intent": "AI 결과물을 검증하고 책임지는 태도를 확인합니다.", "competencyTags": ["AI_UTILIZATION", "DATA_INTEGRITY"], "careerLevel": "ANY"},
+        {"question": "일상에서 데이터를 근거로 판단을 내렸던 경험을 말씀해 주세요.", "intent": "데이터 기반으로 생각하는 습관이 몸에 배어 있는지 확인합니다.", "competencyTags": ["DATA_INTERPRETATION"], "careerLevel": "ANY"},
+        {"question": "데이터 분석을 공부하며 가장 어려웠던 부분을 어떻게 극복했는지 말씀해 주세요.", "intent": "낯선 분야를 익혀 가는 학습 방식과 끈기를 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "분석 결과가 실제 의사결정으로 이어지지 않았던 경험이 있다면, 그 이유를 무엇이라고 생각합니까?", "intent": "분석을 성과로 연결하지 못한 원인을 성찰하는 역량을 확인합니다.", "competencyTags": ["BUSINESS_INSIGHT", "REASONING"], "careerLevel": "EXPERIENCED"},
+        {"question": "궁금한 점을 확인하기 위해 직접 가설을 세우고 검증해 본 경험을 말씀해 주세요.", "intent": "가설을 세우고 근거로 확인하는 사고 습관을 확인합니다.", "competencyTags": ["HYPOTHESIS_VALIDATION"], "careerLevel": "ANY"},
+        {"question": "필요한 데이터가 부족한 상황에서 결론을 내야 했던 경험을 말씀해 주세요.", "intent": "제한된 정보 속에서 합리적으로 판단하는 방식을 확인합니다.", "competencyTags": ["PROBLEM_SOLVING", "DATA_INTERPRETATION"], "careerLevel": "ANY"},
+        {"question": "같은 자료를 보고 다른 사람과 서로 다른 결론을 내렸던 경험을 말씀해 주세요.", "intent": "해석 차이를 논리적으로 조율하는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "REASONING"], "careerLevel": "ANY"},
+        {"question": "분석을 요청한 사람이 결과를 빨리 달라고 할 때 정확성과 속도 중 무엇을 우선하시겠습니까?", "intent": "요청자의 필요와 분석 품질 사이에서 판단하는 기준을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "REASONING"], "careerLevel": "ANY"},
+        {"question": "AI 도구를 활용하더라도 분석가가 직접 판단해야 한다고 생각하는 부분은 무엇입니까?", "intent": "AI 활용의 범위와 분석가의 책임을 구분하는 관점을 확인합니다.", "competencyTags": ["AI_UTILIZATION", "REASONING"], "careerLevel": "ANY"},
+        {"question": "분석 결과를 받은 사람이 결론에 동의하지 않는다면 어떻게 대응하시겠습니까?", "intent": "이견 앞에서 근거를 바탕으로 소통하는 태도를 확인합니다.", "competencyTags": ["COMMUNICATION", "COLLABORATION"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 데이터를 다루며 팀원과 역할을 나눴던 경험을 말씀해 주세요.", "intent": "데이터 작업을 협업으로 나누고 조율하는 방식을 확인합니다.", "competencyTags": ["COLLABORATION"], "careerLevel": "NEW"},
+        {"question": "데이터 분석가로서 첫 직장에서 가장 먼저 이해하고 싶은 것은 무엇입니까?", "intent": "분석을 비즈니스와 연결하려는 관점과 적응 의지를 확인합니다.", "competencyTags": ["BUSINESS_INSIGHT", "LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "실무에서 성과를 측정할 기준을 새로 정해야 했을 때 무엇을 근거로 정했는지 말씀해 주세요.", "intent": "업무 목적에 맞는 측정 기준을 세우는 실무 판단력을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "BUSINESS_INSIGHT"], "careerLevel": "EXPERIENCED"},
+        {"question": "본인의 분석 실수가 업무에 영향을 주었을 때 어떻게 수습했는지 말씀해 주세요.", "intent": "실수를 인정하고 책임 있게 바로잡는 태도를 확인합니다.", "competencyTags": ["DATA_INTEGRITY", "PROBLEM_SOLVING"], "careerLevel": "EXPERIENCED"}
+      ]
+    },
+    {
+      "mainCategory": "경영·사무",
+      "subCategory": "인사 채용",
+      "competencyTags": [
+        {"code": "CANDIDATE_ASSESSMENT", "name": "인재 판별력", "description": "조직에 필요한 역량을 기준으로 사람을 객관적으로 평가하는 역량입니다."},
+        {"code": "FAIRNESS", "name": "공정성", "description": "개인적 선호나 편견을 배제하고 모든 지원자를 같은 기준으로 대하는 태도입니다."},
+        {"code": "CONFIDENTIALITY", "name": "기밀 유지", "description": "업무상 알게 된 개인정보와 내부 정보를 책임 있게 보호하는 태도입니다."},
+        {"code": "CANDIDATE_EXPERIENCE", "name": "지원자 경험", "description": "채용 과정 전반에서 지원자가 존중받는다고 느끼도록 배려하는 역량입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "어떤 사람을 첫인상만으로 판단했다가 생각이 바뀐 경험을 말씀해 주세요.", "intent": "선입견을 인식하고 판단을 수정할 줄 아는지 확인합니다.", "competencyTags": ["CANDIDATE_ASSESSMENT", "FAIRNESS"], "careerLevel": "ANY"},
+        {"question": "개인적으로 호감이 가는 사람과 기준에 더 부합하는 사람 중 한 명을 선택해야 한다면 어떻게 하시겠습니까?", "intent": "개인적 선호를 배제하고 기준에 따라 판단하는 가치관을 확인합니다.", "competencyTags": ["FAIRNESS"], "careerLevel": "ANY"},
+        {"question": "알게 된 정보를 다른 사람에게 말하지 않아야 했던 상황에서 어떻게 행동했는지 말씀해 주세요.", "intent": "민감한 정보를 다루는 책임감을 확인합니다.", "competencyTags": ["CONFIDENTIALITY"], "careerLevel": "ANY"},
+        {"question": "불합격 소식을 지원자에게 전할 때 가장 중요하게 생각하는 것은 무엇입니까?", "intent": "지원자를 존중하며 불편한 소식을 전달하는 태도를 확인합니다.", "competencyTags": ["CANDIDATE_EXPERIENCE", "COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "채용을 요청한 부서가 원하는 인재상이 모호하다면 어떻게 구체화하시겠습니까?", "intent": "현업의 요구를 구체적인 평가 기준으로 바꾸는 방식을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "CANDIDATE_ASSESSMENT"], "careerLevel": "ANY"},
+        {"question": "여러 사람의 일정을 동시에 조율해야 했던 경험을 말씀해 주세요.", "intent": "다수의 이해관계자 사이에서 일을 매끄럽게 진행하는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "좋은 인재를 알아보는 데 가장 중요하다고 생각하는 것은 무엇입니까?", "intent": "인재를 바라보는 관점과 그 근거를 확인합니다.", "competencyTags": ["CANDIDATE_ASSESSMENT", "REASONING"], "careerLevel": "ANY"},
+        {"question": "채용 업무에서 가장 보람을 느낄 순간은 언제라고 생각합니까?", "intent": "채용 직무에 대한 동기와 가치관을 확인합니다.", "competencyTags": ["CANDIDATE_EXPERIENCE"], "careerLevel": "ANY"},
+        {"question": "지원자로서 채용 과정을 겪으며 기억에 남았던 순간을 말씀해 주세요.", "intent": "지원자의 입장을 이해하고 채용 경험 개선에 연결할 수 있는지 확인합니다.", "competencyTags": ["CANDIDATE_EXPERIENCE"], "careerLevel": "NEW"},
+        {"question": "채용한 인재가 일찍 퇴사했을 때 채용 과정에서 무엇을 돌아보았는지 말씀해 주세요.", "intent": "채용 결과를 성찰하고 평가 방식을 개선하는지 확인합니다.", "competencyTags": ["CANDIDATE_ASSESSMENT", "PROBLEM_SOLVING"], "careerLevel": "EXPERIENCED"},
+        {"question": "정해진 절차를 지키는 것과 융통성을 발휘하는 것이 충돌한다면 무엇을 우선하시겠습니까?", "intent": "원칙과 유연성 사이에서 공정하게 판단하는 기준을 확인합니다.", "competencyTags": ["FAIRNESS", "REASONING"], "careerLevel": "ANY"},
+        {"question": "동료가 업무상 알게 된 개인정보를 가볍게 이야기한다면 어떻게 대응하시겠습니까?", "intent": "정보 보호에 대한 책임감과 실천 방식을 확인합니다.", "competencyTags": ["CONFIDENTIALITY"], "careerLevel": "ANY"},
+        {"question": "채용 시장의 변화를 파악하기 위해 평소 무엇을 하고 있습니까?", "intent": "직무 환경의 변화를 꾸준히 학습하는 태도를 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "ANY"},
+        {"question": "지원자가 답하기 곤란한 내부 정보를 물어본다면 어떻게 응대하시겠습니까?", "intent": "지원자를 존중하면서 정보 보호 원칙을 지키는 소통 방식을 확인합니다.", "competencyTags": ["COMMUNICATION", "CONFIDENTIALITY"], "careerLevel": "ANY"},
+        {"question": "면접관이 평가 기준에서 벗어난 질문을 한다면 어떻게 하시겠습니까?", "intent": "채용 과정의 공정성을 지키기 위해 필요한 말을 할 수 있는지 확인합니다.", "competencyTags": ["FAIRNESS", "COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "서로 다른 의견을 하나의 결론으로 모았던 경험을 말씀해 주세요.", "intent": "다양한 이해관계자의 의견을 조율하는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 팀원에게 역할을 배분했던 경험을 말씀해 주세요.", "intent": "사람의 강점을 파악해 적합한 역할을 맡기는 안목을 확인합니다.", "competencyTags": ["CANDIDATE_ASSESSMENT", "COLLABORATION"], "careerLevel": "NEW"},
+        {"question": "인사 담당자로서 첫 직장에서 가장 먼저 배우고 싶은 것은 무엇입니까?", "intent": "직무에 대한 이해도와 성장 의지를 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "채용 과정의 공정성에 대한 문제가 제기되었을 때 어떻게 대응했는지 말씀해 주세요.", "intent": "공정성 문제를 책임 있게 처리하고 개선하는 실무 역량을 확인합니다.", "competencyTags": ["FAIRNESS", "PROBLEM_SOLVING"], "careerLevel": "EXPERIENCED"},
+        {"question": "채용 목표 인원을 기한 안에 채우기 어려웠을 때 어떻게 대처했는지 말씀해 주세요.", "intent": "채용 성과에 대한 책임감과 대안 마련 방식을 확인합니다.", "competencyTags": ["PROBLEM_SOLVING", "REQUIREMENT_ANALYSIS"], "careerLevel": "EXPERIENCED"}
+      ]
+    },
+    {
+      "mainCategory": "경영·사무",
+      "subCategory": "마케팅",
+      "competencyTags": [
+        {"code": "CUSTOMER_INSIGHT", "name": "고객 이해", "description": "고객의 숨은 욕구와 행동 이유를 파악해 기획에 반영하는 역량입니다."},
+        {"code": "PERFORMANCE_ANALYSIS", "name": "성과 지표 분석", "description": "마케팅 활동의 성과를 지표로 측정하고 다음 활동에 반영하는 역량입니다."},
+        {"code": "CONTENT_PLANNING", "name": "콘텐츠 기획", "description": "메시지를 매력적인 아이디어와 콘텐츠로 풀어내는 역량입니다."},
+        {"code": "TREND_SENSITIVITY", "name": "트렌드 감각", "description": "시장과 문화의 변화 흐름을 빠르게 포착해 업무에 반영하는 역량입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "최근 인상 깊게 본 광고나 캠페인 하나를 골라, 왜 효과적이었다고 생각하는지 말씀해 주세요.", "intent": "마케팅을 고객 관점에서 분석하는 시각을 확인합니다.", "competencyTags": ["CUSTOMER_INSIGHT", "REASONING"], "careerLevel": "ANY"},
+        {"question": "본인의 생각이 아니라 상대의 입장에서 판단을 바꿨던 경험을 말씀해 주세요.", "intent": "자기 관점을 내려놓고 고객 입장에서 생각하는 태도를 확인합니다.", "competencyTags": ["CUSTOMER_INSIGHT"], "careerLevel": "ANY"},
+        {"question": "공들여 준비한 기획이 기대한 반응을 얻지 못했을 때 어떻게 했는지 말씀해 주세요.", "intent": "실패 원인을 분석하고 다음 시도로 연결하는 태도를 확인합니다.", "competencyTags": ["PERFORMANCE_ANALYSIS", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "요즘 눈여겨보고 있는 소비 트렌드는 무엇입니까?", "intent": "평소 시장 변화에 관심을 기울이는지 확인합니다.", "competencyTags": ["TREND_SENSITIVITY"], "careerLevel": "ANY"},
+        {"question": "반응이 좋은 콘텐츠와 브랜드 이미지에 맞는 콘텐츠가 다르다면 무엇을 우선하시겠습니까?", "intent": "단기 반응과 브랜드 가치 사이에서 판단하는 기준을 확인합니다.", "competencyTags": ["CONTENT_PLANNING", "REASONING"], "careerLevel": "ANY"},
+        {"question": "자신이 한 일의 성과를 숫자로 증명해야 했던 경험을 말씀해 주세요.", "intent": "성과를 감이 아닌 지표로 설명하려는 태도를 확인합니다.", "competencyTags": ["PERFORMANCE_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "아이디어가 떠오르지 않을 때 새로운 아이디어를 얻기 위해 하는 일은 무엇입니까?", "intent": "아이디어를 꾸준히 만들어 내는 본인만의 방식을 확인합니다.", "competencyTags": ["CONTENT_PLANNING"], "careerLevel": "ANY"},
+        {"question": "다른 부서의 협조를 얻어야 일을 진행할 수 있었던 경험을 말씀해 주세요.", "intent": "여러 부서와 협력해 일을 끌고 가는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "무언가를 직접 알리거나 홍보해 본 경험을 말씀해 주세요.", "intent": "마케팅 활동을 스스로 시도해 본 경험과 그 과정의 고민을 확인합니다.", "competencyTags": ["CONTENT_PLANNING", "CUSTOMER_INSIGHT"], "careerLevel": "NEW"},
+        {"question": "한정된 예산 안에서 성과를 내기 위해 우선순위를 조정한 경험을 말씀해 주세요.", "intent": "제약 조건 속에서 효율적으로 자원을 배분하는 판단력을 확인합니다.", "competencyTags": ["PERFORMANCE_ANALYSIS", "PROBLEM_SOLVING"], "careerLevel": "EXPERIENCED"},
+        {"question": "유행하는 마케팅 방식을 우리 브랜드에 적용할지 판단할 때 무엇을 기준으로 삼습니까?", "intent": "트렌드를 무조건 따르지 않고 적합성을 판단하는지 확인합니다.", "competencyTags": ["TREND_SENSITIVITY", "REASONING"], "careerLevel": "ANY"},
+        {"question": "지시가 모호한 상태에서 기획을 시작해야 한다면 어떻게 하시겠습니까?", "intent": "불명확한 요청의 목적을 파악하는 방식을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "과장된 표현이 더 큰 반응을 얻을 것 같다면 어떻게 하시겠습니까?", "intent": "성과와 정직성 사이에서 판단하는 직업 윤리를 확인합니다.", "competencyTags": ["CONTENT_PLANNING", "REASONING"], "careerLevel": "ANY"},
+        {"question": "브랜드에 대한 부정적인 반응이 온라인에서 퍼지고 있다면 가장 먼저 무엇을 하시겠습니까?", "intent": "위기 상황에서 우선순위를 정하고 대응하는 방식을 확인합니다.", "competencyTags": ["COMMUNICATION", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "새로운 플랫폼이나 매체가 등장하면 어떻게 익히는지 말씀해 주세요.", "intent": "변화하는 채널 환경에 빠르게 적응하는 방식을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY", "TREND_SENSITIVITY"], "careerLevel": "ANY"},
+        {"question": "직접 써 보지 않은 제품을 알려야 한다면 어떻게 준비하시겠습니까?", "intent": "제품과 고객을 이해하기 위해 정보를 모으는 방식을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "CUSTOMER_INSIGHT"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 본인의 아이디어로 팀원을 설득했던 경험을 말씀해 주세요.", "intent": "아이디어를 설득력 있게 전달하는 역량을 확인합니다.", "competencyTags": ["COMMUNICATION", "CONTENT_PLANNING"], "careerLevel": "NEW"},
+        {"question": "마케터로서 첫 직장에서 가장 먼저 키우고 싶은 역량은 무엇입니까?", "intent": "직무 이해도와 성장 방향을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "캠페인 성과가 목표에 미치지 못했을 때 그 결과를 어떻게 보고했는지 말씀해 주세요.", "intent": "부진한 성과를 정직하게 공유하고 책임지는 태도를 확인합니다.", "competencyTags": ["PERFORMANCE_ANALYSIS", "COMMUNICATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "외부 협력사의 결과물이 의도와 어긋났을 때 어떻게 바로잡았는지 말씀해 주세요.", "intent": "외부 파트너와 요구를 맞추며 결과물을 관리하는 실무 역량을 확인합니다.", "competencyTags": ["COLLABORATION", "REQUIREMENT_ANALYSIS"], "careerLevel": "EXPERIENCED"}
+      ]
+    },
+    {
+      "mainCategory": "디자인",
+      "subCategory": "UX/UI 디자인",
+      "competencyTags": [
+        {"code": "USER_CENTERED", "name": "사용자 중심", "description": "디자이너의 취향보다 사용자의 목표와 맥락을 기준으로 디자인을 결정하는 태도입니다."},
+        {"code": "USABILITY_VALIDATION", "name": "사용성 검증", "description": "디자인이 실제로 쓰기 편한지 관찰과 피드백으로 확인하고 개선하는 역량입니다."},
+        {"code": "INFORMATION_ARCHITECTURE", "name": "정보 구조화", "description": "복잡한 정보와 흐름을 사용자가 이해하기 쉬운 구조로 정리하는 역량입니다."},
+        {"code": "DESIGN_SYSTEM", "name": "디자인 시스템", "description": "화면 전반에서 일관된 규칙과 패턴을 유지하고 관리하는 역량입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "자주 쓰는 앱에서 불편하다고 느낀 점을 본인이라면 어떻게 개선하시겠습니까?", "intent": "일상에서 사용성 문제를 발견하고 개선 방향을 제시하는 감각을 확인합니다.", "competencyTags": ["USER_CENTERED", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "본인은 만족했던 디자인이 다른 사람에게는 불편했던 경험을 말씀해 주세요.", "intent": "자기 디자인을 객관적으로 검증받고 수용하는 태도를 확인합니다.", "competencyTags": ["USABILITY_VALIDATION"], "careerLevel": "ANY"},
+        {"question": "개발자가 디자인 구현이 어렵다고 할 때 어떻게 조율하시겠습니까?", "intent": "디자인 의도를 지키면서 현실적인 대안을 찾는 협업 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "본인의 취향과 사용자 반응이 다를 때 무엇을 따르시겠습니까?", "intent": "디자인 결정의 기준이 사용자에게 있는지 확인합니다.", "competencyTags": ["USER_CENTERED", "REASONING"], "careerLevel": "ANY"},
+        {"question": "복잡한 정보를 단순하게 정리해 전달했던 경험을 말씀해 주세요.", "intent": "정보를 구조화해 이해하기 쉽게 만드는 역량을 확인합니다.", "competencyTags": ["INFORMATION_ARCHITECTURE"], "careerLevel": "ANY"},
+        {"question": "디자인의 일관성을 지키기 위해 본인이 가장 신경 쓰는 것은 무엇입니까?", "intent": "규칙과 패턴을 유지하려는 태도와 방식을 확인합니다.", "competencyTags": ["DESIGN_SYSTEM"], "careerLevel": "ANY"},
+        {"question": "디자인 피드백을 받고 생각을 바꿨던 경험을 말씀해 주세요.", "intent": "피드백을 열린 태도로 받아들이는지 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY", "COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "사용자를 직접 관찰하거나 이야기를 듣고 새롭게 알게 된 것이 있다면 말씀해 주세요.", "intent": "사용자를 직접 이해하려는 노력과 그로부터 배운 점을 확인합니다.", "competencyTags": ["USABILITY_VALIDATION", "USER_CENTERED"], "careerLevel": "ANY"},
+        {"question": "UX/UI 디자인을 공부하며 가장 크게 생각이 바뀐 지점은 무엇입니까?", "intent": "학습 과정에서 디자인에 대한 관점이 어떻게 성장했는지 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY", "USER_CENTERED"], "careerLevel": "NEW"},
+        {"question": "서비스 출시 후 사용자 반응을 보고 디자인을 수정했던 경험을 말씀해 주세요.", "intent": "출시 이후에도 사용성을 검증하고 개선하는지 확인합니다.", "competencyTags": ["USABILITY_VALIDATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "기능이 많아져 화면이 복잡해질 때 무엇을 덜어낼지 어떻게 결정하시겠습니까?", "intent": "정보의 우선순위를 정해 구조를 단순화하는 판단 기준을 확인합니다.", "competencyTags": ["INFORMATION_ARCHITECTURE", "REASONING"], "careerLevel": "ANY"},
+        {"question": "정해진 디자인 규칙을 따르면 오히려 사용하기 불편해지는 상황이라면 어떻게 하시겠습니까?", "intent": "일관성과 사용성 사이에서 균형을 잡는 방식을 확인합니다.", "competencyTags": ["DESIGN_SYSTEM", "USER_CENTERED"], "careerLevel": "ANY"},
+        {"question": "요청 뒤에 숨은 실제 목적을 파악해 디자인 방향을 바꿨던 경험을 말씀해 주세요.", "intent": "표면적인 요청보다 본래 목적을 파악하는 역량을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "처음 사용하는 사람이 서비스에서 길을 잃지 않게 하려면 무엇이 가장 중요하다고 생각합니까?", "intent": "사용자의 흐름을 고려해 정보를 구조화하는 관점을 확인합니다.", "competencyTags": ["INFORMATION_ARCHITECTURE"], "careerLevel": "ANY"},
+        {"question": "디자인 결정의 이유를 팀원에게 설명해야 했던 경험을 말씀해 주세요.", "intent": "디자인 의도를 근거와 함께 전달하는 역량을 확인합니다.", "competencyTags": ["COMMUNICATION"], "careerLevel": "ANY"},
+        {"question": "다른 디자이너와 작업 방식을 맞춰야 했던 경험을 말씀해 주세요.", "intent": "함께 일하며 결과물의 일관성을 맞춰 가는 방식을 확인합니다.", "competencyTags": ["COLLABORATION", "DESIGN_SYSTEM"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 개발자와 함께 화면을 완성했던 경험을 말씀해 주세요.", "intent": "다른 직군과 협업하며 디자인을 구현까지 이끄는 방식을 확인합니다.", "competencyTags": ["COLLABORATION"], "careerLevel": "NEW"},
+        {"question": "UX/UI 디자이너로서 첫 직장에서 가장 경험해 보고 싶은 일은 무엇입니까?", "intent": "직무에 대한 기대와 성장 방향을 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "여러 디자이너가 함께 쓰는 디자인 규칙을 만들거나 개선했던 경험을 말씀해 주세요.", "intent": "팀 단위의 일관성을 설계하고 관리하는 실무 역량을 확인합니다.", "competencyTags": ["DESIGN_SYSTEM", "COLLABORATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "일정이나 비용 때문에 필요한 개선을 미뤄야 했을 때 어떻게 판단했는지 말씀해 주세요.", "intent": "현실적 제약 속에서 우선순위를 정하는 실무 판단력을 확인합니다.", "competencyTags": ["REQUIREMENT_ANALYSIS", "REASONING"], "careerLevel": "EXPERIENCED"}
+      ]
+    },
+    {
+      "mainCategory": "디자인",
+      "subCategory": "BX 디자인",
+      "competencyTags": [
+        {"code": "BRAND_UNDERSTANDING", "name": "브랜드 이해", "description": "브랜드의 정체성과 가치를 파악해 디자인의 기준으로 삼는 역량입니다."},
+        {"code": "CONCEPT_DEVELOPMENT", "name": "콘셉트 도출", "description": "추상적인 브랜드 메시지를 구체적인 시각 콘셉트로 풀어내는 역량입니다."},
+        {"code": "VISUAL_CONSISTENCY", "name": "시각 일관성", "description": "다양한 매체와 접점에서 브랜드의 톤과 시각 언어를 일관되게 유지하는 역량입니다."},
+        {"code": "TREND_SENSITIVITY", "name": "트렌드 감각", "description": "시장과 문화의 변화 흐름을 빠르게 포착해 업무에 반영하는 역량입니다."}
+      ],
+      "personalityQuestions": [
+        {"question": "좋아하는 브랜드 하나를 골라, 그 브랜드다움이 어디에서 느껴지는지 말씀해 주세요.", "intent": "브랜드 정체성을 읽어 내는 관점을 확인합니다.", "competencyTags": ["BRAND_UNDERSTANDING"], "careerLevel": "ANY"},
+        {"question": "추상적인 키워드를 시각적인 결과물로 풀어냈던 경험을 말씀해 주세요.", "intent": "개념을 시각 콘셉트로 전환하는 사고 과정을 확인합니다.", "competencyTags": ["CONCEPT_DEVELOPMENT"], "careerLevel": "ANY"},
+        {"question": "본인의 취향과 브랜드가 요구하는 스타일이 다를 때 어떻게 작업하시겠습니까?", "intent": "개인 취향보다 브랜드의 요구를 우선하는 태도를 확인합니다.", "competencyTags": ["BRAND_UNDERSTANDING", "REQUIREMENT_ANALYSIS"], "careerLevel": "ANY"},
+        {"question": "여러 결과물에 걸쳐 같은 톤을 유지하기 위해 신경 쓰는 것은 무엇입니까?", "intent": "시각 언어를 일관되게 관리하는 방식을 확인합니다.", "competencyTags": ["VISUAL_CONSISTENCY"], "careerLevel": "ANY"},
+        {"question": "트렌드를 따르는 것과 브랜드의 고유함을 지키는 것 중 무엇을 우선하시겠습니까?", "intent": "변화와 정체성 사이에서 균형을 잡는 판단 기준을 확인합니다.", "competencyTags": ["TREND_SENSITIVITY", "BRAND_UNDERSTANDING"], "careerLevel": "ANY"},
+        {"question": "디자인을 잘 모르는 사람에게 시안을 설득했던 경험을 말씀해 주세요.", "intent": "디자인 콘셉트를 상대의 언어로 설명하는 방식을 확인합니다.", "competencyTags": ["COMMUNICATION", "CONCEPT_DEVELOPMENT"], "careerLevel": "ANY"},
+        {"question": "영감을 얻기 위해 평소에 꾸준히 하는 것은 무엇입니까?", "intent": "시각적 감각과 아이디어를 유지하는 습관을 확인합니다.", "competencyTags": ["TREND_SENSITIVITY", "CONCEPT_DEVELOPMENT"], "careerLevel": "ANY"},
+        {"question": "다른 직군과 디자인 방향을 두고 의견이 달랐던 경험을 말씀해 주세요.", "intent": "이견을 조율하며 함께 결과물을 만들어 가는 방식을 확인합니다.", "competencyTags": ["COLLABORATION"], "careerLevel": "ANY"},
+        {"question": "브랜드 디자인에 관심을 갖게 된 계기가 된 경험을 말씀해 주세요.", "intent": "직무에 대한 동기와 브랜드를 바라보는 시각을 확인합니다.", "competencyTags": ["BRAND_UNDERSTANDING"], "careerLevel": "NEW"},
+        {"question": "기존 브랜드를 리뉴얼할 때 바꿀 것과 지킬 것을 어떻게 구분했는지 말씀해 주세요.", "intent": "브랜드 자산을 이해하고 변화의 범위를 판단하는 역량을 확인합니다.", "competencyTags": ["BRAND_UNDERSTANDING", "VISUAL_CONSISTENCY"], "careerLevel": "EXPERIENCED"},
+        {"question": "디자인 결과물이 매체에 따라 다르게 보이는 문제를 해결했던 경험을 말씀해 주세요.", "intent": "여러 접점에서 시각적 일관성을 지키기 위한 문제 해결 방식을 확인합니다.", "competencyTags": ["VISUAL_CONSISTENCY", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "여러 시안 중 하나를 최종안으로 고를 때 무엇을 기준으로 판단합니까?", "intent": "감각이 아닌 근거로 디자인을 선택하는 기준을 확인합니다.", "competencyTags": ["REASONING", "CONCEPT_DEVELOPMENT"], "careerLevel": "ANY"},
+        {"question": "잠깐 지나가는 유행과 오래 지속될 흐름을 어떻게 구분합니까?", "intent": "트렌드를 비판적으로 읽어 내는 관점을 확인합니다.", "competencyTags": ["TREND_SENSITIVITY", "REASONING"], "careerLevel": "ANY"},
+        {"question": "새로운 표현 방식을 익혀 작업에 적용했던 경험을 말씀해 주세요.", "intent": "새로운 시도를 배우고 작업에 녹여 내는 태도를 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "ANY"},
+        {"question": "브랜드 가이드에 정해지지 않은 상황에서 디자인을 결정해야 한다면 어떻게 하시겠습니까?", "intent": "기준이 없는 상황에서도 브랜드의 일관성을 지키는 판단 방식을 확인합니다.", "competencyTags": ["VISUAL_CONSISTENCY", "PROBLEM_SOLVING"], "careerLevel": "ANY"},
+        {"question": "요청받은 방향이 브랜드와 맞지 않는다고 느낀다면 어떻게 하시겠습니까?", "intent": "브랜드를 지키기 위해 의견을 조율하고 전달하는 방식을 확인합니다.", "competencyTags": ["COMMUNICATION", "BRAND_UNDERSTANDING"], "careerLevel": "ANY"},
+        {"question": "팀 프로젝트에서 결과물의 시각적 통일성을 맞추기 위해 노력했던 경험을 말씀해 주세요.", "intent": "협업 결과물의 일관성을 챙기는 태도를 확인합니다.", "competencyTags": ["VISUAL_CONSISTENCY", "COLLABORATION"], "careerLevel": "NEW"},
+        {"question": "BX 디자이너로서 첫 직장에서 가장 먼저 배우고 싶은 것은 무엇입니까?", "intent": "직무에 대한 이해와 성장 의지를 확인합니다.", "competencyTags": ["LEARNING_ADAPTABILITY"], "careerLevel": "NEW"},
+        {"question": "여러 사람이 참여하는 브랜드 작업에서 디자인 품질을 일정하게 유지했던 방법을 말씀해 주세요.", "intent": "팀 단위 작업에서 일관된 품질을 관리하는 실무 역량을 확인합니다.", "competencyTags": ["VISUAL_CONSISTENCY", "COLLABORATION"], "careerLevel": "EXPERIENCED"},
+        {"question": "디자인 결과물이 브랜드 성과에 기여했는지 어떻게 확인했는지 말씀해 주세요.", "intent": "디자인의 효과를 근거로 돌아보는 성과 책임 의식을 확인합니다.", "competencyTags": ["BRAND_UNDERSTANDING", "REASONING"], "careerLevel": "EXPERIENCED"}
+      ]
+    }
+  ]
+}

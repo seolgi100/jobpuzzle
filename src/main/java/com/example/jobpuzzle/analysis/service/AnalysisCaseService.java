@@ -24,9 +24,6 @@ import com.example.jobpuzzle.global.error.CustomException;
 import com.example.jobpuzzle.global.error.ErrorCode;
 import com.example.jobpuzzle.jobcategory.entity.JobCategory;
 import com.example.jobpuzzle.jobcategory.repository.JobCategoryRepository;
-import com.example.jobpuzzle.interview.entity.InterviewSessionMode;
-import com.example.jobpuzzle.interview.repository.InterviewSessionRepository;
-import com.example.jobpuzzle.interview.repository.QuestionSetRepository;
 import com.example.jobpuzzle.user.entity.User;
 import com.example.jobpuzzle.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -62,8 +59,6 @@ public class AnalysisCaseService {
     private final JobCategoryRepository jobCategoryRepository;
     private final DocumentExtractionService documentExtractionService;
     private final AnalysisMaterialChunkService analysisMaterialChunkService;
-    private final QuestionSetRepository questionSetRepository;
-    private final InterviewSessionRepository interviewSessionRepository;
 
     // jobCategoryId를 안 보내면 회원 기본 관심 직무를 초기값으로 사용
     @Transactional
@@ -84,14 +79,14 @@ public class AnalysisCaseService {
         return AnalysisCaseResponse.of(analysisCase, findSources(analysisCaseId));
     }
 
+    // v2: 분석 결과 하나로 면접을 여러 번 만들 수 있어 완료된 분석은 모두 보여 준다.
     public List<AnalysisCaseResponse> getCompletedCases(Long userId) {
         return analysisCaseRepository
-                .findByUser_UserIdAndStatusOrderByCreatedAtDesc(
+                .findByUser_UserIdAndStatusAndHiddenAtIsNullOrderByCreatedAtDesc(
                         userId,
                         AnalysisCaseStatus.COMPLETED
                 )
                 .stream()
-                .filter(this::hasUnusedCompanyFitQuestionSet)
                 .map(analysisCase -> AnalysisCaseResponse.of(
                         analysisCase,
                         findSources(analysisCase.getAnalysisCaseId())
@@ -102,7 +97,7 @@ public class AnalysisCaseService {
     // 면접 준비 화면용: 분석을 시작한 모든 케이스(작성 중 DRAFT 제외)를 최신순으로
     public List<AnalysisCaseResponse> getCases(Long userId) {
         return analysisCaseRepository
-                .findByUser_UserIdAndStatusInOrderByCreatedAtDesc(userId, List.of(
+                .findByUser_UserIdAndStatusInAndHiddenAtIsNullOrderByCreatedAtDesc(userId, List.of(
                         AnalysisCaseStatus.INPUT_CONFIRMED,
                         AnalysisCaseStatus.ANALYZING,
                         AnalysisCaseStatus.COMPLETED,
@@ -111,27 +106,9 @@ public class AnalysisCaseService {
                 .stream()
                 .map(analysisCase -> AnalysisCaseResponse.of(
                         analysisCase,
-                        findSources(analysisCase.getAnalysisCaseId()),
-                        analysisCase.getStatus() == AnalysisCaseStatus.COMPLETED
-                                && hasUnusedCompanyFitQuestionSet(analysisCase)
+                        findSources(analysisCase.getAnalysisCaseId())
                 ))
                 .toList();
-    }
-
-    private boolean hasUnusedCompanyFitQuestionSet(AnalysisCase analysisCase) {
-        return analysisInputSnapshotRepository
-                .findByAnalysisCase_AnalysisCaseIdAndUser_UserId(
-                        analysisCase.getAnalysisCaseId(),
-                        analysisCase.getUser().getUserId()
-                )
-                .flatMap(snapshot -> questionSetRepository
-                        .findBySnapshot_SnapshotIdAndInterviewMode(
-                                snapshot.getSnapshotId(),
-                                InterviewSessionMode.COMPANY_FIT
-                        ))
-                .filter(questionSet -> !interviewSessionRepository
-                        .existsByQuestionSet_QuestionSetId(questionSet.getQuestionSetId()))
-                .isPresent();
     }
 
     @Transactional

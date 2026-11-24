@@ -109,7 +109,9 @@ app:
     # 생성 AI와 RAG embedding은 역할·비용·장애 계약이 달라 별도 설정으로 유지한다.
     generation:
       # 운영 기본은 모든 생성 stage가 같은 provider를 사용한다. stage override는 ai-e2e profile에서만 둔다.
-      default-provider: ${AI_GENERATION_DEFAULT_PROVIDER:mock}
+      # 평가 명세 9-1: stub(기본, 실제 호출 없음) | live(실제 Claude). record·replay는 이후 단계
+      mode: ${AI_MODE:stub}
+      max-retries: 2
       # thinking 끄기 위한 설정
       thinking-by-stage:
         JOB_POSTING_ANALYSIS: disabled
@@ -127,9 +129,8 @@ app:
           json05: ${ANTHROPIC_JSON05_MAX_OUTPUT_TOKENS:8192}
           json06: ${ANTHROPIC_JSON06_MAX_OUTPUT_TOKENS:4096}
           json07: ${ANTHROPIC_JSON07_MAX_OUTPUT_TOKENS:6144}
-          json09: ${ANTHROPIC_JSON09_MAX_OUTPUT_TOKENS:6144}
-          json10: ${ANTHROPIC_JSON10_MAX_OUTPUT_TOKENS:2048}
           json11: ${ANTHROPIC_JSON11_MAX_OUTPUT_TOKENS:4096}
+          json12: ${ANTHROPIC_JSON12_MAX_OUTPUT_TOKENS:4096}
       input-limits:
         # fixture 8·9 실측보다 충분히 큰 기본값이다. 초과 입력은 자동 축약하지 않고 Provider 호출 전에 실패한다.
         json01-rendered-prompt-chars: ${AI_JSON01_RENDERED_PROMPT_CHARS:40000}
@@ -141,11 +142,28 @@ app:
         json05-retrieval-chars: ${AI_JSON05_RETRIEVAL_CHARS:36000}
         json05-rendered-prompt-chars: ${AI_JSON05_RENDERED_PROMPT_CHARS:64000}
 
-  # 면접 티켓: 기본 면접 첫 1회 무료 후 1장, 약점 보완 1장, 공고 맞춤 3장
+  # v2 면접 질문 수: 기초 지식·자료 기반은 AI가 만들 질문 수, 인성은 관리자 등록 질문 중 고를 수
+  interview:
+    generated-question-count: 5
+    personality-question-count: 5
+
+  # 사용자 종합 평가 (평가 명세 4-3): 보고서 수, 강점·아쉬운 점 태그 수, 태그당 최소 질문 수
+  summary:
+    min-reports: 5
+    top-n: 2
+    min-questions-per-tag: 3
+
+  # 면접 티켓: 기본 면접 1장, 공고 맞춤 3장
   ticket:
     basic-cost: 1
-    weakness-cost: 1
     company-fit-cost: 3
+    # v2 (평가 명세 1장)
+    analysis-cost: 1
+    knowledge-cost: 1
+    material-cost: 3
+    personality-cost: 1
+    session-retry-cost: 1
+    question-regenerate-cost: 2
     products:
       - code: T5
         name: 면접 티켓 5장
@@ -162,8 +180,19 @@ app:
     toss:
       client-key: ${TOSS_CLIENT_KEY:}
       secret-key: ${TOSS_SECRET_KEY:}
+  # 시연용 시뮬레이션 계정: 이 아이디는 분석·질문 생성·답변 평가에서 AI 대신 계정에 저장된 결과를 다시 보여 준다.
+  # 쉼표로 여러 개. 비우면 시뮬레이션 없음
+  simulation:
+    login-ids: ${SIMULATION_LOGIN_IDS:}
+    min-delay: 5s
+    max-delay: 8s
   data-initializer:
     enabled: false
+
+  # 자동 로그인 토큰 서명 키. 운영은 REMEMBER_ME_KEY 필수, 비우면 실행마다 무작위 값
+  # (토큰은 DB에 저장되므로 재시작해도 자동 로그인이 유지된다)
+  security:
+    remember-me-key: ${REMEMBER_ME_KEY:${random.uuid}}
 
   storage:
     local:

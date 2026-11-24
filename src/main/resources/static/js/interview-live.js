@@ -97,15 +97,17 @@
       '</div>';
   }
 
+  var MODE_LABEL = {
+    KNOWLEDGE: '기초 지식 면접', MATERIAL: '자료 기반 면접', PERSONALITY: '인성 면접',
+    BASIC: '기본 질문', COMPANY_FIT: '맞춤 면접', WEAKNESS_REVIEW: '약점 보완'
+  };
+
   function modeLabel(mode) {
-    if (mode === 'BASIC') return '기본 질문';
-    if (mode === 'COMPANY_FIT') return '맞춤 면접';
-    return '약점 보완';
+    return MODE_LABEL[mode] || '면접';
   }
 
-
   function modeClass(mode) {
-    return mode === 'COMPANY_FIT' ? 'is-fit' : mode === 'WEAKNESS_REVIEW' ? 'is-weak' : 'is-basic';
+    return mode === 'COMPANY_FIT' || mode === 'MATERIAL' ? 'is-fit' : mode === 'WEAKNESS_REVIEW' ? 'is-weak' : 'is-basic';
   }
 
   function weaknessLabel(tag) {
@@ -233,25 +235,71 @@
     });
   }
 
+  // 분석 결과로 볼 면접 고르기 (평가 명세 1장): 기초 지식은 분석만 끝나면, 자료 기반은 분석이 "만들 수 있음"일 때만
   function load() {
-    message('분석 결과와 질문을 확인하고 있어요.');
-    api(window.JobPuzzleRoutes.path('/analysis/cases/' + analysisCaseId + '/status')).then(function (status) {
+    message('분석 결과를 확인하고 있어요.');
+    Promise.all([
+      api(window.JobPuzzleRoutes.path('/analysis/cases/' + analysisCaseId + '/status')),
+      api(window.JobPuzzleRoutes.path('/tickets/me')).catch(function () { return null; })
+    ]).then(function (values) {
+      var status = values[0];
       if (status.analysisCaseStatus !== 'COMPLETED') {
         throw new Error('분석이 아직 끝나지 않았어요. 분석 화면에서 상태를 확인해 주세요.');
       }
-      if (!status.canGenerateQuestions || !status.questionSetAvailable) {
-        throw new Error('이 분석 결과로는 맞춤 질문을 만들 수 없어요.');
-      }
-      return api(window.JobPuzzleRoutes.path('/analysis/cases/' + analysisCaseId + '/question-set'));
-    }).then(function (set) {
-      if (!set.canGenerateQuestions || !set.questions || !set.questions.length) {
-        throw new Error('면접에 쓸 맞춤 질문이 없어요.');
-      }
-      questionSet = set;
-      createSession();
+      renderModeChooser(status.canGenerateQuestions === true, values[1]);
     }).catch(function (error) {
       message(error.message, true);
     });
+  }
+
+  function renderModeChooser(materialAvailable, tickets) {
+    if (window.InterviewHome) window.InterviewHome.hide();
+    var costs = tickets ? tickets.costs : null;
+    function row(mode, title, note, cost, enabled) {
+      return '<li class="ih-quick__row' + (enabled ? '' : ' is-disabled') + '">' +
+        '<div class="ih-quick__text"><h3>' + esc(title) + '</h3><p>' + esc(note) + '</p></div>' +
+        (costs ? '<span class="ih-fare">티켓 <b>' + esc(cost) + '</b>장</span>' : '<span></span>') +
+        '<button type="button" class="ih-btn ih-btn--line" data-choose-mode="' + mode + '"' + (enabled ? '' : ' disabled') +
+        '>고르기</button></li>';
+    }
+    root.innerHTML = '<div class="lv-choose">' +
+      '<a class="lv-back" href="' + window.JobPuzzleRoutes.path('/interview') + '"><span aria-hidden="true">←</span> 면접 준비로 돌아가기</a>' +
+      '<div class="ih-quick ih-box"><h2 class="ih-quick__title">어떤 면접으로 연습할까요?</h2><ul>' +
+      row('KNOWLEDGE', '기초 지식 면접', '공고가 요구하는 기술과 지식을 얼마나 정확히 아는지 물어요.',
+        costs && costs.knowledge, true) +
+      row('MATERIAL', '자료 기반 면접', materialAvailable
+          ? '이력서·자기소개서·포트폴리오의 경험을 공고 요구사항과 연결해 파고들어요.'
+          : '자료에서 공고와 이어지는 근거를 찾지 못해 만들 수 없어요. 자료를 보완한 뒤 다시 분석해 주세요.',
+        costs && costs.material, materialAvailable) +
+      '</ul></div></div>';
+    root.querySelectorAll('[data-choose-mode]').forEach(function (button) {
+      button.addEventListener('click', function () { confirmGenerate(button.getAttribute('data-choose-mode')); });
+    });
+  }
+
+  function confirmGenerate(mode) {
+    var open = function () { generate(mode); };
+    if (!window.TicketConfirm) { open(); return; }
+    window.TicketConfirm.open({
+      usage: mode,
+      what: mode === 'KNOWLEDGE'
+        ? '공고 분석 결과로 기초 지식 질문을 만들고 바로 면접을 시작해요.'
+        : '내 자료와 공고 분석 결과로 경험 질문을 만들고 바로 면접을 시작해요.',
+      note: '질문을 만들지 못하면 티켓은 돌려드려요.',
+      confirmLabel: '질문 만들기',
+      onConfirm: open
+    });
+  }
+
+  function generate(mode) {
+    message(mode === 'KNOWLEDGE' ? '공고에 맞는 기초 지식 질문을 만들고 있어요.' : '내 자료로 경험 질문을 만들고 있어요.', false, mode);
+    api(window.JobPuzzleRoutes.path('/question-sets/' + mode.toLowerCase()), {
+      method: 'POST',
+      json: { analysisCaseId: Number(analysisCaseId) }
+    }).then(function (set) {
+      questionSet = set;
+      createSession();
+    }).catch(function (error) { handleGenerationError(error, mode); });
   }
 
   // 브라우저 기본 confirm 대신 디자인 시스템 확인 창(interview-home.js의 JPDialog)을 쓴다
@@ -295,34 +343,13 @@
       .catch(function (error) { message(error.message, true); });
   }
 
-  function startBasic() {
-    message('희망 직무에 맞는 기본 질문을 만들고 있어요.', false, 'BASIC');
-    Promise.all([api(window.JobPuzzleRoutes.path('/user/me')), api(window.JobPuzzleRoutes.path('/job-category'))]).then(function (values) {
-      var user = values[0];
-      var categories = values[1] || [];
-      var category = categories.filter(function (item) {
-        return String(item.jobCategoryId) === String(user.defaultJobCategoryId);
-      })[0];
-      if (!category) throw new Error('마이페이지에서 희망 직무를 먼저 설정해주세요.');
-      return api(window.JobPuzzleRoutes.path('/question-sets/basic'), {
-        method: 'POST',
-        json: { jobCategoryId: category.jobCategoryId, careerLevel: category.careerLevel }
-      });
-    }).then(function (set) {
+  // 인성 면접: AI 없이 희망 직무의 관리자 등록 질문에서 고른다 (직무는 서버가 회원 정보에서 읽음)
+  function startPersonality() {
+    message('희망 직무의 인성 질문을 고르고 있어요.', false, 'PERSONALITY');
+    api(window.JobPuzzleRoutes.path('/question-sets/personality'), { method: 'POST' }).then(function (set) {
       questionSet = set;
       createSession();
-    }).catch(function (error) { handleGenerationError(error, 'BASIC'); });
-  }
-
-  function startWeakness(tag) {
-    message('고른 약점을 확인하는 질문을 만들고 있어요.', false, 'WEAKNESS_REVIEW');
-    api(window.JobPuzzleRoutes.path('/question-sets/weakness'), {
-      method: 'POST',
-      json: { targetWeaknessTag: tag }
-    }).then(function (set) {
-      questionSet = set;
-      createSession();
-    }).catch(function (error) { handleGenerationError(error, 'WEAKNESS_REVIEW'); });
+    }).catch(function (error) { handleGenerationError(error, 'PERSONALITY'); });
   }
 
   // 질문을 고르지 않고 만든 질문을 모두 넣어 시작한다. 원치 않는 질문은 면접 중에 건너뛴다.
@@ -477,7 +504,8 @@
       (hasAnyAnswer ? '<button type="button" id="view-current-result" class="lv-link">지금까지 결과</button>' : '') +
       (session.analysisCaseId ? '<a class="lv-link" href="' +
         window.JobPuzzleRoutes.path('/analysis-results/' + encodeURIComponent(session.analysisCaseId)) + '">분석 결과</a>' : '') +
-      '<span class="lv-mode ' + modeClass(session.mode) + '">' + esc(modeLabel(session.mode)) + '</span></span></div>' +
+      '<span class="lv-mode ' + modeClass(session.mode) + '">' + esc(modeLabel(session.mode) +
+        (session.round > 1 ? ' · ' + session.round + '회차' : '')) + '</span></span></div>' +
       '<div class="lv-progress"><span>질문 <b>' + (currentIndex + 1) + '</b> / ' + questions.length + '</span>' +
       '<div class="lv-progress__bar" role="progressbar" aria-label="답변을 마친 질문" aria-valuemin="0" aria-valuemax="' +
       questions.length + '" aria-valuenow="' + finished + '"><i style="width:' + percent + '%"></i></div>' +
@@ -487,7 +515,9 @@
       '<button type="button" class="lv-hintbtn" id="lv-hint-toggle" aria-expanded="false" aria-controls="lv-hint">힌트 보기</button>' +
       '<div class="lv-hint" id="lv-hint" hidden><b>이 질문의 의도</b><span>' +
       esc(koreanizeEvaluationTerms(question.intent || '답변의 구체적인 근거와 본인 역할을 확인해요.')) +
-      '</span><b>집중 평가 기준</b><span>' + esc(koreanizeEvaluationTerms(focusLabels(question.evaluationFocus))) + '</span>' +
+      '</span>' + (question.competencyTags && question.competencyTags.length
+        ? '<b>확인하는 역량</b><span>' + esc(question.competencyTags.join(' · ')) + '</span>'
+        : '<b>집중 평가 기준</b><span>' + esc(koreanizeEvaluationTerms(focusLabels(question.evaluationFocus))) + '</span>') +
       weaknessOriginHtml(question) + '</div></section>' +
       conversationHtml +
       (followUpMessageId
@@ -848,10 +878,6 @@
       api(window.JobPuzzleRoutes.path('/interview-sessions/' + resumeSessionId))
         .then(resumeSession)
         .catch(function (error) { message(error.message, true); });
-    } else if (requestedMode === 'weakness') {
-      window.setTimeout(function () {
-        if (window.InterviewPage) window.InterviewPage.openWeakness();
-      }, 0);
     }
   });
   document.addEventListener('click', function (event) {
@@ -876,5 +902,5 @@
     event.preventDefault();
     event.returnValue = '';
   });
-  window.InterviewLive = { startBasic: startBasic, startWeakness: startWeakness, openQuestionSet: openQuestionSet };
+  window.InterviewLive = { startPersonality: startPersonality, openQuestionSet: openQuestionSet };
 })();
