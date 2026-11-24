@@ -112,6 +112,7 @@
       json: { paymentKey: q.get('paymentKey'), orderId: q.get('orderId'), amount: Number(q.get('amount')) }
     }).then(function (data) {
       showResult(true, '티켓 ' + data.chargedTickets + '장이 충전되었습니다. 보유 티켓 ' + data.balance + '장');
+      document.dispatchEvent(new CustomEvent('app-tickets-updated'));
     }).catch(function (error) { showResult(false, error.message); });
   }
 
