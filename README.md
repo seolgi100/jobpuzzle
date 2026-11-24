@@ -54,7 +54,7 @@ flowchart TD
 ## 팀원 및 담당
 
 | 이름 | GitHub | 담당 |
-| --- | --- | --- |
+| ---- | --- | --- |
 | 홍은표 | [@seolgi100](https://github.com/seolgi100) | 자료 등록·텍스트 추출(PDF, OCR), 최종 리포트 AI, 관리자, 직무 카테고리, API 정의서·클래스 정의서 |
 | 이명균 | [@meongkune](https://github.com/meongkune) | 모의면접 세션 진행, 답변 평가 AI, 심화 질문·재답변 처리, 리포트 확정 |
 | 유준영 | [@yjuny03](https://github.com/yjuny03) | 공고·지원자 자료 맞춤 분석 AI, 가이드 문서 RAG(Qdrant), AI 호출 로그, 요구사항 정의서·기능 정의서 |
