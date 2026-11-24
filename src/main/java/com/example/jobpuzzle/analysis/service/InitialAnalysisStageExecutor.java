@@ -107,6 +107,8 @@ public class InitialAnalysisStageExecutor {
                 JobPostingAnalysisResult result = aiResponseProcessor.parseJobPosting(
                         aiClientService.analyzeJobPosting(lease.selection(), prompt), allSources(lease)
                 );
+                // 요구사항이 하나도 없으면 맞춤 분석(JSON-05)을 만들 수 없다. 자료 분석(JSON-02) 비용을 쓰기 전에 멈추고 원인을 남긴다.
+                requireRequirements(result);
                 saveJobPostingSuccess(lease, result);
             } else {
                 CandidateMaterialAnalysisResult result = aiResponseProcessor.parseCandidateMaterial(
@@ -159,6 +161,10 @@ public class InitialAnalysisStageExecutor {
                     || latest.getStatus() == AiCallLogStatus.PENDING
                     || latest.getStatus() == AiCallLogStatus.SUCCEEDED)) {
                 return null;
+            } else if (latest != null && latest.getStatus() == AiCallLogStatus.FAILED
+                    && latest.getErrorType() == AiCallLogErrorType.REQUIREMENTS_NOT_FOUND) {
+                // 같은 공고로 다시 호출해도 결과가 같으므로 유료 AI를 다시 부르지 않는다.
+                throw new CustomException(ErrorCode.JOB_POSTING_REQUIREMENTS_NOT_FOUND);
             }
 
             AiCallLog log = AiCallLog.pending(
@@ -228,7 +234,20 @@ public class InitialAnalysisStageExecutor {
     // 이미 계약된 CustomException은 보존하고 AI 실행 오류만 안전한 AI_001 응답으로 변환한다.
     private CustomException toApiException(AiCallLogErrorType errorType, RuntimeException exception) {
         if (exception instanceof CustomException customException) return customException;
+        // 입력 공고 문제는 AI 오류(AI_001)와 구분해 사용자가 고칠 수 있는 오류로 돌려준다.
+        if (errorType == AiCallLogErrorType.REQUIREMENTS_NOT_FOUND) {
+            return new CustomException(ErrorCode.JOB_POSTING_REQUIREMENTS_NOT_FOUND);
+        }
         return new CustomException(ErrorCode.AI_RESPONSE_INVALID, clientMessage(errorType));
+    }
+
+    private static void requireRequirements(JobPostingAnalysisResult result) {
+        boolean noRequirements = result.getRequirements() == null || result.getRequirements().isEmpty();
+        boolean noPreferred = result.getPreferred() == null || result.getPreferred().isEmpty();
+        if (noRequirements && noPreferred) {
+            throw new AiProcessingException(AiCallLogErrorType.REQUIREMENTS_NOT_FOUND,
+                    "job posting has no requirements or preferred qualifications");
+        }
     }
 
     private AiCallLogErrorType errorType(RuntimeException exception) {

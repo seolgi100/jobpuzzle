@@ -75,6 +75,25 @@ public class GuideContextService {
         return GuideContextResultDto.from(result, contextChunks);
     }
 
+    // 분석을 백그라운드로 넘기기 전에, 쓸 수 있는 가이드가 있는지만 빠르게 확인한다.
+    // (AI를 부르기 전에 실패를 알려주고, 이 오류를 /run 응답으로 바로 전달하기 위함)
+    @Transactional(readOnly = true)
+    public void requireAvailableGuide(Long userId, Long analysisCaseId) {
+        AnalysisInputSnapshot snapshot = analysisInputSnapshotRepository
+                .findByAnalysisCase_AnalysisCaseIdAndUser_UserId(analysisCaseId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SNAPSHOT_NOT_FOUND));
+        GuideContextResult existing = findExisting(String.valueOf(snapshot.getSnapshotId()));
+        if (existing != null) {
+            if (existing.getMatchType() == GuideMatchType.NONE) {
+                throw new CustomException(ErrorCode.GUIDE_ACTIVE_NOT_FOUND);
+            }
+            return;
+        }
+        if (findGuide(snapshot.getJobCategory()) == null) {
+            throw new CustomException(ErrorCode.GUIDE_ACTIVE_NOT_FOUND);
+        }
+    }
+
     private GuideContextResult findExisting(String inputReferenceId) {
         return guideContextResultRepository.findByPurposeAndInputReferenceTypeAndInputReferenceId(
                 GuideContextPurpose.CUSTOMIZED_SYNTHESIS,

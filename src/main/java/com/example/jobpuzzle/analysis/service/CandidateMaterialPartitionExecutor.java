@@ -27,11 +27,15 @@ import com.example.jobpuzzle.analysis.repository.CandidateMaterialPartitionRunRe
 import com.example.jobpuzzle.analysis.repository.AnalysisInputSnapshotRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // 4-6b-3의 독립 executor다. 기존 /run은 아직 이 서비스를 호출하지 않아 현재 단일 JSON-02 흐름에 영향이 없다.
 @Service
@@ -50,15 +54,18 @@ public class CandidateMaterialPartitionExecutor {
     private final AiGenerationProperties properties;
     private final CandidateMaterialPartitionMerger merger;
     private final CandidateMaterialPartitionSchemaFactory partitionSchemas;
+    private final Executor partitionExecutor;
 
     public CandidateMaterialPartitionExecutor(CandidateMaterialPartitionPlanner planner, CandidateMaterialPartitionRunRepository runs,
                                               CandidateMaterialPartitionRepository partitions, AnalysisInputSnapshotRepository snapshots, PromptTemplateRepository prompts,
                                               AiClientService clients, PromptTemplateRenderer renderer,
                                               GenerationInputLimitValidator inputLimits, AiResponseProcessor responses,
                                               AiCallLogRepository logs, ObjectMapper objectMapper, AiGenerationProperties properties,
-                                              CandidateMaterialPartitionMerger merger) {
+                                              CandidateMaterialPartitionMerger merger,
+                                              @Qualifier("json02PartitionExecutor") Executor partitionExecutor) {
         this.planner = planner; this.runs = runs; this.partitions = partitions; this.snapshots = snapshots; this.prompts = prompts; this.clients = clients;
         this.renderer = renderer; this.inputLimits = inputLimits; this.responses = responses; this.logs = logs; this.objectMapper = objectMapper; this.properties = properties; this.merger = merger;
+        this.partitionExecutor = partitionExecutor;
         this.partitionSchemas = new CandidateMaterialPartitionSchemaFactory(objectMapper);
     }
 
@@ -90,52 +97,69 @@ public class CandidateMaterialPartitionExecutor {
             }).toList();
         }
         run.start(); runs.save(run);
-        boolean failed = false;
+        // ponytail: partition마다 완전히 독립된 입력·로그·행이라 전용 풀(json02PartitionExecutor)에서 동시에 돌려도 안전하다.
+        AtomicBoolean failed = new AtomicBoolean(false);
+        List<CompletableFuture<Void>> futures = new java.util.ArrayList<>();
         for (int index = 0; index < stored.size(); index++) {
-            CandidateMaterialPartition storedPartition = stored.get(index);
+            int partitionIndex = index;
+            CandidateMaterialPartition storedPartition = stored.get(partitionIndex);
             if (storedPartition.getStatus() == CandidateMaterialPartitionStatus.SUCCEEDED) continue;
-            AiCallLog log = null;
-            AiProviderCompletionMetadata completion = null;
-            boolean providerStarted = false;
-            try {
-                CandidateMaterialMarkerPartition partition = plan.get(index);
-                if (partition.oversizedSingleMarker()) throw new AiProcessingException(AiCallLogErrorType.INPUT_LIMIT_EXCEEDED, "single marker exceeds partition limit");
-                List<AnalysisInputSnapshotContextSource> partitionSources = List.of(sourceFor(partition, sources));
-                String rendered = renderer.render(AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS, prompt, context, partitionSources, List.of());
-                inputLimits.validateRenderedPrompt(selection, rendered);
-                log = AiCallLog.pending(selection.provider(), selection.model(), AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS,
-                        AiInputReferenceType.ANALYSIS_SNAPSHOT, String.valueOf(context.getSnapshotId()), storedPartition.getInputFingerprint(), prompt, null, null);
-                log.start(); logs.save(log); storedPartition.start(log); partitions.save(storedPartition);
-                providerStarted = true;
-                String raw = clients.analyzeCandidateMaterial(selection, rendered, partition.documentType());
-                completion = clients.consumeCompletionMetadata(selection);
-                var result = responses.parseCandidateMaterial(raw, partitionSources);
-                storedPartition.succeed(objectMapper.writeValueAsString(result));
-                recordMetadata(log, completion == null ? null : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
-                log.succeed(); partitions.save(storedPartition); logs.save(log);
-            } catch (RuntimeException | JsonProcessingException exception) {
-                CandidateMaterialMarkerPartition failedPartition = plan.get(index);
-                if (recoverBySingleMarkers(exception, failedPartition, context, sources, prompt, selection, storedPartition)) {
-                    continue;
+            futures.add(CompletableFuture.runAsync(() -> {
+                if (!processPartition(partitionIndex, storedPartition, plan, context, sources, prompt, selection)) {
+                    failed.set(true);
                 }
-                if (log == null && !providerStarted) {
-                    log = AiCallLog.preparationFailure(selection.provider(), selection.model(), AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS,
-                            AiInputReferenceType.ANALYSIS_SNAPSHOT, String.valueOf(context.getSnapshotId()), storedPartition.getInputFingerprint(), prompt);
-                    log.start();
-                    log.fail(errorType(exception), safeMessage(exception));
-                    logs.save(log);
-                    storedPartition.start(log);
-                }
-                if (log != null && log.getStatus() == AiCallLogStatus.RUNNING) {
-                    recordMetadata(log, failureMetadata(exception, completion));
-                    log.fail(errorType(exception), safeMessage(exception));
-                    logs.save(log);
-                }
-                storedPartition.fail(failureKind(exception)); partitions.save(storedPartition); failed = true;
-            }
+            }, partitionExecutor));
         }
-        if (failed) { run.fail(); return runs.save(run); }
+        futures.forEach(CompletableFuture::join);
+        if (failed.get()) { run.fail(); return runs.save(run); }
         run.succeed(); return runs.save(run);
+    }
+
+    // true = 성공(또는 marker 단위 복구 성공), false = 실패 처리됨. executeRun에서 partition별로 병렬 호출한다.
+    private boolean processPartition(int index, CandidateMaterialPartition storedPartition, List<CandidateMaterialMarkerPartition> plan,
+                                      AnalysisInputSnapshotContext context, List<AnalysisInputSnapshotContextSource> sources,
+                                      PromptTemplate prompt, GenerationClientSelection selection) {
+        AiCallLog log = null;
+        AiProviderCompletionMetadata completion = null;
+        boolean providerStarted = false;
+        try {
+            CandidateMaterialMarkerPartition partition = plan.get(index);
+            if (partition.oversizedSingleMarker()) throw new AiProcessingException(AiCallLogErrorType.INPUT_LIMIT_EXCEEDED, "single marker exceeds partition limit");
+            List<AnalysisInputSnapshotContextSource> partitionSources = List.of(sourceFor(partition, sources));
+            String rendered = renderer.render(AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS, prompt, context, partitionSources, List.of());
+            inputLimits.validateRenderedPrompt(selection, rendered);
+            log = AiCallLog.pending(selection.provider(), selection.model(), AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS,
+                    AiInputReferenceType.ANALYSIS_SNAPSHOT, String.valueOf(context.getSnapshotId()), storedPartition.getInputFingerprint(), prompt, null, null);
+            log.start(); logs.save(log); storedPartition.start(log); partitions.save(storedPartition);
+            providerStarted = true;
+            String raw = clients.analyzeCandidateMaterial(selection, rendered, partition.documentType());
+            completion = clients.consumeCompletionMetadata(selection);
+            var result = responses.parseCandidateMaterial(raw, partitionSources);
+            storedPartition.succeed(objectMapper.writeValueAsString(result));
+            recordMetadata(log, completion == null ? null : completion.withPostProcessing(true, true, true, false, AiFailureKind.NONE));
+            log.succeed(); partitions.save(storedPartition); logs.save(log);
+            return true;
+        } catch (RuntimeException | JsonProcessingException exception) {
+            CandidateMaterialMarkerPartition failedPartition = plan.get(index);
+            if (recoverBySingleMarkers(exception, failedPartition, context, sources, prompt, selection, storedPartition)) {
+                return true;
+            }
+            if (log == null && !providerStarted) {
+                log = AiCallLog.preparationFailure(selection.provider(), selection.model(), AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS,
+                        AiInputReferenceType.ANALYSIS_SNAPSHOT, String.valueOf(context.getSnapshotId()), storedPartition.getInputFingerprint(), prompt);
+                log.start();
+                log.fail(errorType(exception), safeMessage(exception));
+                logs.save(log);
+                storedPartition.start(log);
+            }
+            if (log != null && log.getStatus() == AiCallLogStatus.RUNNING) {
+                recordMetadata(log, failureMetadata(exception, completion));
+                log.fail(errorType(exception), safeMessage(exception));
+                logs.save(log);
+            }
+            storedPartition.fail(failureKind(exception)); partitions.save(storedPartition);
+            return false;
+        }
     }
 
     // max_tokens/JSON 미완결처럼 marker 경계가 원인인 실패만 한 단계 더 작게 재시도한다.

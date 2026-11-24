@@ -32,6 +32,9 @@ public enum ErrorCode {
     // 재시도하면 될 수 있는 상황"임을 알 수 있게 한다. 현재 point 수·hard limit 등 판단 근거 수치는
     // 서버 로그에만 남기고 이 코드의 메시지에는 포함하지 않는다.
     VECTOR_CAPACITY_EXCEEDED(HttpStatus.SERVICE_UNAVAILABLE, "ANALYSIS_017", "현재 분석 자료를 저장할 수 있는 용량이 부족합니다. 잠시 후 다시 시도해 주세요."),
+    // 분석을 백그라운드 풀에 접수하지 못했을 때(대기열 꽉 찬 경우)만 쓴다. 상태는 FAILED로 되돌리고 티켓도 환불한다.
+    ANALYSIS_QUEUE_FULL(HttpStatus.SERVICE_UNAVAILABLE, "ANALYSIS_018", "지금은 분석 요청이 많아 접수할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+    JOB_POSTING_REQUIREMENTS_NOT_FOUND(HttpStatus.CONFLICT, "ANALYSIS_019", "공고에서 자격요건이나 우대사항을 찾지 못했습니다. 공고 원문에 자격요건이 포함되어 있는지 확인해 주세요."),
     SNAPSHOT_NOT_FOUND(HttpStatus.NOT_FOUND, "ANALYSIS_001", "확정된 분석 스냅샷을 찾을 수 없습니다."),
     ANALYSIS_CASE_NOT_FOUND(HttpStatus.NOT_FOUND, "ANALYSIS_002", "존재하지 않는 분석 작업입니다."),
     ANALYSIS_CASE_NOT_DRAFT(HttpStatus.BAD_REQUEST, "ANALYSIS_003", "DRAFT 상태의 분석 작업만 자료·기준을 변경할 수 있습니다."),

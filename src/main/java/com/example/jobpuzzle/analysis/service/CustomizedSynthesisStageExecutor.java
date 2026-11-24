@@ -147,6 +147,8 @@ public class CustomizedSynthesisStageExecutor {
         } catch (RuntimeException exception) {
             // 하위 실행 단계가 이미 실패 log와 CustomException을 확정한 경우 중복 기록하지 않는다.
             if (exception instanceof CustomException customException) throw customException;
+            // provider 호출 전(입력 구성·스키마·프롬프트 렌더링)에 난 예외는 아래에서 일반 메시지로 바뀌므로, 원인을 진단 로그에 남긴다.
+            diagnostic.failure("JSON05_PREPARE", exception);
             recordFailure(lease.aiCallLogId(), errorType(exception), exception);
             throw toApiException(errorType(exception), exception);
         }

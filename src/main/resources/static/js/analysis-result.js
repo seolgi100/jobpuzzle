@@ -29,10 +29,12 @@
       var must = m.requirementType === 'REQUIRED';
       var refs = (m.candidateSourceRefs || []).map(function (r) { return (SRC[r.documentType] || '지원 자료') + (r.pageNumber ? ' ' + r.pageNumber + '쪽' : ''); })
         .filter(function (v, i, all) { return all.indexOf(v) === i; });
+      // 확인된 근거·부족한 근거가 둘 다 있으면 나란히, 하나만 있으면 칸을 채운다(색은 유지)
+      var soloEv = (!!m.candidateEvidence) !== (!!m.missingPoint) ? ' ev--solo' : '';
       return '<details class="req"><summary><span class="req__kind' + (must ? ' req__kind--must' : '') + '">' + (must ? '필수' : '우대') + '</span>' +
         '<p class="req__text">' + esc(m.requirement) + '</p><span class="lvp lvp--' + lv(m)[1] + '">' + lv(m)[0] + '</span></summary><div class="req__body">' +
-        (m.candidateEvidence ? '<div class="ev"><small>확인된 근거</small>' + esc(m.candidateEvidence) + '</div>' : '') +
-        (m.missingPoint ? '<div class="ev ev--miss"><small>부족한 근거</small>' + esc(m.missingPoint) + '</div>' : '') +
+        (m.candidateEvidence ? '<div class="ev' + soloEv + '"><small>확인된 근거</small>' + esc(m.candidateEvidence) + '</div>' : '') +
+        (m.missingPoint ? '<div class="ev ev--miss' + soloEv + '"><small>부족한 근거</small>' + esc(m.missingPoint) + '</div>' : '') +
         (m.reason ? '<div class="ev ev--wide"><small>판단 이유</small>' + esc(m.reason) + '</div>' : '') +
         '<div class="ev ev--wide"><small>사용된 자료</small><div class="ev__src">' +
         (refs.length ? refs.map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') : '<span>연결된 자료 없음</span>') + '</div></div>' +
@@ -54,7 +56,6 @@
 
     // 면접 모드(기초 지식·자료 기반)를 고를 때 질문을 만든다.
     var cta = ['이 분석으로 면접 보기', route('/interview?analysisCaseId=' + encodeURIComponent(caseId))];
-    var ctaSub = '기초 지식 면접이나 내 자료를 파고드는 자료 기반 면접을 고를 수 있습니다.';
 
     var limits = result.readiness && result.readiness.limitations || [];
     root.innerHTML =
@@ -71,8 +72,7 @@
       '<div class="ar-legend">' + ['high', 'medium', 'low', 'none'].map(function (k) { return '<span><i class="lv--' + k + '"></i>' + { high: '충족', medium: '일부 충족', low: '낮은 연결', none: '근거 부족' }[k] + ' <b>' + counts[k] + '</b></span>'; }).join('') + '</div>' +
       '<div class="ar-kind"><div>필수 요구사항<b>' + req.length + '개 중 ' + req.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div>' +
       '<div>우대 요구사항<b>' + pref.length + '개 중 ' + pref.filter(function (m) { return connected(m.matchLevel); }).length + '개 연결</b></div></div></section>' +
-      '<section class="dcard ar-next"><h2 class="rs-h">분석을 연습으로 이어 갑니다</h2><p class="rs-sub" style="margin-bottom:0">' + ctaSub + '</p>' +
-      '<div class="ar-next__row"><span>보완 과제</span><b>' + plans.length + '개</b></div>' +
+      '<section class="dcard ar-next"><div class="ar-next__row"><span>보완 과제</span><b>' + plans.length + '개</b></div>' +
       '<a href="' + cta[1] + '" class="dbtn dbtn--navy" style="margin-top:16px">' + cta[0] + '</a></section></div>' +
       '<section class="ar-sec" aria-labelledby="req-title"><div class="ar-sec__head"><div><h2 id="req-title">요구사항 연결 분석<small>' + matches.length + '개</small></h2>' +
       '<p>공고의 조건과 내 자료에서 찾은 근거를 나란히 비교합니다. 눌러서 자세히 볼 수 있습니다.</p></div>' +

@@ -190,16 +190,11 @@ class AnalysisPipelineDatabaseIntegrationTest {
                 com.example.jobpuzzle.guide.entity.GuideContextInputReferenceType.ANALYSIS_SNAPSHOT,
                 String.valueOf(snapshot.getSnapshotId()))).isEmpty();
         assertThat(retrievalResultRepository.findBySnapshot_SnapshotIdOrderByRetrievalResultIdAsc(snapshot.getSnapshotId())).isEmpty();
+        // 가이드 확인을 AI 호출 전 사전 검사로 옮겨, 가이드가 없으면 JSON-01·02도 호출하지 않는다 (불필요한 AI 비용 방지).
         var snapshotLogs = aiCallLogRepository.findAll().stream()
                 .filter(log -> (log.getInputReferenceType() == com.example.jobpuzzle.ai.log.AiInputReferenceType.ANALYSIS_SNAPSHOT && log.getInputReferenceId().equals(String.valueOf(snapshot.getSnapshotId()))))
                 .toList();
-        assertThat(snapshotLogs).extracting(log -> log.getExecutionStage())
-                .containsExactlyInAnyOrder(AiExecutionStage.JOB_POSTING_ANALYSIS,
-                        AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS, AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS)
-                .doesNotContain(AiExecutionStage.CUSTOMIZED_SYNTHESIS);
-        assertThat(snapshotLogs).filteredOn(log -> log.getExecutionStage() == AiExecutionStage.CANDIDATE_MATERIAL_ANALYSIS)
-                .extracting(log -> log.getCallRole())
-                .containsExactlyInAnyOrder(AiCallLogRole.PROVIDER_CALL, AiCallLogRole.AGGREGATE_RESULT);
+        assertThat(snapshotLogs).isEmpty();
     }
 
     @Test
