@@ -173,5 +173,7 @@
         loadCurrentUser();
         loadGuestHeaderAuthState();
         document.addEventListener('app-user-updated', function (event) { renderUserDisplay(event.detail); });
+        // 티켓 충전 등으로 잔액이 바뀐 화면에서 header.js가 처음 그린 뒤라도 badge를 다시 불러온다.
+        document.addEventListener('app-tickets-updated', loadTicketCount);
     });
 })();
