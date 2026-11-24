@@ -134,6 +134,7 @@ public class AnalysisStatusQueryService {
         return switch (type) {
             case TIMEOUT, RATE_LIMIT -> "ANALYSIS_PROVIDER_TEMPORARILY_UNAVAILABLE";
             case INPUT_LIMIT_EXCEEDED -> "ANALYSIS_INPUT_INVALID";
+            case REQUIREMENTS_NOT_FOUND -> "ANALYSIS_JOB_POSTING_REQUIREMENTS_NOT_FOUND";
             case SOURCE_REFERENCE_INVALID, RESPONSE_VALIDATION_FAILED ->
                     "ANALYSIS_RESULT_GENERATION_FAILED";
             default -> "ANALYSIS_EXECUTION_FAILED";
@@ -144,6 +145,7 @@ public class AnalysisStatusQueryService {
         return switch (type) {
             case TIMEOUT, RATE_LIMIT -> "분석 서비스 응답이 지연되고 있어요.";
             case INPUT_LIMIT_EXCEEDED -> "분석할 자료의 내용을 확인해 주세요.";
+            case REQUIREMENTS_NOT_FOUND -> "공고에서 자격요건이나 우대사항을 찾지 못했어요. 공고 원문에 자격요건이 포함되어 있는지 확인해 주세요.";
             default -> "분석 결과를 생성하지 못했어요.";
         };
     }

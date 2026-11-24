@@ -41,7 +41,7 @@
 .ar-top { margin-top: 20px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .ar-dist { display: flex; height: 14px; margin-top: 18px; border-radius: 2px; overflow: hidden; gap: 2px; }
 .ar-dist i { display: block; }
-.lv--high { background: #12151B; } .lv--medium { background: #3A62A8; } .lv--low { background: #8A4B14; } .lv--none { background: #8A4B14; }
+.lv--high { background: #12151B; } .lv--medium { background: #3A62A8; } .lv--low { background: #8A4B14; } .lv--none { background: #92342A; }
 .ar-legend { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--text-2); }
 .ar-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .ar-legend i { width: 10px; height: 10px; border-radius: 2px; }
@@ -82,6 +82,8 @@
 .ev--miss { background: #F6EFE8; }
 .ev--miss small { color: var(--danger); }
 .ev--wide { grid-column: 1 / -1; background: #fff; border: 1px solid #EEF1F5; }
+/* 확인된 근거·부족한 근거 중 하나만 있을 때 칸을 채운다(색은 그대로, 폭만 ev--wide처럼 전체) */
+.ev--solo { grid-column: 1 / -1; }
 .ev__src { display: flex; flex-wrap: wrap; gap: 6px; }
 .ev__src span { height: 26px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 2px; background: #EEF1F5; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
 

@@ -190,10 +190,23 @@ class LiveAnalysisDryRunTest {
         for (Long id : extractions) data(post("/analysis-cases/" + caseId + "/sources"), Map.of("extractionId", id));
         data(post("/analysis-cases/" + caseId + "/confirm"), null);
         data(post("/analysis-cases/" + caseId + "/index"), null);
-        var response = mockMvc.perform(post("/analysis/cases/" + caseId + "/run").with(user(principal))).andReturn().getResponse();
-        Run run = new Run(count, response.getStatus(), response.getContentAsString(StandardCharsets.UTF_8), List.copyOf(CALLS));
+        mockMvc.perform(post("/analysis/cases/" + caseId + "/run").with(user(principal)));
+        // /run은 분석을 백그라운드로 접수만 하고 바로 돌아오므로, 성공·실패는 /status가 ANALYZING을 벗어날 때까지 기다려 확인한다.
+        JsonNode status = waitUntilNotAnalyzing(caseId);
+        boolean completed = "COMPLETED".equals(status.path("analysisCaseStatus").asText());
+        Run run = new Run(count, completed ? 200 : 500, status.toString(), List.copyOf(CALLS));
         report(run);
         return run;
+    }
+
+    private JsonNode waitUntilNotAnalyzing(Long caseId) throws Exception {
+        long deadline = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < deadline) {
+            JsonNode status = data(get("/analysis/cases/" + caseId + "/status"), null);
+            if (!"ANALYZING".equals(status.path("analysisCaseStatus").asText())) return status;
+            Thread.sleep(100);
+        }
+        throw new AssertionError("analysis did not finish within 30 seconds");
     }
 
     // 사람이 읽을 점검표: 단계별 호출 수·가장 긴 프롬프트 길이·실패 이유

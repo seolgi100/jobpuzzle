@@ -76,7 +76,7 @@ class CandidateMaterialPartitionExecutorTest {
         CandidateMaterialPartitionExecutor executor = new CandidateMaterialPartitionExecutor(
                 new CandidateMaterialPartitionPlanner(new com.example.jobpuzzle.ai.validation.AnalysisSourceMarkerParser()), runs, partitions,
                 snapshots, prompts, clients, renderer, limits, responses, logs, new ObjectMapper(), new AiGenerationProperties(),
-                mock(CandidateMaterialPartitionMerger.class));
+                mock(CandidateMaterialPartitionMerger.class), Runnable::run);
         var partitionLimits = new CandidateMaterialPartitionPlanner.Limits(100, 8);
 
         assertThat(executor.execute(context, List.of(source), partitionLimits)).isTrue();

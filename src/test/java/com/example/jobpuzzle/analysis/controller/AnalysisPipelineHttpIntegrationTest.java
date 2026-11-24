@@ -92,36 +92,28 @@ class AnalysisPipelineHttpIntegrationTest {
         Fixture fixture = fixture(true);
         confirm(fixture);
 
+        // /run은 분석을 백그라운드에 넘기고 바로 202(ANALYZING)로 응답한다.
         mockMvc.perform(post("/analysis/cases/{caseId}/run", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
-                .andExpect(status().isOk())
+                .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.status").value("COMPLETED"));
+                .andExpect(jsonPath("$.data.status").value("ANALYZING"));
+        waitUntilAnalysisFinishes(fixture);
 
         mockMvc.perform(get("/analysis/cases/{caseId}/status", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.analysisCaseStatus").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.canGenerateQuestions").value(true))
-                // v2: 분석은 질문 세트를 만들지 않는다. 자료 기반 질문은 면접 생성 때 만든다.
-                .andExpect(jsonPath("$.data.questionSetAvailable").value(false));
+                .andExpect(jsonPath("$.data.canGenerateQuestions").value(true));
 
+        // v2: 분석은 질문 세트를 만들지 않는다. 자료 기반 질문은 면접 생성 때 만든다(/question-sets).
         mockMvc.perform(get("/analysis/cases/{caseId}/result", fixture.analysisCase().getAnalysisCaseId())
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.readiness.canGenerateQuestions").value(true))
-                .andExpect(jsonPath("$.data.questionSet.questions").isEmpty());
-
-        mockMvc.perform(get("/analysis/cases/{caseId}/question-set", fixture.analysisCase().getAnalysisCaseId())
-                        .with(authenticated(fixture.user())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.canGenerateQuestions").value(true))
-                .andExpect(jsonPath("$.data.questionSetId").doesNotExist())
-                .andExpect(jsonPath("$.data.questions").isEmpty());
+                .andExpect(jsonPath("$.data.readiness.canGenerateQuestions").value(true));
     }
 
     @Test
@@ -140,6 +132,18 @@ class AnalysisPipelineHttpIntegrationTest {
                         .with(authenticated(fixture.user())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.analysisCaseStatus").value("FAILED"));
+    }
+
+    private void waitUntilAnalysisFinishes(Fixture fixture) throws Exception {
+        // 백그라운드 분석이 끝날 때까지 화면과 같은 방식으로 /status를 확인한다.
+        long deadline = System.currentTimeMillis() + 60_000;
+        while (System.currentTimeMillis() < deadline) {
+            String body = mockMvc.perform(get("/analysis/cases/{caseId}/status", fixture.analysisCase().getAnalysisCaseId())
+                    .with(authenticated(fixture.user()))).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+            if (!body.contains("\"analysisCaseStatus\":\"ANALYZING\"")) return;
+            Thread.sleep(200);
+        }
+        throw new AssertionError("analysis did not finish within 60 seconds");
     }
 
     private void confirm(Fixture fixture) throws Exception {

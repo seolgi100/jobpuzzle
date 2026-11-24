@@ -115,7 +115,9 @@ class InitialAnalysisStageExecutorTest {
         when(promptTemplateRenderer.fingerprintMaterial(any(), any(), any(), any(), any())).thenReturn("fingerprint-material");
         when(promptTemplateRenderer.render(any(), any(), any(), any(), any())).thenReturn("rendered prompt");
         when(aiResponseProcessor.parseJobPosting(anyString(), any())).thenReturn(JobPostingAnalysisResult.builder()
-                .mainTasks(List.of()).requirements(List.of()).preferred(List.of()).companyValues(List.of()).coreCompetencies(List.of()).conflicts(List.of()).missingEvidence(List.of()).build());
+                .mainTasks(List.of()).requirements(List.of(JobPostingAnalysisResult.Requirement.builder()
+                        .requirementId("REQ-1").text("Java 백엔드 개발 경험").sourceRefs(List.of(new com.example.jobpuzzle.ai.dto.SourceReference())).build()))
+                .preferred(List.of()).companyValues(List.of()).coreCompetencies(List.of()).conflicts(List.of()).missingEvidence(List.of()).build());
         when(aiResponseProcessor.parseCandidateMaterial(anyString(), any())).thenReturn(CandidateMaterialAnalysisResult.builder()
                 .availableDocumentTypes(List.of(UserDocumentType.RESUME)).missingEvidence(List.of()).build());
         when(jobPostingAnalysisRepository.existsBySnapshot_SnapshotId(SNAPSHOT_ID)).thenReturn(false);
@@ -182,6 +184,51 @@ class InitialAnalysisStageExecutorTest {
 
         assertThat(savedLogs).hasSize(1);
         assertThat(savedLogs.get(0).getErrorType()).isEqualTo(AiCallLogErrorType.RATE_LIMIT);
+    }
+
+    @Test
+    @DisplayName("공고에서 자격요건·우대사항을 하나도 찾지 못하면 결과를 저장하지 않고 입력 문제로 실패시킨다")
+    void failsWithRequirementsNotFoundWhenPostingHasNoRequirements() {
+        when(aiClientService.analyzeJobPosting(any(GenerationClientSelection.class), anyString())).thenReturn("{}");
+        when(aiResponseProcessor.parseJobPosting(anyString(), any())).thenReturn(JobPostingAnalysisResult.builder()
+                .mainTasks(List.of()).requirements(List.of()).preferred(List.of()).companyValues(List.of())
+                .coreCompetencies(List.of()).conflicts(List.of()).missingEvidence(List.of()).build());
+
+        CustomException exception = catchThrowableOfType(
+                () -> executor.execute(AiExecutionStage.JOB_POSTING_ANALYSIS, context, jobSources, List.of()),
+                CustomException.class);
+
+        // AI 오류(AI_001)가 아니라 사용자가 고칠 수 있는 공고 문제로 알려야 한다.
+        assertThat(exception.getErrorCode()).isEqualTo(com.example.jobpuzzle.global.error.ErrorCode.JOB_POSTING_REQUIREMENTS_NOT_FOUND);
+        verify(jobPostingAnalysisRepository, never()).saveAndFlush(any());
+        assertThat(savedLogs).hasSize(1);
+        assertThat(savedLogs.get(0).getStatus()).isEqualTo(AiCallLogStatus.FAILED);
+        assertThat(savedLogs.get(0).getErrorType()).isEqualTo(AiCallLogErrorType.REQUIREMENTS_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("요구사항 없음으로 실패한 공고는 같은 입력으로 다시 실행해도 AI를 다시 부르지 않는다")
+    void doesNotCallAiAgainForPostingWithoutRequirements() {
+        when(aiClientService.analyzeJobPosting(any(GenerationClientSelection.class), anyString())).thenReturn("{}");
+        when(aiResponseProcessor.parseJobPosting(anyString(), any())).thenReturn(JobPostingAnalysisResult.builder()
+                .mainTasks(List.of()).requirements(List.of()).preferred(List.of()).companyValues(List.of())
+                .coreCompetencies(List.of()).conflicts(List.of()).missingEvidence(List.of()).build());
+        when(aiCallLogRepository.findFirstByExecutionStageAndInputReferenceTypeAndInputReferenceIdAndInputFingerprintOrderByAiCallLogIdDesc(
+                eq(AiExecutionStage.JOB_POSTING_ANALYSIS),
+                eq(AiInputReferenceType.ANALYSIS_SNAPSHOT),
+                eq(String.valueOf(SNAPSHOT_ID)),
+                anyString()))
+                .thenAnswer(invocation -> savedLogs.isEmpty() ? Optional.empty() : Optional.of(savedLogs.get(savedLogs.size() - 1)));
+
+        assertThatThrownBy(() -> executor.execute(AiExecutionStage.JOB_POSTING_ANALYSIS, context, jobSources, List.of()))
+                .isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> executor.execute(AiExecutionStage.JOB_POSTING_ANALYSIS, context, jobSources, List.of()))
+                .isInstanceOf(CustomException.class)
+                .extracting(error -> ((CustomException) error).getErrorCode())
+                .isEqualTo(com.example.jobpuzzle.global.error.ErrorCode.JOB_POSTING_REQUIREMENTS_NOT_FOUND);
+
+        verify(aiClientService, org.mockito.Mockito.times(1)).analyzeJobPosting(any(GenerationClientSelection.class), anyString());
+        assertThat(savedLogs).hasSize(1);
     }
 
     @Test

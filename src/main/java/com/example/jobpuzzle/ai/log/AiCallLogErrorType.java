@@ -19,5 +19,7 @@ public enum AiCallLogErrorType {
     // Provider를 호출하기 전에 stage 입력 계약을 초과한 경우다. 공개 API ErrorCode는 이번 단계에서 추가하지 않는다.
     INPUT_LIMIT_EXCEEDED,
     RESULT_PERSIST_FAILED,
-    STALE_RUNNING
+    STALE_RUNNING,
+    // AI 응답은 정상이지만 공고에서 자격요건·우대사항을 하나도 찾지 못한 경우다 (입력 공고 문제). 같은 입력으로 재시도하지 않는다.
+    REQUIREMENTS_NOT_FOUND
 }

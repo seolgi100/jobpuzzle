@@ -66,7 +66,6 @@ missingEvidence의 각 항목은 item과 reason을 가지며 두 문자열은 �
 ',
     '입력에 없는 사실, 근거 위치, 문서 유형을 추정하거나 생성하지 않는다. evidenceText를 새로 작성·요약·재서술·정규화하지 않는다. 출력 JSON 스키마 밖의 필드를 추가하지 않는다.',
     TRUE,
-    NOW(),
     NOW()
 )
 ON DUPLICATE KEY UPDATE
@@ -172,7 +171,7 @@ SELECT 'PT-JSON05-001', '맞춤 종합 분석 프롬프트', 'v1.10', 'JSON-05',
 - reason은 요구사항과 선택한 지원자 근거를 비교한 판단 이유를 구체적으로 작성한다.
 - missingPoint는 부족한 역량명이 아니라 현재 근거에서 확인되지 않은 경험·행동·성과를 작성한다.
 - candidateEvidence는 근거 원문의 단순 반복이 아니라 요구사항과 연결되는 지원자의 역할·행동·성과를 요약한다.
-- taskSuggestion은 missingPoint를 실제로 보완할 수 있는 구체적인 준비 행동을 작성한다.
+- taskSuggestion은 "~하기" 형태의 짧은 과제 이름만 작성한다. "~해볼 것을 권장합니다" 같은 추천 문장이나 이유 설명은 쓰지 않는다(이유는 missingPoint에 이미 있다).
 - HIGH이면 missingPoint와 taskSuggestion은 빈 문자열이다.
 - NONE/INSUFFICIENT이면 candidateEvidence는 빈 문자열이다.
 
@@ -193,6 +192,7 @@ SELECT 'PT-JSON05-001', '맞춤 종합 분석 프롬프트', 'v1.10', 'JSON-05',
 
 [서버 책임]
 - readiness는 reason과 limitations만 반환한다.
+- limitations는 지원자 준비 상태의 한계만 적는다. 질문 생성 활성화 여부, chunk·retrieval 범위, 모델·시스템 동작 같은 내부 구현 사실은 적지 않는다.
 - status, canGenerateQuestions, source identity, sourceRefs, 각 저장 ID와 저장 형식은 서버가 결정한다.
 
 반환 전에 모든 requirement key, enum 값, 필수 필드를 확인한다.',

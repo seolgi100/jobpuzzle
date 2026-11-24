@@ -172,15 +172,17 @@ class FullFlowTest {
         AiProcessingException timeout = new AiProcessingException(AiCallLogErrorType.TIMEOUT, "stub timeout");
 
         // 분석: 공고 분석이 시간 초과 → 분석 FAILED, 티켓 그대로, 다시 실행하면 끝난다
+        // (분석은 백그라운드로 넘어가므로 실패도 /status로 드러난다. /run 자체는 접수만 하고 202로 바로 응답한다.)
         doThrow(timeout).when(stubAi).analyzeJobPosting(anyString());
         Long caseId = preparedCase();
         int balance = balance();
-        assertThat(call(post("/analysis/cases/" + caseId + "/run"), null, -1).path("success").asBoolean()).isFalse();
+        runAnalysisAndWaitForFinish(caseId);
         assertThat(data(get("/analysis/cases/" + caseId + "/status"), null, 200).path("analysisCaseStatus").asText()).isEqualTo("FAILED");
         assertThat(balance()).isEqualTo(balance);
         assertThat(timeoutLogs(AiExecutionStage.JOB_POSTING_ANALYSIS)).isPositive();
         reset(stubAi);
-        assertThat(data(post("/analysis/cases/" + caseId + "/run"), null, 200).path("status").asText()).isEqualTo("COMPLETED");
+        runAnalysisAndWaitForFinish(caseId);
+        assertThat(data(get("/analysis/cases/" + caseId + "/status"), null, 200).path("analysisCaseStatus").asText()).isEqualTo("COMPLETED");
 
         // 질문 생성: 3번(처음 + 다시 2번) 모두 시간 초과 → 실패, 질문 세트 없음, 티켓 그대로
         doThrow(timeout).when(stubAi).generateQuestionsV2(anyString());
@@ -232,8 +234,19 @@ class FullFlowTest {
 
     private Long analyzedCase() throws Exception {
         Long caseId = preparedCase();
-        assertThat(data(post("/analysis/cases/" + caseId + "/run"), null, 200).path("status").asText()).isEqualTo("COMPLETED");
+        runAnalysisAndWaitForFinish(caseId);
         return caseId;
+    }
+
+    /** /run은 분석을 백그라운드로 접수만 하고(200 또는 202) 바로 돌아오므로, /status가 ANALYZING을 벗어날 때까지 기다린다. */
+    private void runAnalysisAndWaitForFinish(Long caseId) throws Exception {
+        call(post("/analysis/cases/" + caseId + "/run"), null, -2);
+        long deadline = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < deadline) {
+            if (!"ANALYZING".equals(data(get("/analysis/cases/" + caseId + "/status"), null, 200).path("analysisCaseStatus").asText())) return;
+            Thread.sleep(100);
+        }
+        throw new AssertionError("analysis did not finish within 30 seconds");
     }
 
     /** 자료 등록(직접 입력 → 확정) → 분석 케이스 생성 → 자료 연결 → 확정 → 색인까지. run은 부르는 쪽이 한다. */
@@ -319,7 +332,9 @@ class FullFlowTest {
         var response = mockMvc.perform(request).andReturn().getResponse();
         String text = response.getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         // status -1: 실패 응답이면 무엇이든 (오류 코드는 이 테스트가 확인할 대상이 아님)
+        // status -2: 분석 실행처럼 200(바로 끝남)과 202(백그라운드로 접수) 둘 다 허용
         if (status == -1) assertThat(response.getStatus()).as(text).isGreaterThanOrEqualTo(400);
+        else if (status == -2) assertThat(response.getStatus()).as(text).isIn(200, 202);
         else assertThat(response.getStatus()).as(text).isEqualTo(status);
         return text.isBlank() ? objectMapper.nullNode() : objectMapper.readTree(text);
     }

@@ -45,7 +45,10 @@ public class CustomizedSynthesisV18SchemaFactory {
         });
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("readiness", object(Map.of(
-                "reason", ref("text"), "limitations", array(ref("text")))));
+                "reason", ref("text"),
+                "limitations", array(Map.of("type", "string", "description",
+                        "지원자 준비 상태의 한계만 적는다(예: 특정 요구사항 근거 부족). 질문 생성 활성화 여부, chunk·retrieval 범위, "
+                                + "모델·시스템 동작 같은 내부 구현 사실은 적지 않는다.")))));
         properties.put("decisionById", object(decisions));
         properties.put("narrativesById", object(narratives));
         properties.put("questions", input.generationPolicy().questionGenerationEnabled()
